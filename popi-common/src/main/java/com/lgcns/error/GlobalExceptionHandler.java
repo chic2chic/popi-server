@@ -3,9 +3,15 @@ package com.lgcns.error;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.error.exception.ErrorCode;
 import com.lgcns.response.GlobalResponse;
+import lombok.SneakyThrows;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice(basePackages = "com.lgcns")
@@ -20,5 +26,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 GlobalResponse.fail(errorCode.getHttpStatus().value(), errorResponse);
 
         return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
+
+    /**
+     * javax.validation.Valid or @Validated 으로 binding error 발생시 발생한다. HttpMessageConverter 에서 등록한
+     * HttpMessageConverter binding 못할경우 발생 주로 @RequestBody, @RequestPart 어노테이션에서 발생
+     */
+    @SneakyThrows
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException e,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        final String errorMessage = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+        final ErrorResponse errorResponse =
+                ErrorResponse.of(e.getClass().getSimpleName(), errorMessage);
+        final GlobalResponse response =
+                GlobalResponse.fail(HttpStatus.BAD_REQUEST.value(), errorResponse);
+
+        return ResponseEntity.status(status).body(response);
     }
 }
