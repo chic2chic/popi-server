@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    config:
+      name: api-gateway
+  config:
+    import: configserver:${SPRING_CONFIG_IMPORT}
