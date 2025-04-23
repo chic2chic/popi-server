@@ -1,1 +1,5 @@
 rootProject.name = 'popi'
+
+include(
+        "popi-eureka-server"
+)
