@@ -79,4 +79,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
     }
+
+    /** 500번대 에러 처리 */
+    @ExceptionHandler(Exception.class)
+    protected ResponseEntity<GlobalResponse> handleException(Exception e) {
+        final ErrorCode errorCode = GlobalErrorCode.INTERNAL_SERVER_ERROR;
+        final ErrorResponse errorResponse =
+                ErrorResponse.of(e.getClass().getSimpleName(), errorCode.getMessage());
+        final GlobalResponse response =
+                GlobalResponse.fail(errorCode.getHttpStatus().value(), errorResponse);
+
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
 }
