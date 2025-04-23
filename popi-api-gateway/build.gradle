@@ -14,10 +14,10 @@ dependencies {
     // Cloud Bus
     implementation 'org.springframework.cloud:spring-cloud-starter-bus-amqp'
 
-    // Jakarta Servlet API 추가
-    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
-
     // Config Server
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Jakarta Servlet API 추가
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 }
