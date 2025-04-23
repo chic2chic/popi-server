@@ -2,26 +2,91 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.4'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.diffplug.spotless' version '6.20.0'
 }
 
-group = 'today'
-version = '0.0.1-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
+bootJar.enabled = false
 
 repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+subprojects {
+    group = 'com.lgcns'
+    version = '0.0.1-SNAPSHOT'
+
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'com.diffplug.spotless'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:2024.0.0"
+        }
+    }
+
+    spotless {
+        java {
+            // Google Java 포맷 적용
+            /*
+                googleJavaFormat() : 탭은 2개의 공백
+                googleJavaFormat().aosp() : 탭은 4개의 공백
+                [참고] https://github.com/google/google-java-format/issues/525
+             */
+            googleJavaFormat().aosp()
+            // import 순서 정렬
+            importOrder()
+            // 사용하지 않는 import 제거
+            removeUnusedImports()
+            // 각 라인 끝에 있는 공백을 제거
+            trimTrailingWhitespace()
+            // 파일 끝에 새로운 라인 추가
+            endWithNewline()
+        }
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
 }
+
+tasks.register('updateGitHooks', Copy) {
+    from './scripts/pre-commit'
+    into './.git/hooks'
+}
+
+tasks.register('makeGitHooksExecutable', Exec) {
+    commandLine 'chmod', '+x', './.git/hooks/pre-commit'
+    dependsOn updateGitHooks
+}
+
+compileJava.dependsOn makeGitHooksExecutable
 
 tasks.named('test') {
     useJUnitPlatform()
