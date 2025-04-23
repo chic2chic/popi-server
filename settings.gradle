@@ -1,5 +1,6 @@
 rootProject.name = 'popi'
 
 include(
-        "popi-eureka-server"
+        "popi-eureka-server",
+        "popi-common"
 )
