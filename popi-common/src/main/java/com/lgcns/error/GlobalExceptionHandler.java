@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice(basePackages = "com.lgcns")
@@ -58,6 +59,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request) {
         final ErrorCode errorCode = GlobalErrorCode.METHOD_NOT_ALLOWED;
+        final ErrorResponse errorResponse =
+                ErrorResponse.of(e.getClass().getSimpleName(), errorCode.getMessage());
+        final GlobalResponse response =
+                GlobalResponse.fail(errorCode.getHttpStatus().value(), errorResponse);
+
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
+
+    /** PathVariable, RequestParam, RequestHeader, RequestBody 에서 타입이 일치하지 않을 경우 발생 */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    protected ResponseEntity<GlobalResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException e) {
+        final ErrorCode errorCode = GlobalErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH;
         final ErrorResponse errorResponse =
                 ErrorResponse.of(e.getClass().getSimpleName(), errorCode.getMessage());
         final GlobalResponse response =
