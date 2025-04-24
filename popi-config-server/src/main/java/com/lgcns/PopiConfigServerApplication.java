@@ -8,8 +8,7 @@ import org.springframework.cloud.config.server.EnableConfigServer;
 @EnableConfigServer
 public class PopiConfigServerApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(PopiConfigServerApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(PopiConfigServerApplication.class, args);
+    }
 }
