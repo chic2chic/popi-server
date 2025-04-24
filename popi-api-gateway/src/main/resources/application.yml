@@ -3,6 +3,6 @@ spring:
     name: api-gateway
   cloud:
     config:
-      name: api-gateway
+      name: ${SPRING_CLOUD_CONFIG_NAME:api-gateway}
   config:
-    import: configserver:${SPRING_CONFIG_IMPORT}
+    import: configserver:http://${CONFIG_SERVER_NAME:localhost}:8888
