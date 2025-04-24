@@ -14,7 +14,7 @@ dependencies {
     // Cloud Bus
     implementation 'org.springframework.cloud:spring-cloud-starter-bus-amqp'
 
-    // Config Server
+    // Spring Cloud Config
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
