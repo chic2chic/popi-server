@@ -11,5 +11,4 @@ public class PopiApiGatewayApplication {
     public static void main(String[] args) {
         SpringApplication.run(PopiApiGatewayApplication.class, args);
     }
-
 }
