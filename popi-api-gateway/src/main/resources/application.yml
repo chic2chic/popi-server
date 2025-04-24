@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    config:
+      name: ${SPRING_CLOUD_CONFIG_NAME:api-gateway}
+  config:
+    import: configserver:http://${CONFIG_SERVER_NAME:localhost}:8888

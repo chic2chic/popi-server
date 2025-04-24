@@ -2,13 +2,13 @@ package com.lgcns;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.config.server.EnableConfigServer;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
-@EnableConfigServer
-public class PopiConfigServerApplication {
+@EnableDiscoveryClient
+public class PopiApiGatewayApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PopiConfigServerApplication.class, args);
+        SpringApplication.run(PopiApiGatewayApplication.class, args);
     }
 }

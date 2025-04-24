@@ -3,5 +3,6 @@ rootProject.name = 'popi'
 include(
         "popi-eureka-server",
         "popi-common",
-        "popi-config-server"
+        "popi-config-server",
+        "popi-api-gateway"
 )
