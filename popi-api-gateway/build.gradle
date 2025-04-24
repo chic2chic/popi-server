@@ -20,4 +20,7 @@ dependencies {
 
     // Jakarta Servlet API 추가
     implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+    // Springdoc Webflux
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.6'
 }
