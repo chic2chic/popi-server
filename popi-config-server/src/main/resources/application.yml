@@ -1,0 +1,26 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: guest
+    password: guest
+  profiles:
+    active: git
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/chic2chic/popi-config.git
+          default-label: main
+          skipSslValidation: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, busrefresh, refresh, metrics
