@@ -1,5 +1,5 @@
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation project(':popi-common')
 
     // Spring Cloud Config
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
