@@ -4,5 +4,6 @@ include(
         "popi-eureka-server",
         "popi-common",
         "popi-config-server",
-        "popi-api-gateway"
+        "popi-api-gateway",
+        "popi-auth-service"
 )
