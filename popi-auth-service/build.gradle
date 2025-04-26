@@ -1,6 +1,9 @@
 dependencies {
     implementation project(':popi-common')
 
+    // h2
+    runtimeOnly 'com.h2database:h2'
+
     // Spring Cloud Config
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
