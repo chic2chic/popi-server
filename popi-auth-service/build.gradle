@@ -1,6 +1,12 @@
 dependencies {
     implementation project(':popi-common')
 
+    // h2
+    runtimeOnly 'com.h2database:h2'
+
+    // Eureka Client
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
     // Spring Cloud Config
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
