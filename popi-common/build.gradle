@@ -16,4 +16,10 @@ dependencies {
 
     // Validation
     api 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Actuator
+    api 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // RabbitMQ
+    api 'org.springframework.boot:spring-boot-starter-amqp'
 }
