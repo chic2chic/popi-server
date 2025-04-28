@@ -1,9 +1,18 @@
 dependencies {
     implementation project(':popi-common')
 
+    // Eureka Client
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
     // Spring Cloud Config
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // MySQL
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -11,4 +20,15 @@ dependencies {
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.security:spring-security-test'
+
+    // Spring Cloud Open Feign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // Oauth2 Jose
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
 }

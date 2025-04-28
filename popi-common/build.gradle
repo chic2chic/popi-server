@@ -13,4 +13,13 @@ dependencies {
 
     //QueryDSL
     api 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+
+    // Validation
+    api 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Actuator
+    api 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // RabbitMQ
+    api 'org.springframework.boot:spring-boot-starter-amqp'
 }
