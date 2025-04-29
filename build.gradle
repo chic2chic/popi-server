@@ -3,6 +3,8 @@ plugins {
     id 'org.springframework.boot' version '3.4.4'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '6.20.0'
+    id "org.sonarqube" version "6.0.1.5171"
+    id 'jacoco'
 }
 
 bootJar.enabled = false
@@ -19,6 +21,7 @@ subprojects {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'com.diffplug.spotless'
+    apply plugin: 'jacoco'
 
     java {
         toolchain {
@@ -71,8 +74,64 @@ subprojects {
         }
     }
 
+    def QDomains = []
+    for (qPattern in '*.QA'..'*.QZ') { // qPattern = '*.QA', '*.QB', ... '*.QZ'
+        QDomains.add(qPattern + '*')
+    }
+
+    def jacocoExcludePatterns = [
+            // 측정 안하고 싶은 패턴
+            "**/*Application*",
+            "**/*Config*",
+            "**/*Exception*",
+            "**/*Request*",
+            "**/*Response*",
+            "**/*Dto*",
+            "**/*Filter*",
+            "**/*Error*/**",
+            "**/resources/**",
+            "**/exception/**",
+            "**/config/**"
+    ]
+
+    sonar {
+        properties {
+            property "sonar.projectKey", "popi-official_popi-manager-server"
+            property "sonar.organization", "popi-official"
+            property "sonar.host.url", "https://sonarcloud.io"
+            property 'sonar.language', 'java'
+            property 'sonar.sourceEncoding', 'UTF-8'
+            property 'sonar.exclusions', jacocoExcludePatterns.join(',')
+            property 'sonar.test.inclusions', '**/*Test.java'
+            property 'sonar.java.coveragePlugin', 'jacoco'
+            property "sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+        }
+    }
+
+    jacoco {
+        toolVersion = '0.8.12'
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            html.required.set(true)
+            csv.required.set(true)
+            xml.required.set(true)
+        }
+
+        afterEvaluate {
+            classDirectories.setFrom(
+                    files(classDirectories.files.collect {
+                        fileTree(dir: it, excludes: jacocoExcludePatterns + QDomains)
+                    })
+            )
+        }
+    }
+
     tasks.named('test') {
         useJUnitPlatform()
+        finalizedBy(tasks.named('jacocoTestReport'))
     }
 }
 
