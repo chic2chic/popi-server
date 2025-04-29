@@ -7,5 +7,7 @@ public interface ErrorCode {
 
     String getMessage();
 
-    String getErrorName();
+    default String getErrorName() {
+        return this.toString();
+    }
 }
