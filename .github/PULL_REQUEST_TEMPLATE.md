@@ -1,6 +1,6 @@
 ## 🌱 관련 이슈
 
-- #Jira_ticket_number
+- [Jira_ticket_number]
 
 ---
 ## 📌 작업 내용 및 특이사항
