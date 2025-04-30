@@ -15,7 +15,7 @@ spring:
     config:
       server:
         git:
-          uri: https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/chic2chic/popi-config.git
+          uri: https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/popi-official/popi-config.git
           default-label: main
           skipSslValidation: true
 
