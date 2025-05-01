@@ -1,0 +1,28 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;MODE=MYSQL
+  data:
+    redis:
+      host: ${REDIS_HOST:popi-user-server-redis-1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:password}
+oauth:
+  kakao:
+    client-id: test_kakao_client_id
+    client-secret: test_kakao_client_secret
+    redirect-uri: http://localhost:3000/auth/kakao/callback
+    grant-type: authorization_code
+  google:
+    client-id: test_google_client_id
+    client-secret: test_google_client_secret
+    redirect-uri: http://localhost:3000/auth/google/callback
+    grant-type: authorization_code
+jwt:
+  access-token-secret: test_access_token_secret
+  refresh-token-secret: test_refresh_token_secret
+  access-token-expiration-time: 7200
+  refresh-token-expiration-time: 172800
+  issuer: popi-user
