@@ -19,6 +19,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Start Redis container for test
+        run: docker compose -f ./docker-compose-test.yml up -d
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
@@ -29,14 +32,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: check
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
-
       - name: SonarCloud scan
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_SERVER_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar --info --stacktrace
+        run: ./gradlew test sonar --info --stacktrace
