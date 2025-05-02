@@ -2,6 +2,7 @@ package com.lgcns.service;
 
 import com.lgcns.domain.MemberRole;
 import com.lgcns.domain.RefreshToken;
+import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.repository.RefreshTokenRepository;
 import com.lgcns.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,9 @@ public class JwtTokenService {
         refreshTokenRepository.save(refreshToken);
 
         return token;
+    }
+
+    public RefreshTokenDto validateRefreshToken(String refreshToken) {
+        return jwtUtil.parseRefreshToken(refreshToken);
     }
 }

@@ -3,6 +3,10 @@ package com.lgcns.util;
 import static com.lgcns.constants.SecurityConstants.TOKEN_ROLE_NAME;
 
 import com.lgcns.domain.MemberRole;
+import com.lgcns.dto.RefreshTokenDto;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
@@ -50,6 +54,21 @@ public class JwtUtil {
         return buildRefreshToken(memberId, issuedAt, expiredAt);
     }
 
+    public RefreshTokenDto parseRefreshToken(String refreshTokenValue) throws ExpiredJwtException {
+        try {
+            Jws<Claims> claims = getClaims(refreshTokenValue, getRefreshTokenKey());
+
+            return RefreshTokenDto.of(
+                    Long.parseLong(claims.getBody().getSubject()),
+                    refreshTokenValue,
+                    refreshTokenExpirationTime);
+        } catch (ExpiredJwtException e) {
+            throw e;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public long getRefreshTokenExpirationTime() {
         return refreshTokenExpirationTime;
     }
@@ -82,5 +101,13 @@ public class JwtUtil {
                 .setExpiration(expiredAt)
                 .signWith(getRefreshTokenKey())
                 .compact();
+    }
+
+    private Jws<Claims> getClaims(String token, Key key) {
+        return Jwts.parserBuilder()
+                .requireIssuer(issuer)
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token);
     }
 }
