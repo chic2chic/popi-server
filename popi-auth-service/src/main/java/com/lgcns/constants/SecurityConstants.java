@@ -14,4 +14,6 @@ public final class SecurityConstants {
 
     public static final String GOOGLE_JWK_SET_URL = "https://www.googleapis.com/oauth2/v3/certs";
     public static final String GOOGLE_ISSUER = "https://accounts.google.com";
+
+    public static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 }
