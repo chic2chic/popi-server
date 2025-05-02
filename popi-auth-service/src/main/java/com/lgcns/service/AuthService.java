@@ -3,8 +3,14 @@ package com.lgcns.service;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
+import com.lgcns.dto.AccessTokenDto;
+import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.request.AuthCodeRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
+import com.lgcns.dto.response.TokenReissueResponse;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.AuthErrorCode;
+import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +38,23 @@ public class AuthService {
         Member member = optionalMember.orElseGet(() -> saveMember(oidcUser, provider));
 
         return getLoginResponse(member);
+    }
+
+    public TokenReissueResponse reissueToken(String refreshTokenValue) {
+        RefreshTokenDto oldRefreshTokenDto =
+                jwtTokenService.validateRefreshToken(refreshTokenValue);
+
+        if (oldRefreshTokenDto == null) {
+            throw new CustomException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
+        }
+
+        RefreshTokenDto newRefreshTokenDto =
+                jwtTokenService.reissueRefreshToken(oldRefreshTokenDto);
+        AccessTokenDto newAccessTokenDto =
+                jwtTokenService.reissueAccessToken(getMember(newRefreshTokenDto));
+
+        return TokenReissueResponse.of(
+                newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());
     }
 
     private SocialLoginResponse getLoginResponse(Member member) {
@@ -69,5 +92,11 @@ public class AuthService {
             case GOOGLE -> (String) oidcUser.getClaims().get("name");
             case KAKAO -> (String) oidcUser.getClaims().get("nickname");
         };
+    }
+
+    private Member getMember(RefreshTokenDto refreshTokenDto) {
+        return memberRepository
+                .findById(refreshTokenDto.memberId())
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
     }
 }

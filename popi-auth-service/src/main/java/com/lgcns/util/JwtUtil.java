@@ -3,6 +3,7 @@ package com.lgcns.util;
 import static com.lgcns.constants.SecurityConstants.TOKEN_ROLE_NAME;
 
 import com.lgcns.domain.MemberRole;
+import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -42,10 +43,24 @@ public class JwtUtil {
         return refreshTokenExpirationTime * 1000;
     }
 
+    public AccessTokenDto generateAccessTokenDto(Long memberId, MemberRole memberRole) {
+        Date issuedAt = new Date();
+        Date expiredAt = new Date(issuedAt.getTime() + accessTokenExpirationMilliTime());
+        String tokenValue = buildAccessToken(memberId, memberRole, issuedAt, expiredAt);
+        return new AccessTokenDto(memberId, memberRole, tokenValue);
+    }
+
     public String generateAccessToken(Long memberId, MemberRole memberRole) {
         Date issuedAt = new Date();
         Date expiredAt = new Date(issuedAt.getTime() + accessTokenExpirationMilliTime());
         return buildAccessToken(memberId, memberRole, issuedAt, expiredAt);
+    }
+
+    public RefreshTokenDto generateRefreshTokenDto(Long memberId) {
+        Date issuedAt = new Date();
+        Date expiredAt = new Date(issuedAt.getTime() + refreshTokenExpirationMilliTime());
+        String refreshTokenValue = buildRefreshToken(memberId, issuedAt, expiredAt);
+        return RefreshTokenDto.of(memberId, refreshTokenValue, refreshTokenExpirationTime);
     }
 
     public String generateRefreshToken(Long memberId) {
