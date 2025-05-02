@@ -78,7 +78,7 @@ public class JwtUtil {
                     refreshTokenValue,
                     refreshTokenExpirationTime);
         } catch (ExpiredJwtException e) {
-            throw e;
+            return null;
         } catch (Exception e) {
             return null;
         }
