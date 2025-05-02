@@ -18,9 +18,11 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
-    // Jakarta Servlet API 추가
-    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
-
     // Springdoc Webflux
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.6'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 }
