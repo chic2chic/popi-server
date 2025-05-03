@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter
                 }
             }
 
-            return onError(exchange, GatewayAuthErrorCode.AUTH_INVALID_TOKEN);
+            return onError(exchange, GatewayAuthErrorCode.INVALID_ACCESS_TOKEN);
         };
     }
 
