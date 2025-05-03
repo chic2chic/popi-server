@@ -3,6 +3,11 @@ package com.lgcns.util;
 import static com.lgcns.constants.SecurityConstants.TOKEN_ROLE_NAME;
 
 import com.lgcns.domain.MemberRole;
+import com.lgcns.dto.AccessTokenDto;
+import com.lgcns.dto.RefreshTokenDto;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
@@ -38,16 +43,45 @@ public class JwtUtil {
         return refreshTokenExpirationTime * 1000;
     }
 
+    public AccessTokenDto generateAccessTokenDto(Long memberId, MemberRole memberRole) {
+        Date issuedAt = new Date();
+        Date expiredAt = new Date(issuedAt.getTime() + accessTokenExpirationMilliTime());
+        String tokenValue = buildAccessToken(memberId, memberRole, issuedAt, expiredAt);
+        return new AccessTokenDto(memberId, memberRole, tokenValue);
+    }
+
     public String generateAccessToken(Long memberId, MemberRole memberRole) {
         Date issuedAt = new Date();
         Date expiredAt = new Date(issuedAt.getTime() + accessTokenExpirationMilliTime());
         return buildAccessToken(memberId, memberRole, issuedAt, expiredAt);
     }
 
+    public RefreshTokenDto generateRefreshTokenDto(Long memberId) {
+        Date issuedAt = new Date();
+        Date expiredAt = new Date(issuedAt.getTime() + refreshTokenExpirationMilliTime());
+        String refreshTokenValue = buildRefreshToken(memberId, issuedAt, expiredAt);
+        return RefreshTokenDto.of(memberId, refreshTokenValue, refreshTokenExpirationTime);
+    }
+
     public String generateRefreshToken(Long memberId) {
         Date issuedAt = new Date();
         Date expiredAt = new Date(issuedAt.getTime() + refreshTokenExpirationMilliTime());
         return buildRefreshToken(memberId, issuedAt, expiredAt);
+    }
+
+    public RefreshTokenDto parseRefreshToken(String refreshTokenValue) throws ExpiredJwtException {
+        try {
+            Jws<Claims> claims = getClaims(refreshTokenValue, getRefreshTokenKey());
+
+            return RefreshTokenDto.of(
+                    Long.parseLong(claims.getBody().getSubject()),
+                    refreshTokenValue,
+                    refreshTokenExpirationTime);
+        } catch (ExpiredJwtException e) {
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public long getRefreshTokenExpirationTime() {
@@ -82,5 +116,13 @@ public class JwtUtil {
                 .setExpiration(expiredAt)
                 .signWith(getRefreshTokenKey())
                 .compact();
+    }
+
+    private Jws<Claims> getClaims(String token, Key key) {
+        return Jwts.parserBuilder()
+                .requireIssuer(issuer)
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token);
     }
 }

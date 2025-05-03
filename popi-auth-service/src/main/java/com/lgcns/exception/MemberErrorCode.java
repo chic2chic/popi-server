@@ -1,13 +1,14 @@
-package com.lgcns.error.exception;
+package com.lgcns.exception;
 
+import com.lgcns.error.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum GatewayAuthErrorCode {
-    INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 액세스 토큰입니다. 올바른 토큰으로 요청해주세요."),
+public enum MemberErrorCode implements ErrorCode {
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
     ;
 
     private final HttpStatus httpStatus;

@@ -22,4 +22,9 @@ public class RefreshToken {
         this.token = token;
         this.ttl = ttl;
     }
+
+    public void updateRefreshToken(String token, long ttl) {
+        this.token = token;
+        this.ttl = ttl;
+    }
 }

@@ -1,6 +1,6 @@
 package com.lgcns.filter;
 
-import static com.lgcns.common.constants.SecurityConstants.TOKEN_PREFIX;
+import static com.lgcns.constants.SecurityConstants.TOKEN_PREFIX;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter
                 }
             }
 
-            return onError(exchange, GatewayAuthErrorCode.AUTH_INVALID_TOKEN);
+            return onError(exchange, GatewayAuthErrorCode.INVALID_ACCESS_TOKEN);
         };
     }
 
