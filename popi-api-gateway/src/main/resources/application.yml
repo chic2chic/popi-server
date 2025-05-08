@@ -1,8 +1,76 @@
+server:
+  port: 8000
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
 spring:
   application:
     name: api-gateway
+
   cloud:
-    config:
-      name: ${SPRING_CLOUD_CONFIG_NAME:api-gateway}
-  config:
-    import: configserver:http://${CONFIG_SERVER_NAME:localhost}:8888
+    gateway:
+      routes:
+        - id: auth-service
+          uri: lb://AUTH
+          predicates:
+            - Path=/auth/reissue
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
+            - RefreshTokenHeaderFilter
+
+        - id: auth-service
+          uri: lb://AUTH
+          predicates:
+            - Path=/auth/**
+            - Method=GET,POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
+
+        - id: member-docs
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+
+        - id: member-service
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/**
+            - Method=GET,POST,DELETE
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allow-credentials: true
+            allowed-origins:
+              - http://localhost:3000
+            allowed-headers:
+              - *
+            allowed-methods:
+              - *
+
+springdoc:
+  swagger-ui:
+    urls[0]:
+      name: 인증 서비스
+      url: http://localhost:8000/auth/v3/api-docs
+    urls[1]:
+      name: 회원 서비스
+      url: http://localhost:8000/members/v3/api-docs
+
+jwt:
+  access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
+  issuer: ${JWT_ISSUER}

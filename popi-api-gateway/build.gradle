@@ -11,13 +11,6 @@ dependencies {
     // Actuator
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // Cloud Bus
-    implementation 'org.springframework.cloud:spring-cloud-starter-bus-amqp'
-
-    // Spring Cloud Config
-    implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
     // Springdoc Webflux
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.6'
 

@@ -1,9 +1,3 @@
-spring:
-  cloud:
-    config:
-      enabled: false
-
 jwt:
   access-token-secret: test
-  refresh-token-secret: test
   issuer: test

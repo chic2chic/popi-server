@@ -1,8 +1,57 @@
+server:
+  port: 60000
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
 spring:
-  application:
-    name: auth
-  cloud:
-    config:
-      name: ${SPRING_CLOUD_CONFIG_NAME:auth-service-local}
-  config:
-    import: configserver:http://${CONFIG_SERVER_NAME:localhost}:8888
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${AUTH_DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+oauth:
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: ${BASE_URL}/login/oauth2/code/kakao
+    grant-type: authorization_code
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: ${BASE_URL}/login/oauth2/code/google
+    grant-type: authorization_code
+
+jwt:
+  access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
+  refresh-token-secret: ${JWT_REFRESH_TOKEN_SECRET}
+  access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME:3600}
+  refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME:172800}
+  issuer: ${JWT_ISSUER}
+
+spring-doc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method
+    disable-swagger-default-url: true
+    path: /swagger-ui
+    doc-expansion: none
