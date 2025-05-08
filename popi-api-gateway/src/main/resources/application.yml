@@ -58,9 +58,9 @@ spring:
             allowed-origins:
               - http://localhost:3000
             allowed-headers:
-              - *
+              - "*"
             allowed-methods:
-              - *
+              - "*"
 
 springdoc:
   swagger-ui:
