@@ -1,32 +1,25 @@
-server:
-  port: 60000
-
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-
 spring:
-  application:
-    name: auth
+  cloud:
+    kubernetes:
+      discovery:
+        namespaces: popi
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${AUTH_DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
+        default_batch_fetch_size: 100
     open-in-view: false
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
 
 oauth:
@@ -47,6 +40,14 @@ jwt:
   access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME:3600}
   refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME:172800}
   issuer: ${JWT_ISSUER}
+
+eureka:
+  client:
+    enabled: false
+
+logging:
+  level:
+    org.hibernate.SQL: debug
 
 spring-doc:
   default-consumes-media-type: application/json
