@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway-deploy
+  namespace: popi
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: gateway-app
+          image: ht3064/api-gateway:k8s_v1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          args:
+            - "--spring.config.additional-location=file:/config/"
+            - "--spring.profiles.active=k8s"
+          volumeMounts:
+            - name: api-gateway-configmap
+              mountPath: /config
+              readOnly: true
+          env:
+            - name: JWT_ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-gateway-secret
+                  key: JWT_ACCESS_TOKEN_SECRET
+            - name: JWT_ISSUER
+              valueFrom:
+                secretKeyRef:
+                  name: api-gateway-secret
+                  key: JWT_ISSUER
+      volumes:
+        - name: api-gateway-configmap
+          configMap:
+            name: api-gateway-configmap
+            items:
+              - key: application-k8s.yml
+                path: application.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-svc
+  namespace: popi
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
