@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deploy
+  namespace: popi
+spec:
+  selector:
+    matchLabels:
+      app: auth
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth-service
+          image: ht3064/auth-service:k8s_v1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 60000
+              protocol: TCP
+          args:
+            - "--spring.config.additional-location=file:/config/"
+            - "--spring.profiles.active=k8s"
+          volumeMounts:
+            - name: auth-configmap
+              mountPath: /config
+              readOnly: true
+          env:
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: MYSQL_HOST
+            - name: MYSQL_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: MYSQL_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: DB_NAME
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: DB_PASSWORD
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: REDIS_PORT
+            - name: KAKAO_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: KAKAO_CLIENT_ID
+            - name: KAKAO_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: KAKAO_CLIENT_SECRET
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: GOOGLE_CLIENT_SECRET
+            - name: BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: BASE_URL
+            - name: JWT_ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: JWT_ACCESS_TOKEN_SECRET
+            - name: JWT_REFRESH_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: JWT_REFRESH_TOKEN_SECRET
+            - name: JWT_ACCESS_TOKEN_EXPIRATION_TIME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: JWT_ACCESS_TOKEN_EXPIRATION_TIME
+            - name: JWT_REFRESH_TOKEN_EXPIRATION_TIME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: JWT_REFRESH_TOKEN_EXPIRATION_TIME
+            - name: JWT_ISSUER
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: JWT_ISSUER
+      volumes:
+        - name: auth-configmap
+          configMap:
+            name: auth-configmap
+            items:
+              - key: application-k8s.yml
+                path: application.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-svc
+  namespace: popi
+spec:
+  selector:
+    app: auth
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 60000
+  type: ClusterIP
