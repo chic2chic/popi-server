@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: ht3064/api-gateway:k8s_v1.0
+          image: 446305434496.dkr.ecr.ap-northeast-2.amazonaws.com/popi-user/popi-api-gateway:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
