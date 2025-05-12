@@ -5,11 +5,14 @@ metadata:
   namespace: popi
 data:
   application-k8s.yml: |
+    server:
+      port: 8000
+      
     spring:
       cloud:
         kubernetes:
           discovery:
-            all-namespaces: true
+            namespaces: popi
         gateway:
           routes:
             - id: auth-reissue
@@ -60,6 +63,10 @@ data:
         urls[0]:
           name: 인증 서비스
           url: /auth/v3/api-docs
+    
+    jwt:
+      access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
+      issuer: ${JWT_ISSUER}    
 
     logging:
       level:
