@@ -16,7 +16,7 @@ data:
         gateway:
           routes:
             - id: auth-reissue
-              uri: http://auth-svc.popi.svc.cluster.local
+              uri: lb://auth-svc
               predicates:
                 - Path=/auth/reissue
                 - Method=POST
@@ -26,7 +26,7 @@ data:
                 - RefreshTokenHeaderFilter
 
             - id: auth-service
-              uri: http://auth-svc.popi.svc.cluster.local
+              uri: lb://auth-svc
               predicates:
                 - Path=/auth/**
                 - Method=GET,POST
@@ -35,7 +35,7 @@ data:
                 - RewritePath=/auth/(?<segment>.*), /${segment}
 
             - id: auth-docs
-              uri: http://auth-svc.popi.svc.cluster.local
+              uri: lb://auth-svc
               predicates:
                 - Path=/auth/v3/api-docs
               filters:
