@@ -14,19 +14,18 @@ spec:
         app: api-gateway
     spec:
       containers:
-        - name: gateway-app
+        - name: api-gateway
           image: ht3064/api-gateway:k8s_v1.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
-          args:
-            - "--spring.config.additional-location=file:/config/"
-            - "--spring.profiles.active=k8s"
           volumeMounts:
-            - name: api-gateway-configmap
+            - name: api-gateway-config-volume
               mountPath: /config
               readOnly: true
           env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
             - name: JWT_ACCESS_TOKEN_SECRET
               valueFrom:
                 secretKeyRef:
@@ -38,12 +37,9 @@ spec:
                   name: api-gateway-secret
                   key: JWT_ISSUER
       volumes:
-        - name: api-gateway-configmap
+        - name: api-gateway-config-volume
           configMap:
             name: api-gateway-configmap
-            items:
-              - key: application-k8s.yml
-                path: application.yml
 ---
 apiVersion: v1
 kind: Service
