@@ -18,16 +18,14 @@ spec:
           image: ht3064/auth-service:k8s_v1.0
           imagePullPolicy: Always
           ports:
-            - containerPort: 60000
-              protocol: TCP
-          args:
-            - "--spring.config.additional-location=file:/config/"
-            - "--spring.profiles.active=k8s"
+            - containerPort: 8080
           volumeMounts:
-            - name: auth-configmap
+            - name: auth-config-volume
               mountPath: /config
               readOnly: true
           env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
             - name: MYSQL_HOST
               valueFrom:
                 secretKeyRef:
@@ -114,12 +112,9 @@ spec:
                   name: auth-secret
                   key: JWT_ISSUER
       volumes:
-        - name: auth-configmap
+        - name: auth-config-volume
           configMap:
             name: auth-configmap
-            items:
-              - key: application-k8s.yml
-                path: application.yml
 ---
 apiVersion: v1
 kind: Service
@@ -132,5 +127,5 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 60000
+      targetPort: 8080
   type: ClusterIP
