@@ -1,3 +1,3 @@
 jwt:
-  access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
-  issuer: ${JWT_ISSUER}
+  access-token-secret: test
+  issuer: test
