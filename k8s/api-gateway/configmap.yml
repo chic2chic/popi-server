@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-configmap
+  namespace: popi
+data:
+  application-k8s.yml: |
+    server:
+      port: 8000
+      
+    spring:
+      cloud:
+        kubernetes:
+          discovery:
+            namespaces: popi
+        gateway:
+          routes:
+            - id: auth-reissue
+              uri: lb://auth-svc
+              predicates:
+                - Path=/auth/reissue
+                - Method=POST
+              filters:
+                - RemoveRequestHeader=Cookie
+                - RewritePath=/auth/(?<segment>.*), /${segment}
+                - RefreshTokenHeaderFilter
+
+            - id: auth-service
+              uri: lb://auth-svc
+              predicates:
+                - Path=/auth/**
+                - Method=GET,POST
+              filters:
+                - RemoveRequestHeader=Cookie
+                - RewritePath=/auth/(?<segment>.*), /${segment}
+
+            - id: auth-docs
+              uri: lb://auth-svc
+              predicates:
+                - Path=/auth/v3/api-docs
+              filters:
+                - RemoveRequestHeader=Cookie
+                - RewritePath=/auth/(?<segment>.*), /${segment}
+
+          globalcors:
+            cors-configurations:
+              "[/**]":
+                allow-credentials: true
+                allowed-origins:
+                  - http://localhost:3000
+                  - https://www.dev.ceo.popi.today
+                allowed-headers:
+                  - "*"
+                allowed-methods:
+                  - "*"
+
+    eureka:
+      client:
+        enabled: false
+
+    springdoc:
+      swagger-ui:
+        urls[0]:
+          name: 인증 서비스
+          url: /auth/v3/api-docs
+    
+    jwt:
+      access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
+      issuer: ${JWT_ISSUER}    
+
+    logging:
+      level:
+        org.hibernate.SQL: debug

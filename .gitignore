@@ -39,3 +39,8 @@ out/
 ### Custom ###
 .DS_Store
 .env
+
+### K8s Secret ###
+#k8s/api-gateway/secret.yml
+#!**/k8s/**/secret.yml
+k8s/**/secret.yml

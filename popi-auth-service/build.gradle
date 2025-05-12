@@ -4,9 +4,11 @@ dependencies {
     // Eureka Client
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
-    // Spring Cloud Config
-    implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    // Spring Cloud Kubernetes Discovery Client
+    implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-client'
+
+    // Spring Cloud Kubernetes Config Client
+    implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-client-config'
 
     // H2
     runtimeOnly 'com.h2database:h2'
