@@ -58,7 +58,7 @@ logging:
   level:
     org.hibernate.SQL: debug
 
-spring-doc:
+springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
   swagger-ui:
