@@ -58,12 +58,9 @@ logging:
   level:
     org.hibernate.SQL: debug
 
-springdoc:
+spring-doc:
+  api-docs:
+    version: openapi_3_1
+    enabled: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
-  swagger-ui:
-    tags-sorter: alpha
-    operations-sorter: method
-    disable-swagger-default-url: true
-    path: /swagger-ui
-    doc-expansion: none
