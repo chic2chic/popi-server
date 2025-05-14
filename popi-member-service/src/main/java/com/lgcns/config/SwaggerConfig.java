@@ -1,4 +1,4 @@
-package com.lgcns;
+package com.lgcns.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -22,7 +22,6 @@ public class SwaggerConfig {
                                 .title("PoPI Member Server API")
                                 .description("PoPI 회원 서비스 API 명세서입니다.")
                                 .version("v0.0.1"))
-                .addServersItem(new Server().url("/auth"))
                 .addServersItem(new Server().url("/members"))
                 .components(authSetting())
                 .addSecurityItem(securityRequirement());
