@@ -27,6 +27,25 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
+
+        - id: member-service
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/**
+            - Method=GET,POST,DELETE
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+
+        - id: member-docs
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+
       globalcors:
         cors-configurations:
           "[/**]":
