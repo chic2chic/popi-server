@@ -1,0 +1,31 @@
+dependencies {
+	implementation project(':popi-common')
+
+	// Eureka Client
+	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
+	// Spring Cloud Kubernetes Discovery Client
+	implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-client'
+
+	// Spring Cloud Kubernetes Config Client
+	implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-client-config'
+
+	// H2
+	runtimeOnly 'com.h2database:h2'
+	// MySQL
+	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	// Swagger
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
+
+	// Spring Cloud Open Feign
+	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
