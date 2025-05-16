@@ -27,6 +27,24 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
+
+        - id: member-docs
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+        - id: member-service
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/**
+            - Method=GET,POST,DELETE
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+
       globalcors:
         cors-configurations:
           "[/**]":
@@ -52,6 +70,9 @@ springdoc:
     urls[0]:
       name: 인증 서비스
       url: /auth/v3/api-docs
+    urls[1]:
+      name: 회원 서비스
+      url: /members/v3/api-docs
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
