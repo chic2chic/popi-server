@@ -45,6 +45,23 @@ spring:
             - RewritePath=/members/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
+        - id: reservation-docs
+          uri: lb://RESERVATIONS
+          predicates:
+              - Path=/reservations/v3/api-docs
+          filters:
+              - RemoveRequestHeader=Cookie
+              - RewritePath=/reservations/(?<segment>.*), /$\{segment}
+        - id: reservation-service
+          uri: lb://RESERVATIONS
+          predicates:
+            - Path=/reservations/**
+            - Method=GET,POST,DELETE
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/reservations/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+
       globalcors:
         cors-configurations:
           "[/**]":
@@ -73,6 +90,9 @@ springdoc:
     urls[1]:
       name: 회원 서비스
       url: /members/v3/api-docs
+    urls[2]:
+      name: 예약 서비스
+      url: /reservations/v3/api-docs
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
