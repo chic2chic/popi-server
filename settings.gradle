@@ -1,4 +1,4 @@
-rootProject.name = 'popi-user-server'
+rootProject.name = 'popi'
 
 include(
         "popi-eureka-server",
