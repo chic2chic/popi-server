@@ -27,18 +27,6 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
 
-oauth:
-  kakao:
-    client-id: ${KAKAO_CLIENT_ID}
-    client-secret: ${KAKAO_CLIENT_SECRET}
-    redirect-uri: ${BASE_URL}/login/oauth2/code/kakao
-    grant-type: authorization_code
-  google:
-    client-id: ${GOOGLE_CLIENT_ID}
-    client-secret: ${GOOGLE_CLIENT_SECRET}
-    redirect-uri: ${BASE_URL}/login/oauth2/code/google
-    grant-type: authorization_code
-
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
   refresh-token-secret: ${JWT_REFRESH_TOKEN_SECRET}

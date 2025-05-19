@@ -6,7 +6,6 @@ import com.lgcns.exception.AuthErrorCode;
 import java.time.Instant;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -18,12 +17,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class IdTokenVerifier {
-
-    @Value("${oauth.google.client-id}")
-    private String googleClientId;
-
-    @Value("${oauth.kakao.client-id}")
-    private String kakaoClientId;
 
     private final Map<OauthProvider, JwtDecoder> decoders =
             Map.of(
@@ -38,7 +31,7 @@ public class IdTokenVerifier {
         Jwt jwt = getJwt(idToken, provider);
         OidcIdToken oidcIdToken = getOidcIdToken(jwt);
 
-        validateAudience(oidcIdToken, provider.getClientId(googleClientId, kakaoClientId));
+        validateAudience(oidcIdToken, "");
         validateIssuer(oidcIdToken, provider.getIssuer());
         validateExpiresAt(oidcIdToken);
 

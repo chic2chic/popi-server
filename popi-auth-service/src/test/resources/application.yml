@@ -7,18 +7,6 @@ spring:
       port: 1234
       password:
 
-oauth:
-  kakao:
-    client-id: test
-    client-secret: test
-    redirect-uri: test
-    grant-type: test
-  google:
-    client-id: test
-    client-secret: test
-    redirect-uri: test
-    grant-type: test
-
 jwt:
   access-token-secret: test
   refresh-token-secret: test
