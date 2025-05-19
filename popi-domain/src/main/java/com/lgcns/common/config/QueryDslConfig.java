@@ -1,4 +1,4 @@
-package com.lgcns.config;
+package com.lgcns.common.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
