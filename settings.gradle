@@ -6,5 +6,6 @@ include(
         "popi-api-gateway",
         "popi-auth-service",
         "popi-member-service",
+        "popi-domain",
         "popi-reservation-service",
 )
