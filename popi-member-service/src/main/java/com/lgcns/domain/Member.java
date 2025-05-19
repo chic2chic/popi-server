@@ -21,8 +21,6 @@ public class Member extends BaseTimeEntity {
 
     @Embedded private OauthInfo oauthInfo;
 
-    private String phoneNumber;
-
     private int age;
 
     @Enumerated(EnumType.STRING)
@@ -38,13 +36,11 @@ public class Member extends BaseTimeEntity {
     private Member(
             String nickname,
             OauthInfo oauthInfo,
-            String phoneNumber,
             int age,
             MemberGender gender,
             MemberStatus status,
             MemberRole role) {
         this.nickname = nickname;
-        this.phoneNumber = phoneNumber;
         this.gender = gender;
         this.age = age;
         this.oauthInfo = oauthInfo;
