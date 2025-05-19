@@ -5,6 +5,7 @@ import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
+import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.error.exception.CustomException;
@@ -26,10 +27,8 @@ public class AuthService {
     private final IdTokenVerifier idTokenVerifier;
     private final MemberRepository memberRepository;
 
-    public SocialLoginResponse socialLoginMember(OauthProvider provider) {
-        String idToken = "";
-
-        OidcUser oidcUser = idTokenVerifier.getOidcUser(idToken, provider);
+    public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
+        OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
 
         Optional<Member> optionalMember = findByOidcUser(oidcUser);
         Member member = optionalMember.orElseGet(() -> saveMember(oidcUser, provider));
