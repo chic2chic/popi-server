@@ -1,7 +1,5 @@
 package com.lgcns.service;
 
-import com.lgcns.domain.Member;
-import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
@@ -11,6 +9,8 @@ import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.exception.MemberErrorCode;
+import com.lgcns.member.Member;
+import com.lgcns.member.OauthInfo;
 import com.lgcns.repository.MemberRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

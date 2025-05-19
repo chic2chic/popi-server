@@ -1,4 +1,4 @@
-package com.lgcns.domain;
+package com.lgcns.member;
 
 import lombok.AccessLevel;
 import lombok.Builder;

@@ -1,12 +1,12 @@
 package com.lgcns.service;
 
-import com.lgcns.domain.Member;
-import com.lgcns.domain.MemberRole;
 import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
+import com.lgcns.member.Member;
+import com.lgcns.member.MemberRole;
 import com.lgcns.repository.RefreshTokenRepository;
 import com.lgcns.util.JwtUtil;
 import lombok.RequiredArgsConstructor;

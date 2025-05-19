@@ -2,9 +2,9 @@ package com.lgcns.util;
 
 import static com.lgcns.constants.SecurityConstants.TOKEN_ROLE_NAME;
 
-import com.lgcns.domain.MemberRole;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
+import com.lgcns.member.MemberRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;

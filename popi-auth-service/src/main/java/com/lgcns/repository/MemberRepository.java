@@ -1,7 +1,7 @@
 package com.lgcns.repository;
 
-import com.lgcns.domain.Member;
-import com.lgcns.domain.OauthInfo;
+import com.lgcns.member.Member;
+import com.lgcns.member.OauthInfo;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

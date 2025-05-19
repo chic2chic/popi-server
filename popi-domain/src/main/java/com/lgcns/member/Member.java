@@ -1,4 +1,4 @@
-package com.lgcns.domain;
+package com.lgcns.member;
 
 import com.lgcns.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
