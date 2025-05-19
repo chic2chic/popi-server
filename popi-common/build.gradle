@@ -8,9 +8,6 @@ jar { enabled = true }
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-web'
     
-    // JPA
-    api 'org.springframework.boot:spring-boot-starter-data-jpa'
-
     //QueryDSL
     api 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 
