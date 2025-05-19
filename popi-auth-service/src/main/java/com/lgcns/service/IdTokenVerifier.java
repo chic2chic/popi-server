@@ -3,6 +3,7 @@ package com.lgcns.service;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
+import com.lgcns.infra.oidc.OidcProperties;
 import java.time.Instant;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class IdTokenVerifier {
 
+    private final OidcProperties oidcProperties;
     private final Map<OauthProvider, JwtDecoder> decoders =
             Map.of(
                     OauthProvider.GOOGLE, buildDecoder(OauthProvider.GOOGLE.getJwkSetUrl()),
@@ -31,7 +33,13 @@ public class IdTokenVerifier {
         Jwt jwt = getJwt(idToken, provider);
         OidcIdToken oidcIdToken = getOidcIdToken(jwt);
 
-        validateAudience(oidcIdToken, "");
+        String audience =
+                switch (provider) {
+                    case KAKAO -> oidcProperties.kakao().audience();
+                    case GOOGLE -> oidcProperties.google().audience();
+                };
+
+        validateAudience(oidcIdToken, audience);
         validateIssuer(oidcIdToken, provider.getIssuer());
         validateExpiresAt(oidcIdToken);
 
@@ -47,10 +55,10 @@ public class IdTokenVerifier {
                 jwt.getTokenValue(), jwt.getIssuedAt(), jwt.getExpiresAt(), jwt.getClaims());
     }
 
-    private void validateAudience(OidcIdToken oidcIdToken, String clientId) {
+    private void validateAudience(OidcIdToken oidcIdToken, String audience) {
         String idTokenAudience = oidcIdToken.getAudience().get(0);
 
-        if (idTokenAudience == null || !idTokenAudience.equals(clientId)) {
+        if (idTokenAudience == null || !idTokenAudience.equals(audience)) {
             throw new CustomException(AuthErrorCode.ID_TOKEN_VERIFICATION_FAILED);
         }
     }
