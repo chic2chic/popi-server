@@ -10,11 +10,6 @@ dependencies {
     // Spring Cloud Kubernetes Config Client
     implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-client-config'
 
-    // H2
-    runtimeOnly 'com.h2database:h2'
-    // MySQL
-    runtimeOnly 'com.mysql:mysql-connector-j'
-
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
 
