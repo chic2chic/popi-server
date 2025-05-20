@@ -14,8 +14,8 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @Operation(summary = "회원 정보 조회", description = "로그인한 회원 정보를 조회합니다.")
     @GetMapping("/me")
+    @Operation(summary = "회원 정보 조회", description = "로그인한 회원 정보를 조회합니다.")
     public MemberInfoResponse memberInfoFind(@RequestHeader("member-id") String memberId) {
         return memberService.findMemberInfo(memberId);
     }
