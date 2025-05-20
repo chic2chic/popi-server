@@ -27,17 +27,17 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
 
-oauth:
+oidc:
   kakao:
-    client-id: ${KAKAO_CLIENT_ID}
-    client-secret: ${KAKAO_CLIENT_SECRET}
-    redirect-uri: ${BASE_URL}/login/oauth2/code/kakao
-    grant-type: authorization_code
+    jwk-set-uri: https://kauth.kakao.com/.well-known/jwks.json
+    issuer: https://kauth.kakao.com
+    audience: ${KAKAO_NATIVE_APP_KEY:}
   google:
-    client-id: ${GOOGLE_CLIENT_ID}
-    client-secret: ${GOOGLE_CLIENT_SECRET}
-    redirect-uri: ${BASE_URL}/login/oauth2/code/google
-    grant-type: authorization_code
+    jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+    issuer: https://accounts.google.com
+    audience:
+      - ${GOOGLE_WEB_CLIENT_ID}
+      - ${GOOGLE_ANDROID_CLIENT_ID}
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}

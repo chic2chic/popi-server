@@ -3,25 +3,23 @@ spring:
     url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;MODE=MYSQL
   data:
     redis:
-      host: test
-      port: 1234
-      password:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
-oauth:
+oidc:
   kakao:
-    client-id: test
-    client-secret: test
-    redirect-uri: test
-    grant-type: test
+    jwk-set-uri: https://kauth.kakao.com/.well-known/jwks.json
+    issuer: https://kauth.kakao.com
+    audience: ${KAKAO_NATIVE_APP_KEY:}
   google:
-    client-id: test
-    client-secret: test
-    redirect-uri: test
-    grant-type: test
+    jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+    issuer: https://accounts.google.com
+    audience: ${GOOGLE_CLIENT_ID:}
 
 jwt:
-  access-token-secret: test
-  refresh-token-secret: test
-  access-token-expiration-time: 1234
-  refresh-token-expiration-time: 1234
-  issuer: test
+  access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
+  refresh-token-secret: ${JWT_REFRESH_TOKEN_SECRET}
+  access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME:3600}
+  refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME:172800}
+  issuer: ${JWT_ISSUER}

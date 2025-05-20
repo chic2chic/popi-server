@@ -3,10 +3,11 @@ package com.lgcns.service;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
+import com.lgcns.infra.oidc.OidcProperties;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -19,12 +20,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class IdTokenVerifier {
 
-    @Value("${oauth.google.client-id}")
-    private String googleClientId;
-
-    @Value("${oauth.kakao.client-id}")
-    private String kakaoClientId;
-
+    private final OidcProperties oidcProperties;
     private final Map<OauthProvider, JwtDecoder> decoders =
             Map.of(
                     OauthProvider.GOOGLE, buildDecoder(OauthProvider.GOOGLE.getJwkSetUrl()),
@@ -38,7 +34,13 @@ public class IdTokenVerifier {
         Jwt jwt = getJwt(idToken, provider);
         OidcIdToken oidcIdToken = getOidcIdToken(jwt);
 
-        validateAudience(oidcIdToken, provider.getClientId(googleClientId, kakaoClientId));
+        List<String> audiences =
+                switch (provider) {
+                    case KAKAO -> List.of(oidcProperties.kakao().audience());
+                    case GOOGLE -> oidcProperties.google().audiences();
+                };
+
+        validateAudience(oidcIdToken, audiences);
         validateIssuer(oidcIdToken, provider.getIssuer());
         validateExpiresAt(oidcIdToken);
 
@@ -54,10 +56,10 @@ public class IdTokenVerifier {
                 jwt.getTokenValue(), jwt.getIssuedAt(), jwt.getExpiresAt(), jwt.getClaims());
     }
 
-    private void validateAudience(OidcIdToken oidcIdToken, String clientId) {
+    private void validateAudience(OidcIdToken oidcIdToken, List<String> targetAudiences) {
         String idTokenAudience = oidcIdToken.getAudience().get(0);
 
-        if (idTokenAudience == null || !idTokenAudience.equals(clientId)) {
+        if (idTokenAudience == null || !targetAudiences.contains(idTokenAudience)) {
             throw new CustomException(AuthErrorCode.ID_TOKEN_VERIFICATION_FAILED);
         }
     }

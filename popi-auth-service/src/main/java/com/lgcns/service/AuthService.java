@@ -5,7 +5,7 @@ import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
-import com.lgcns.dto.request.AuthCodeRequest;
+import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.error.exception.CustomException;
@@ -23,16 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final KakaoService kakaoService;
-    private final GoogleService googleService;
     private final JwtTokenService jwtTokenService;
     private final IdTokenVerifier idTokenVerifier;
     private final MemberRepository memberRepository;
 
-    public SocialLoginResponse socialLoginMember(AuthCodeRequest request, OauthProvider provider) {
-        String idToken = getIdToken(request.code(), provider);
-
-        OidcUser oidcUser = idTokenVerifier.getOidcUser(idToken, provider);
+    public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
+        OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
 
         Optional<Member> optionalMember = findByOidcUser(oidcUser);
         Member member = optionalMember.orElseGet(() -> saveMember(oidcUser, provider));
@@ -61,13 +57,6 @@ public class AuthService {
         String accessToken = jwtTokenService.createAccessToken(member.getId(), member.getRole());
         String refreshToken = jwtTokenService.createRefreshToken(member.getId());
         return SocialLoginResponse.of(accessToken, refreshToken);
-    }
-
-    private String getIdToken(String code, OauthProvider provider) {
-        return switch (provider) {
-            case GOOGLE -> googleService.getIdToken(code);
-            case KAKAO -> kakaoService.getIdToken(code);
-        };
     }
 
     private Optional<Member> findByOidcUser(OidcUser oidcUser) {

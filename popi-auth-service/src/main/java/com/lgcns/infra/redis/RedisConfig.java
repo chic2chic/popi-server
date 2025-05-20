@@ -1,8 +1,7 @@
-package com.lgcns.config;
+package com.lgcns.infra.redis;
 
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,21 +13,14 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 @RequiredArgsConstructor
 public class RedisConfig {
 
-    @Value("${spring.data.redis.host}")
-    private String host;
-
-    @Value("${spring.data.redis.port}")
-    private int port;
-
-    @Value("${spring.data.redis.password}")
-    private String password;
+    private final RedisProperties redisProperties;
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfig =
-                new RedisStandaloneConfiguration(host, port);
-        if (!password.isBlank()) {
-            redisStandaloneConfig.setPassword(password);
+                new RedisStandaloneConfiguration(redisProperties.host(), redisProperties.port());
+        if (!redisProperties.password().isBlank()) {
+            redisStandaloneConfig.setPassword(redisProperties.password());
         }
 
         LettuceClientConfiguration lettuceClientConfig =

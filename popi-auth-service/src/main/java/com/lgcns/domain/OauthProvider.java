@@ -14,11 +14,4 @@ public enum OauthProvider {
 
     private final String jwkSetUrl;
     private final String issuer;
-
-    public String getClientId(String googleClientId, String kakaoClientId) {
-        return switch (this) {
-            case GOOGLE -> googleClientId;
-            case KAKAO -> kakaoClientId;
-        };
-    }
 }
