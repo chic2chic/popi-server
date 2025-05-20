@@ -62,13 +62,6 @@ spring:
             - RewritePath=/reservations/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
-        - id: popup-docs
-          uri: lb://POPUPS
-          predicates:
-            - Path=/popups/v3/api-docs
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/popups/(?<segment>.*), /$\{segment}
         - id: popup-service
           uri: lb://POPUPS
           predicates:
@@ -77,7 +70,6 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/popups/(?<segment>.*), /$\{segment}
-            - JwtAuthenticationFilter
 
       globalcors:
         cors-configurations:
