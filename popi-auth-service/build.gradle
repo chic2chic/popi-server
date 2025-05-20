@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(':popi-domain')
     implementation project(':popi-common')
 
     // Eureka Client

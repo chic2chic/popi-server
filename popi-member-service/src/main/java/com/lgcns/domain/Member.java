@@ -1,6 +1,6 @@
 package com.lgcns.domain;
 
-import com.lgcns.model.BaseTimeEntity;
+import com.lgcns.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

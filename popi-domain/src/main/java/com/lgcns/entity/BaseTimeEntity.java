@@ -1,4 +1,4 @@
-package com.lgcns.model;
+package com.lgcns.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
