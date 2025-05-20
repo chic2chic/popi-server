@@ -35,7 +35,9 @@ oidc:
   google:
     jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
     issuer: https://accounts.google.com
-    audience: ${GOOGLE_CLIENT_ID:}
+    audience:
+      - ${GOOGLE_WEB_CLIENT_ID}
+      - ${GOOGLE_ANDROID_CLIENT_ID}
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
