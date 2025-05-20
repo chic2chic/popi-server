@@ -1,0 +1,21 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: members
+  cloud:
+    kubernetes:
+      config:
+        enabled: false\
+eureka:
+  instance:
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.instance_id:${random.value}}
+    leaseRenewalIntervalInSeconds: 10
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    org.hibernate.SQL: debug
