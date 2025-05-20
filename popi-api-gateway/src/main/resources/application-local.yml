@@ -62,6 +62,23 @@ spring:
             - RewritePath=/reservations/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
+        - id: notification-docs
+          uri: lb://NOTIFICATIONS
+          predicates:
+            - Path=/notifications/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/notifications/(?<segment>.*), /$\{segment}
+        - id: notifications-service
+          uri: lb://NOTIFICATIONS
+          predicates:
+            - Path=/notifications/**
+            - Method=GET,POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/notifications/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+
       globalcors:
         cors-configurations:
           "[/**]":
@@ -93,6 +110,12 @@ springdoc:
     urls[2]:
       name: 예약 서비스
       url: /reservations/v3/api-docs
+    urls[3]:
+      name: 팝업 서비스
+      url: /popups/v3/api-docs
+    urls[4]:
+      name: 알림 서비스
+      url: /notifications/v3/api-docs
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
