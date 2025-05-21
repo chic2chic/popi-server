@@ -13,6 +13,7 @@ dependencies {
 
 	// H2
 	runtimeOnly 'com.h2database:h2'
+
 	// MySQL
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
@@ -21,6 +22,9 @@ dependencies {
 
 	// Swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
+
+	// Redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 	// Spring Cloud Open Feign
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
