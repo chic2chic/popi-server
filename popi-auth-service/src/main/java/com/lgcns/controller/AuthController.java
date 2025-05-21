@@ -51,4 +51,11 @@ public class AuthController {
 
         return ResponseEntity.ok().headers(headers).body(response);
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "회원 로그아웃", description = "로그아웃 시, 쿠키에 저장된 리프레시 토큰이 삭제됩니다.")
+    public ResponseEntity<Void> memberLogout(@RequestHeader("member-id") String memberId) {
+        authService.logoutMember(memberId);
+        return ResponseEntity.ok().headers(cookieUtil.deleteRefreshTokenCookie()).build();
+    }
 }

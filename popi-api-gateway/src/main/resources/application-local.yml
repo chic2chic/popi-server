@@ -10,7 +10,22 @@ spring:
         enabled: false
     gateway:
       routes:
-        - id: auth-service
+        - id: auth-docs
+          uri: lb://AUTH
+          predicates:
+            - Path=/auth/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
+        - id: auth-social-login
+          uri: lb://AUTH
+          predicates:
+            - Path=/auth/social-login
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
+        - id: auth-reissue
           uri: lb://AUTH
           predicates:
             - Path=/auth/reissue
@@ -19,14 +34,15 @@ spring:
             - RemoveRequestHeader=Cookie
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
             - RefreshTokenHeaderFilter
-        - id: auth-service
+        - id: auth-logout
           uri: lb://AUTH
           predicates:
-            - Path=/auth/**
-            - Method=GET,POST
+            - Path=/auth/logout
+            - Method=POST
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
 
         - id: member-docs
           uri: lb://MEMBERS
