@@ -1,8 +1,10 @@
 package com.lgcns.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record SocialLoginResponse(
         @Schema(description = "엑세스 토큰") String accessToken,
         @JsonIgnore @Schema(description = "리프레시 토큰") String refreshToken,
