@@ -1,10 +1,14 @@
 package com.lgcns.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.lgcns.domain.Member;
+import com.lgcns.domain.MemberStatus;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.RefreshToken;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
 import com.lgcns.repository.RefreshTokenRepository;
 import org.junit.jupiter.api.Nested;
@@ -62,6 +66,42 @@ public class AuthServiceTest {
 
             // then
             assertThat(refreshTokenRepository.findById(member.getId())).isEmpty();
+        }
+    }
+
+    @Nested
+    class 회원_탈퇴_시 {
+        @Test
+        void 탈퇴하지_않은_유저면_성공한다() {
+            // given
+            Member member = registerAuthenticatedMember();
+
+            RefreshToken refreshToken =
+                    RefreshToken.builder()
+                            .memberId(member.getId())
+                            .token("testRefreshToken")
+                            .build();
+            refreshTokenRepository.save(refreshToken);
+
+            // when
+            memberService.withdrawalMember(member.getId().toString());
+            Member currentMember = memberRepository.findById(member.getId()).get();
+
+            // then
+            assertThat(refreshTokenRepository.findById(member.getId())).isEmpty();
+            assertThat(currentMember.getStatus()).isEqualTo(MemberStatus.DELETED);
+        }
+
+        @Test
+        void 탈퇴한_유저면_예외가_발생한다() {
+            // given
+            Member member = registerAuthenticatedMember();
+            memberService.withdrawalMember(member.getId().toString());
+
+            // when & then
+            assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_ALREADY_DELETED.getMessage());
         }
     }
 }
