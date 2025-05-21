@@ -11,4 +11,6 @@ public interface AuthService {
     TokenReissueResponse reissueToken(String refreshTokenValue);
 
     void logoutMember(String memberId);
+
+    void withdrawalMember(String memberId);
 }

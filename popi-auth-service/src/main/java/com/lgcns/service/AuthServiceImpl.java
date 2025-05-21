@@ -1,6 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.domain.Member;
+import com.lgcns.domain.MemberStatus;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
@@ -36,6 +37,10 @@ public class AuthServiceImpl implements AuthService {
         Optional<Member> optionalMember = findByOidcUser(oidcUser);
         Member member = optionalMember.orElseGet(() -> saveMember(oidcUser, provider));
 
+        if (member.getStatus() == MemberStatus.DELETED) {
+            member.reEnroll();
+        }
+
         return getLoginResponse(member);
     }
 
@@ -62,6 +67,20 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository
                 .findById(Long.parseLong(memberId))
                 .ifPresent(refreshTokenRepository::delete);
+    }
+
+    @Override
+    public void withdrawalMember(String memberId) {
+        refreshTokenRepository
+                .findById(Long.parseLong(memberId))
+                .ifPresent(refreshTokenRepository::delete);
+
+        Member member =
+                memberRepository
+                        .findById(Long.parseLong(memberId))
+                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        member.withdrawal();
     }
 
     private SocialLoginResponse getLoginResponse(Member member) {
