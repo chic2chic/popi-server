@@ -3,10 +3,7 @@ package com.lgcns.service;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-import com.lgcns.domain.Member;
-import com.lgcns.domain.MemberStatus;
-import com.lgcns.domain.OauthInfo;
-import com.lgcns.domain.RefreshToken;
+import com.lgcns.domain.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
@@ -30,8 +27,10 @@ public class AuthServiceTest {
     private Member registerAuthenticatedMember() {
         Member member =
                 Member.createMember(
-                        "testNickName",
-                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"));
+                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                        "testNickname",
+                        MemberGender.MALE,
+                        MemberAge.TWENTIES);
         memberRepository.save(member);
 
         UserDetails userDetails =
