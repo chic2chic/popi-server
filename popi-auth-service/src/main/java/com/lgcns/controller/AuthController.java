@@ -26,7 +26,7 @@ public class AuthController {
     @Operation(summary = "회원가입 및 로그인", description = "회원가입 및 로그인을 진행합니다.")
     public ResponseEntity<SocialLoginResponse> memberSocialLogin(
             @RequestParam(name = "oauthProvider") OauthProvider provider,
-            @Valid IdTokenRequest request) {
+            @Valid @RequestBody IdTokenRequest request) {
         SocialLoginResponse response = authService.socialLoginMember(provider, request);
 
         String refreshToken = response.refreshToken();
