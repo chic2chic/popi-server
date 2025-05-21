@@ -2,6 +2,7 @@ package com.lgcns.controller;
 
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.request.IdTokenRequest;
+import com.lgcns.dto.request.RegisterTokenRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.service.AuthService;
@@ -23,11 +24,24 @@ public class AuthController {
     private final CookieUtil cookieUtil;
 
     @PostMapping("/social-login")
-    @Operation(summary = "회원가입 및 로그인", description = "회원가입 및 로그인을 진행합니다.")
+    @Operation(summary = "소셜 로그인", description = "소셜 로그인을 진행합니다.")
     public ResponseEntity<SocialLoginResponse> memberSocialLogin(
             @RequestParam(name = "oauthProvider") OauthProvider provider,
             @Valid @RequestBody IdTokenRequest request) {
         SocialLoginResponse response = authService.socialLoginMember(provider, request);
+
+        String refreshToken = response.refreshToken();
+        HttpHeaders headers = cookieUtil.generateRefreshTokenCookie(refreshToken);
+
+        return ResponseEntity.ok().headers(headers).body(response);
+    }
+
+    @PostMapping("/register")
+    @Operation(summary = "회원가입", description = "신규 유저의 경우 추가 정보를 등록하고 회원가입을 진행합니다.")
+    public ResponseEntity<SocialLoginResponse> memberRegister(
+            @RequestHeader("register-token") String registerTokenValue,
+            @Valid @RequestBody RegisterTokenRequest request) {
+        SocialLoginResponse response = authService.registerMember(registerTokenValue, request);
 
         String refreshToken = response.refreshToken();
         HttpHeaders headers = cookieUtil.generateRefreshTokenCookie(refreshToken);

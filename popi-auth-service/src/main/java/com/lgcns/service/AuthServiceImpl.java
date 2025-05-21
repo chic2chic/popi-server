@@ -6,7 +6,9 @@ import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
+import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
+import com.lgcns.dto.request.RegisterTokenRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.error.exception.CustomException;
@@ -49,6 +51,34 @@ public class AuthServiceImpl implements AuthService {
                 jwtTokenService.createRegisterToken(
                         oidcUser.getSubject(), oidcUser.getIssuer().toString());
         return SocialLoginResponse.notRegistered(registerToken);
+    }
+
+    @Override
+    public SocialLoginResponse registerMember(
+            String registerTokenValue, RegisterTokenRequest request) {
+        RegisterTokenDto registerTokenDto =
+                jwtTokenService.validateRegisterToken(registerTokenValue);
+
+        if (registerTokenDto == null) {
+            throw new CustomException(AuthErrorCode.EXPIRED_REGISTER_TOKEN);
+        }
+
+        if (memberRepository.existsByOauthInfo(
+                OauthInfo.createOauthInfo(
+                        registerTokenDto.oauthId(), registerTokenDto.oauthProvider()))) {
+            throw new CustomException(AuthErrorCode.ALREADY_REGISTERED);
+        }
+
+        Member member =
+                Member.createMember(
+                        OauthInfo.createOauthInfo(
+                                registerTokenDto.oauthId(), registerTokenDto.oauthProvider()),
+                        request.nickname(),
+                        request.gender(),
+                        request.age());
+        memberRepository.save(member);
+
+        return getLoginResponse(member);
     }
 
     @Override
@@ -101,23 +131,8 @@ public class AuthServiceImpl implements AuthService {
         return memberRepository.findByOauthInfo(oauthInfo);
     }
 
-    private Member saveMember(OidcUser oidcUser, OauthProvider provider) {
-        OauthInfo oauthInfo = extractOauthInfo(oidcUser);
-        String nickname = getDisplayName(oidcUser, provider);
-
-        Member member = Member.createMember(nickname, oauthInfo);
-        return memberRepository.save(member);
-    }
-
     private OauthInfo extractOauthInfo(OidcUser oidcUser) {
         return OauthInfo.createOauthInfo(oidcUser.getSubject(), oidcUser.getIssuer().toString());
-    }
-
-    private String getDisplayName(OidcUser oidcUser, OauthProvider provider) {
-        return switch (provider) {
-            case GOOGLE -> (String) oidcUser.getClaims().get("name");
-            case KAKAO -> (String) oidcUser.getClaims().get("nickname");
-        };
     }
 
     private Member getMember(RefreshTokenDto refreshTokenDto) {
