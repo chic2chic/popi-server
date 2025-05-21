@@ -8,6 +8,8 @@ public record JwtProperties(
         String refreshTokenSecret,
         Long accessTokenExpirationTime,
         Long refreshTokenExpirationTime,
+        String registerTokenSecret,
+        Long registerTokenExpirationTime,
         String issuer) {
     public Long accessTokenExpirationMilliTime() {
         return accessTokenExpirationTime * 1000;
@@ -15,5 +17,9 @@ public record JwtProperties(
 
     public Long refreshTokenExpirationMilliTime() {
         return refreshTokenExpirationTime * 1000;
+    }
+
+    public Long registerTokenExpirationMilliTime() {
+        return registerTokenExpirationTime * 1000;
     }
 }

@@ -53,6 +53,13 @@ public class JwtUtil {
         return buildRefreshToken(memberId, issuedAt, expiredAt);
     }
 
+    public String generateRegisterToken(String oauthId, String oauthProvider) {
+        Date issuedAt = new Date();
+        Date expiredAt =
+                new Date(issuedAt.getTime() + jwtProperties.registerTokenExpirationMilliTime());
+        return buildRegisterToken(oauthId, oauthProvider, issuedAt, expiredAt);
+    }
+
     public RefreshTokenDto parseRefreshToken(String refreshTokenValue) throws ExpiredJwtException {
         try {
             Jws<Claims> claims = getClaims(refreshTokenValue, getRefreshTokenKey());
@@ -80,6 +87,10 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(jwtProperties.refreshTokenSecret().getBytes());
     }
 
+    private Key getRegisterTokenKey() {
+        return Keys.hmacShaKeyFor(jwtProperties.registerTokenSecret().getBytes());
+    }
+
     private String buildAccessToken(
             Long memberId, MemberRole memberRole, Date issuedAt, Date expiredAt) {
         return Jwts.builder()
@@ -99,6 +110,18 @@ public class JwtUtil {
                 .setIssuedAt(issuedAt)
                 .setExpiration(expiredAt)
                 .signWith(getRefreshTokenKey())
+                .compact();
+    }
+
+    private String buildRegisterToken(
+            String oauthId, String oauthProvider, Date issuedAt, Date expiredAt) {
+        return Jwts.builder()
+                .setIssuer(jwtProperties.issuer())
+                .setSubject(oauthId)
+                .claim("provider", oauthProvider)
+                .setIssuedAt(issuedAt)
+                .setExpiration(expiredAt)
+                .signWith(getRegisterTokenKey())
                 .compact();
     }
 

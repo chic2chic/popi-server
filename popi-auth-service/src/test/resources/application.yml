@@ -15,11 +15,15 @@ oidc:
   google:
     jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
     issuer: https://accounts.google.com
-    audience: ${GOOGLE_CLIENT_ID:}
+    audiences:
+      - ${GOOGLE_WEB_CLIENT_ID:}
+      - ${GOOGLE_ANDROID_CLIENT_ID:}
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
   refresh-token-secret: ${JWT_REFRESH_TOKEN_SECRET}
   access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME:3600}
   refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME:172800}
+  register-token-secret: ${JWT_REGISTER_TOKEN_SECRET}
+  register-token-expiration-time: ${JWT_REGISTER_TOKEN_EXPIRATION_TIME:300}
   issuer: ${JWT_ISSUER}
