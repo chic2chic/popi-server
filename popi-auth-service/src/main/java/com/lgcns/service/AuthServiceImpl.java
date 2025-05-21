@@ -1,6 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.domain.Member;
+import com.lgcns.domain.MemberStatus;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
@@ -35,6 +36,10 @@ public class AuthServiceImpl implements AuthService {
 
         Optional<Member> optionalMember = findByOidcUser(oidcUser);
         Member member = optionalMember.orElseGet(() -> saveMember(oidcUser, provider));
+
+        if (member.getStatus() == MemberStatus.DELETED) {
+            member.reEnroll();
+        }
 
         return getLoginResponse(member);
     }

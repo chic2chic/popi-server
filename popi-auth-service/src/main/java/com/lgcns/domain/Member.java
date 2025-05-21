@@ -67,4 +67,8 @@ public class Member extends BaseTimeEntity {
 
         this.status = MemberStatus.DELETED;
     }
+
+    public void reEnroll() {
+        this.status = MemberStatus.NORMAL;
+    }
 }
