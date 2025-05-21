@@ -64,6 +64,20 @@ public class AuthServiceImpl implements AuthService {
                 .ifPresent(refreshTokenRepository::delete);
     }
 
+    @Override
+    public void withdrawalMember(String memberId) {
+        refreshTokenRepository
+                .findById(Long.parseLong(memberId))
+                .ifPresent(refreshTokenRepository::delete);
+
+        Member member =
+                memberRepository
+                        .findById(Long.parseLong(memberId))
+                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        member.withdrawal();
+    }
+
     private SocialLoginResponse getLoginResponse(Member member) {
         String accessToken = jwtTokenService.createAccessToken(member.getId(), member.getRole());
         String refreshToken = jwtTokenService.createRefreshToken(member.getId());

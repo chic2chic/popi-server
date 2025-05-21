@@ -12,10 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,6 +53,13 @@ public class AuthController {
     @Operation(summary = "회원 로그아웃", description = "로그아웃 시, 쿠키에 저장된 리프레시 토큰이 삭제됩니다.")
     public ResponseEntity<Void> memberLogout(@RequestHeader("member-id") String memberId) {
         authService.logoutMember(memberId);
+        return ResponseEntity.ok().headers(cookieUtil.deleteRefreshTokenCookie()).build();
+    }
+
+    @DeleteMapping("/withdrawal")
+    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
+    public ResponseEntity<Void> memberWithdrawal(@RequestHeader("member-id") String memberId) {
+        authService.withdrawalMember(memberId);
         return ResponseEntity.ok().headers(cookieUtil.deleteRefreshTokenCookie()).build();
     }
 }
