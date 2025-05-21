@@ -4,8 +4,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.lgcns.error.exception.CustomException;
-import com.lgcns.exception.FcmErrorCode;
-import com.lgcns.infra.firebase.FcmProperties;
+import com.lgcns.exception.FirebaseErrorCode;
+import com.lgcns.infra.firebase.FirebaseProperties;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class FirebaseConfig {
 
-    private final FcmProperties fcmProperties;
+    private final FirebaseProperties firebaseProperties;
 
     @Bean
     public FirebaseApp firebaseApp() {
@@ -32,14 +32,14 @@ public class FirebaseConfig {
     }
 
     private GoogleCredentials getCredentials() {
-        String credentialsJson = fcmProperties.credentialsJson();
+        String credentialsJson = firebaseProperties.credentialsJson();
 
         try {
             InputStream serviceAccount =
                     new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8));
             return GoogleCredentials.fromStream(serviceAccount);
         } catch (IOException e) {
-            throw new CustomException(FcmErrorCode.FCM_FILE_CONVERSION_FAILED);
+            throw new CustomException(FirebaseErrorCode.FCM_FILE_CONVERSION_FAILED);
         }
     }
 }

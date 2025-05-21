@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum FcmErrorCode implements ErrorCode {
+public enum FirebaseErrorCode implements ErrorCode {
     FCM_FILE_CONVERSION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FCM 키 파일 변환에 실패했습니다."),
     ;
 
