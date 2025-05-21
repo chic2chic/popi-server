@@ -8,5 +8,6 @@ include(
         "popi-auth-service",
         "popi-member-service",
         "popi-reservation-service",
-        "popi-popup-service"
+        "popi-popup-service",
+        "popi-notification-service",
 )
