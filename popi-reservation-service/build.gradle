@@ -13,6 +13,7 @@ dependencies {
 
 	// H2
 	runtimeOnly 'com.h2database:h2'
+
 	// MySQL
 	runtimeOnly 'com.mysql:mysql-connector-j'
 

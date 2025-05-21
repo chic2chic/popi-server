@@ -1,0 +1,30 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: popups
+  cloud:
+    kubernetes:
+      config:
+        enabled: false
+
+eureka:
+  instance:
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.instance_id:${random.value}}
+    leaseRenewalIntervalInSeconds: 10
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+
+spring-doc:
+  api-docs:
+    version: openapi_3_1
+    enabled: true
+  enable-kotlin: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
