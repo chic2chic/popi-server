@@ -22,7 +22,9 @@ public class SwaggerConfig {
                                 .title("PoPI Reservation Service API")
                                 .description("PoPI 예약 서비스 API 명세서입니다.")
                                 .version("v0.0.1"))
-                .addServersItem(new Server().url("/reservations"));
+                .addServersItem(new Server().url("/reservations"))
+                .components(authSetting())
+                .addSecurityItem(securityRequirement());
     }
 
     private Components authSetting() {
