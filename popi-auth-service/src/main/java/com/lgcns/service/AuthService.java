@@ -9,4 +9,6 @@ public interface AuthService {
     SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request);
 
     TokenReissueResponse reissueToken(String refreshTokenValue);
+
+    void logoutMember(String memberId);
 }

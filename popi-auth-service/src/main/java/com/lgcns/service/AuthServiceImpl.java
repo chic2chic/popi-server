@@ -12,6 +12,7 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
+import com.lgcns.repository.RefreshTokenRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -26,6 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenService jwtTokenService;
     private final IdTokenVerifier idTokenVerifier;
     private final MemberRepository memberRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
@@ -53,6 +55,13 @@ public class AuthServiceImpl implements AuthService {
 
         return TokenReissueResponse.of(
                 newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());
+    }
+
+    @Override
+    public void logoutMember(String memberId) {
+        refreshTokenRepository
+                .findById(Long.parseLong(memberId))
+                .ifPresent(refreshTokenRepository::delete);
     }
 
     private SocialLoginResponse getLoginResponse(Member member) {
