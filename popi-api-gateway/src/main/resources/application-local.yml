@@ -110,9 +110,6 @@ springdoc:
     urls[2]:
       name: 예약 서비스
       url: /reservations/v3/api-docs
-    urls[3]:
-      name: 팝업 서비스
-      url: /popups/v3/api-docs
     urls[4]:
       name: 알림 서비스
       url: /notifications/v3/api-docs
