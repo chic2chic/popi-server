@@ -1,11 +1,11 @@
-package com.lgcns.config;
+package com.lgcns.infra.firebase;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.FirebaseErrorCode;
-import com.lgcns.infra.firebase.FirebaseProperties;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +29,11 @@ public class FirebaseConfig {
         FirebaseOptions options =
                 new FirebaseOptions.Builder().setCredentials(getCredentials()).build();
         return FirebaseApp.initializeApp(options);
+    }
+
+    @Bean
+    public FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
+        return FirebaseMessaging.getInstance(firebaseApp);
     }
 
     private GoogleCredentials getCredentials() {

@@ -1,0 +1,40 @@
+package com.lgcns.infra.firebase;
+
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
+import com.lgcns.dto.request.FcmRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class FcmSender {
+
+    private final FirebaseMessaging firebaseMessaging;
+
+    public void sendFCM(FcmRequest fcmRequest) {
+        Notification notification =
+                Notification.builder()
+                        .setTitle(fcmRequest.title())
+                        .setBody(fcmRequest.body())
+                        .build();
+
+        Message message =
+                Message.builder()
+                        .setToken(fcmRequest.fcmToken())
+                        .setNotification(notification)
+                        .putData("key", fcmRequest.key())
+                        .build();
+
+        try {
+            firebaseMessaging.send(message);
+        } catch (FirebaseMessagingException e) {
+            log.info("FCM ERROR : {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+}
