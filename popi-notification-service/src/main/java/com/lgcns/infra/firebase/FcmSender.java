@@ -5,6 +5,8 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.lgcns.dto.request.FcmRequest;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.FirebaseErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -34,7 +36,7 @@ public class FcmSender {
             firebaseMessaging.send(message);
         } catch (FirebaseMessagingException e) {
             log.info("FCM ERROR : {}", e.getMessage());
-            throw new RuntimeException(e);
+            throw new CustomException(FirebaseErrorCode.FCM_SEND_FAILED);
         }
     }
 }
