@@ -33,15 +33,22 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
         OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
-
         Optional<Member> optionalMember = findByOidcUser(oidcUser);
-        Member member = optionalMember.orElseGet(() -> saveMember(oidcUser, provider));
 
-        if (member.getStatus() == MemberStatus.DELETED) {
-            member.reEnroll();
+        if (optionalMember.isPresent()) {
+            Member member = optionalMember.get();
+
+            if (member.getStatus() == MemberStatus.DELETED) {
+                member.reEnroll();
+            }
+
+            return getLoginResponse(member);
         }
 
-        return getLoginResponse(member);
+        String registerToken =
+                jwtTokenService.createRegisterToken(
+                        oidcUser.getSubject(), oidcUser.getIssuer().toString());
+        return SocialLoginResponse.notRegistered(registerToken);
     }
 
     @Override
@@ -86,7 +93,7 @@ public class AuthServiceImpl implements AuthService {
     private SocialLoginResponse getLoginResponse(Member member) {
         String accessToken = jwtTokenService.createAccessToken(member.getId(), member.getRole());
         String refreshToken = jwtTokenService.createRefreshToken(member.getId());
-        return SocialLoginResponse.of(accessToken, refreshToken);
+        return SocialLoginResponse.registered(accessToken, refreshToken);
     }
 
     private Optional<Member> findByOidcUser(OidcUser oidcUser) {
