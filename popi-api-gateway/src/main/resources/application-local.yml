@@ -25,6 +25,14 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
+        - id: auth-register
+          uri: lb://AUTH
+          predicates:
+            - Path=/auth/register
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
         - id: auth-reissue
           uri: lb://AUTH
           predicates:
