@@ -16,7 +16,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(
                         new Info()
-                                .title("PoPI Auth Service API")
+                                .title("PoPI Popup Service API")
                                 .description("PoPI 팝업 서비스 API 명세서입니다.")
                                 .version("v0.0.1"))
                 .addServersItem(new Server().url("/popups"));
