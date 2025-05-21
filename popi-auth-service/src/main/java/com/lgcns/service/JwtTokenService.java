@@ -5,6 +5,7 @@ import com.lgcns.domain.MemberRole;
 import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
+import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
@@ -36,6 +37,10 @@ public class JwtTokenService {
         return token;
     }
 
+    public String createRegisterToken(String oauthId, String oauthProvider) {
+        return jwtUtil.generateRegisterToken(oauthId, oauthProvider);
+    }
+
     public RefreshTokenDto reissueRefreshToken(RefreshTokenDto oldRefreshTokenDto) {
         RefreshToken refreshToken =
                 refreshTokenRepository
@@ -58,5 +63,9 @@ public class JwtTokenService {
 
     public RefreshTokenDto validateRefreshToken(String refreshToken) {
         return jwtUtil.parseRefreshToken(refreshToken);
+    }
+
+    public RegisterTokenDto validateRegisterToken(String registerToken) {
+        return jwtUtil.parseRegisterToken(registerToken);
     }
 }

@@ -5,6 +5,7 @@ import static com.lgcns.constants.SecurityConstants.TOKEN_ROLE_NAME;
 import com.lgcns.domain.MemberRole;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
+import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.infra.jwt.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -68,6 +69,22 @@ public class JwtUtil {
                     Long.parseLong(claims.getBody().getSubject()),
                     refreshTokenValue,
                     jwtProperties.refreshTokenExpirationTime());
+        } catch (ExpiredJwtException e) {
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public RegisterTokenDto parseRegisterToken(String registerTokenValue)
+            throws ExpiredJwtException {
+        try {
+            Jws<Claims> claims = getClaims(registerTokenValue, getRegisterTokenKey());
+
+            return RegisterTokenDto.of(
+                    claims.getBody().getSubject(),
+                    claims.getBody().get("provider", String.class),
+                    registerTokenValue);
         } catch (ExpiredJwtException e) {
             return null;
         } catch (Exception e) {
