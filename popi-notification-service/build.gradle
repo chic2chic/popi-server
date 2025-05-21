@@ -1,6 +1,6 @@
 dependencies {
-	implementation project(':popi-common')
 	implementation project(':popi-domain')
+	implementation project(':popi-common')
 
 	// Eureka Client
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
@@ -21,4 +21,7 @@ dependencies {
 
 	// Spring Cloud Open Feign
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+	// Firebase
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
 }
