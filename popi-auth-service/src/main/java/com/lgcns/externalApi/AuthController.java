@@ -1,4 +1,4 @@
-package com.lgcns.controller;
+package com.lgcns.externalApi;
 
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.request.IdTokenRequest;
