@@ -10,5 +10,3 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       database: 1
-
-manager-service-url: http://localhost:8888

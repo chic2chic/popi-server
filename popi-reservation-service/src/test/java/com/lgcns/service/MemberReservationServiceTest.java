@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.ReservableDate;
@@ -14,19 +15,11 @@ import com.lgcns.repository.MemberReservationRepository;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.http.MediaType;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@AutoConfigureWireMock(port = 8888)
-class MemberReservationServiceTest {
+class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     @Autowired private MemberReservationService memberReservationService;
 
@@ -46,249 +39,265 @@ class MemberReservationServiceTest {
         // 6월 2일은 일부만 찬 상태
         insertMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(13, 0));
 
-        // OpenFeign Mocking
-        stubFor(
-                get(urlPathEqualTo("/reservations/popups/1"))
-                        .withQueryParam("date", equalTo("2025-05"))
-                        .willReturn(
-                                okJson(
-                                        """
-                            {
-                              "popupOpenDate": "2025-05-31",
-                              "popupCloseDate": "2025-06-02",
-                              "timeCapacity": 5,
-                              "dailyReservations": [
-                                {
-                                  "reservationDate": "2025-05-31",
-                                  "timeSlots": [
-                                    {
-                                      "reservationId": 1,
-                                      "time": "12:00"
-                                    },
-                                    {
-                                      "reservationId": 2,
-                                      "time": "13:00"
-                                    },
-                                    {
-                                      "reservationId": 3,
-                                      "time": "14:00"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                        """)));
+        stub(
+                1L,
+                "2025-05",
+                200,
+                """
+                    {
+                      "popupOpenDate": "2025-05-31",
+                      "popupCloseDate": "2025-06-02",
+                      "timeCapacity": 5,
+                      "dailyReservations": [
+                        {
+                          "reservationDate": "2025-05-31",
+                          "timeSlots": [
+                            {"reservationId": 1, "time": "12:00"},
+                            {"reservationId": 2, "time": "13:00"},
+                            {"reservationId": 3, "time": "14:00"}
+                          ]
+                        }
+                      ]
+                    }
+                """);
 
-        stubFor(
-                get(urlPathEqualTo("/reservations/popups/1"))
-                        .withQueryParam("date", equalTo("2025-06"))
-                        .willReturn(
-                                okJson(
-                                        """
-                            {
-                              "popupOpenDate": "2025-05-31",
-                              "popupCloseDate": "2025-06-02",
-                              "timeCapacity": 5,
-                              "dailyReservations": [
-                                {
-                                  "reservationDate": "2025-06-01",
-                                  "timeSlots": [
-                                    {
-                                      "reservationId": 4,
-                                      "time": "12:00"
-                                    },
-                                    {
-                                      "reservationId": 5,
-                                      "time": "13:00"
-                                    },
-                                    {
-                                      "reservationId": 6,
-                                      "time": "14:00"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "reservationDate": "2025-06-02",
-                                  "timeSlots": [
-                                    {
-                                      "reservationId": 7,
-                                      "time": "12:00"
-                                    },
-                                    {
-                                      "reservationId": 8,
-                                      "time": "13:00"
-                                    },
-                                    {
-                                      "reservationId": 9,
-                                      "time": "14:00"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                        """)));
+        stub(
+                1L,
+                "2025-06",
+                200,
+                """
+                    {
+                      "popupOpenDate": "2025-05-31",
+                      "popupCloseDate": "2025-06-02",
+                      "timeCapacity": 5,
+                      "dailyReservations": [
+                        {
+                          "reservationDate": "2025-06-01",
+                          "timeSlots": [
+                            {"reservationId": 4, "time": "12:00"},
+                            {"reservationId": 5, "time": "13:00"},
+                            {"reservationId": 6, "time": "14:00"}
+                          ]
+                        },
+                        {
+                          "reservationDate": "2025-06-02",
+                          "timeSlots": [
+                            {"reservationId": 7, "time": "12:00"},
+                            {"reservationId": 8, "time": "13:00"},
+                            {"reservationId": 9, "time": "14:00"}
+                          ]
+                        }
+                      ]
+                    }
+                """);
 
-        stubFor(
-                get(urlPathEqualTo("/reservations/popups/1"))
-                        .withQueryParam("date", equalTo("2025-07"))
-                        .willReturn(
-                                okJson(
-                                        """
-                            {
-                              "popupOpenDate": "2025-05-31",
-                              "popupCloseDate": "2025-06-02",
-                              "timeCapacity": 5,
-                              "dailyReservations": []
-                            }
-                        """)));
+        stub(
+                1L,
+                "2025-07",
+                200,
+                """
+                    {
+                      "popupOpenDate": "2025-05-31",
+                      "popupCloseDate": "2025-06-02",
+                      "timeCapacity": 5,
+                      "dailyReservations": []
+                    }
+                """);
 
-        stubFor(
-                get(urlPathEqualTo("/reservations/popups/999"))
-                        .withQueryParam("date", equalTo("2025-06"))
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(404)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody(
-                                                """
-                                    {
-                                      "errorCode": "POPUP_NOT_FOUND",
-                                      "message": "해당 팝업이 존재하지 않습니다."
-                                    }
-                                """)));
+        stub(
+                999L,
+                "2025-06",
+                404,
+                """
+                    {
+                      "success": false,
+                      "status": 404,
+                      "data": {
+                        "errorClassName": "POPUP_NOT_FOUND",
+                        "message": "해당 팝업이 존재하지 않습니다."
+                      },
+                      "timestamp": "2025-05-23T01:50:46.229657"
+                    }
+                """);
     }
 
-    @DisplayName("날짜에 문자가 포함된 경우 예외가 발생한다.")
-    @Test
-    void 날짜에_문자가_포함되면_예외발생() {
-        // given
-        String date = "2025-June";
+    @Nested
+    @DisplayName("예약 가능 날짜 조회")
+    class FindAvailableDate {
 
-        // when & then
-        assertThatThrownBy(
-                        () -> memberReservationService.findAvailableDate(memberId, popupId, date))
-                .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue(
-                        "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
-    }
+        @DisplayName("날짜에 문자가 포함된 경우 예외가 발생한다.")
+        @Test
+        void 날짜에_문자가_포함되면_예외발생() {
+            // given
+            String date = "2025-June";
 
-    @DisplayName("yyyy-MM 날짜 형식이 아닌 경우 예외가 발생한다.")
-    @Test
-    void 날짜_형식이_yyyy_MM이_아니면_예외발생() {
-        // given
-        String date = "2025-5";
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.findAvailableDate(
+                                            memberId, popupId, date))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue(
+                            "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
+        }
 
-        // when & then
-        assertThatThrownBy(
-                        () -> memberReservationService.findAvailableDate(memberId, popupId, date))
-                .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue(
-                        "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
-    }
+        @DisplayName("yyyy-MM 날짜 형식이 아닌 경우 예외가 발생한다.")
+        @Test
+        void 날짜_형식이_yyyy_MM이_아니면_예외발생() {
+            // given
+            String date = "2025-5";
 
-    @DisplayName("1월부터 12월이 아닌 날짜가 들어오면 예외가 발생한다.")
-    @Test
-    void 월이_1부터_12가_아니면_예외발생() {
-        // given
-        String date = "2025-13";
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.findAvailableDate(
+                                            memberId, popupId, date))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue(
+                            "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
+        }
 
-        // when & then
-        assertThatThrownBy(
-                        () -> memberReservationService.findAvailableDate(memberId, popupId, date))
-                .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue(
-                        "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
-    }
+        @DisplayName("1월부터 12월이 아닌 날짜가 들어오면 예외가 발생한다.")
+        @Test
+        void 월이_1부터_12가_아니면_예외발생() {
+            // given
+            String date = "2025-13";
 
-    @DisplayName("예약이 전혀 없는 경우 모든 슬롯이 예약 가능해야 한다.")
-    @Test
-    void 예약이_없는_경우_모든_시간_예약_가능() {
-        // given
-        String date = "2025-05";
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.findAvailableDate(
+                                            memberId, popupId, date))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue(
+                            "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
+        }
 
-        // when
-        AvailableDateResponse response =
-                memberReservationService.findAvailableDate(memberId, popupId, date);
+        @DisplayName("예약이 전혀 없는 경우 모든 슬롯이 예약 가능해야 한다.")
+        @Test
+        void 예약이_없는_경우_모든_시간_예약_가능() {
+            // given
+            String date = "2025-05";
 
-        // then
-        assertPopupDate(response);
+            // when
+            AvailableDateResponse response =
+                    memberReservationService.findAvailableDate(memberId, popupId, date);
 
-        for (ReservableDate reservableDate : response.reservableDate()) {
+            // then
+            assertPopupDate(response);
+
+            for (ReservableDate reservableDate : response.reservableDate()) {
+                assertThat(reservableDate.isReservable()).isTrue();
+
+                for (ReservableTime reservableTime : reservableDate.timeSlots()) {
+                    assertThat(reservableTime.isPossible()).isTrue();
+                }
+            }
+        }
+
+        @DisplayName("모든 슬롯이 예약된 날짜는 예약 불가로 표시된다.")
+        @Test
+        void 모든_시간이_가득_찬_날짜는_예약불가() {
+            // given
+            String date = "2025-06";
+
+            // when
+            AvailableDateResponse response =
+                    memberReservationService.findAvailableDate(memberId, popupId, date);
+
+            ReservableDate fullyBooked =
+                    response.reservableDate().stream()
+                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 1)))
+                            .findFirst()
+                            .orElseThrow();
+
+            // then
+            assertPopupDate(response);
+            assertThat(fullyBooked.isReservable()).isFalse();
+
+            for (ReservableTime reservableTime : fullyBooked.timeSlots()) {
+                assertThat(reservableTime.isPossible()).isFalse(); // 모두 불가해야 함
+            }
+        }
+
+        @DisplayName("일부 시간만 예약된 날짜는 예약 가능이며, 해당 시간은 예약 불가로 표시된다.")
+        @Test
+        void 일부_시간만_예약된_날짜는_정확하게_표시된다() {
+            // given
+            String date = "2025-06";
+
+            // when
+            AvailableDateResponse response =
+                    memberReservationService.findAvailableDate(memberId, popupId, date);
+
+            ReservableDate reservableDate =
+                    response.reservableDate().stream()
+                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 2)))
+                            .findFirst()
+                            .orElseThrow();
+
+            // then
+            assertPopupDate(response);
             assertThat(reservableDate.isReservable()).isTrue();
 
             for (ReservableTime reservableTime : reservableDate.timeSlots()) {
-                assertThat(reservableTime.isPossible()).isTrue();
+                if (reservableTime.time().equals(LocalTime.of(13, 0))) {
+                    assertThat(reservableTime.isPossible()).isFalse(); // 예약 불가
+                } else {
+                    assertThat(reservableTime.isPossible()).isTrue(); // 예약 가능
+                }
             }
         }
-    }
 
-    @DisplayName("모든 슬롯이 예약된 날짜는 예약 불가로 표시된다.")
-    @Test
-    void 모든_시간이_가득_찬_날짜는_예약불가() {
-        // given
-        String date = "2025-06";
+        @DisplayName("팝업 예약 기간이 아닌 경우 가능한 날짜는 빈 리스트를 반환한다.")
+        @Test
+        void 예약_기간_아닌경우_빈_리스트_반환한다() {
+            // given
+            String date = "2025-07";
 
-        // when
-        AvailableDateResponse response =
-                memberReservationService.findAvailableDate(memberId, popupId, date);
+            // when
+            AvailableDateResponse response =
+                    memberReservationService.findAvailableDate(memberId, popupId, date);
 
-        ReservableDate fullyBooked =
-                response.reservableDate().stream()
-                        .filter(d -> d.date().equals(LocalDate.of(2025, 6, 1)))
-                        .findFirst()
-                        .orElseThrow();
+            // then
+            assertPopupDate(response);
+            assertThat(response.reservableDate()).isEmpty();
+        }
 
-        // then
-        assertPopupDate(response);
-        assertThat(fullyBooked.isReservable()).isFalse();
+        @DisplayName("존재하지 않는 팝업 ID로 요청 시 예외가 발생한다.")
+        @Test
+        void 존재하지_않는_팝업ID는_예외처리_된다() {
+            // given
+            Long invalidPopupId = 999L;
+            String date = "2025-06";
 
-        for (ReservableTime reservableTime : fullyBooked.timeSlots()) {
-            assertThat(reservableTime.isPossible()).isFalse(); // 모두 불가해야 함
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.findAvailableDate(
+                                            memberId, invalidPopupId, date))
+                    .isInstanceOf(CustomException.class)
+                    .satisfies(
+                            ex -> {
+                                CustomException e = (CustomException) ex;
+                                assertThat(e.getErrorCode().getErrorName())
+                                        .isEqualTo("POPUP_NOT_FOUND");
+                                assertThat(e.getErrorCode().getMessage())
+                                        .isEqualTo("해당 팝업이 존재하지 않습니다.");
+                            });
         }
     }
 
-    @DisplayName("일부 시간만 예약된 날짜는 예약 가능이며, 해당 시간은 예약 불가로 표시된다.")
-    @Test
-    void 일부_시간만_예약된_날짜는_정확하게_표시된다() {
-        // given
-        String date = "2025-06";
-
-        // when
-        AvailableDateResponse response =
-                memberReservationService.findAvailableDate(memberId, popupId, date);
-
-        ReservableDate reservableDate =
-                response.reservableDate().stream()
-                        .filter(d -> d.date().equals(LocalDate.of(2025, 6, 2)))
-                        .findFirst()
-                        .orElseThrow();
-
-        // then
-        assertPopupDate(response);
-        assertThat(reservableDate.isReservable()).isTrue();
-
-        for (ReservableTime reservableTime : reservableDate.timeSlots()) {
-            if (reservableTime.time().equals(LocalTime.of(13, 0))) {
-                assertThat(reservableTime.isPossible()).isFalse(); // 예약 불가
-            } else {
-                assertThat(reservableTime.isPossible()).isTrue(); // 예약 가능
-            }
-        }
-    }
-
-    @DisplayName("팝업 예약 기간이 아닌 경우 가능한 날짜는 빈 리스트를 반환한다.")
-    @Test
-    void 예약_기간_아닌경우_빈_리스트_반환한다() {
-        // given
-        String date = "2025-07";
-
-        // when
-        AvailableDateResponse response =
-                memberReservationService.findAvailableDate(memberId, popupId, date);
-
-        // then
-        assertPopupDate(response);
-        assertThat(response.reservableDate()).isEmpty();
+    private void stub(Long popupId, String date, int status, String body) {
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/reservations/popups/" + popupId))
+                        .withQueryParam("date", equalTo(date))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader(
+                                                "Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                        .withBody(body)));
     }
 
     private void insertMemberReservation(LocalDate date, LocalTime time) {
