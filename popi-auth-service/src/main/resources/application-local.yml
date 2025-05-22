@@ -45,6 +45,8 @@ jwt:
   refresh-token-secret: ${JWT_REFRESH_TOKEN_SECRET}
   access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME:3600}
   refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME:172800}
+  register-token-secret: ${JWT_REGISTER_TOKEN_SECRET}
+  register-token-expiration-time: ${JWT_REGISTER_TOKEN_EXPIRATION_TIME:300}
   issuer: ${JWT_ISSUER}
 
 eureka:
