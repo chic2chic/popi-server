@@ -4,7 +4,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.lgcns.IntegrationTest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.ReservableDate;
@@ -20,10 +19,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
+import org.springframework.test.context.ActiveProfiles;
 
+@SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureWireMock(port = 8888)
-class MemberReservationServiceTest extends IntegrationTest {
+class MemberReservationServiceTest {
 
     @Autowired private MemberReservationService memberReservationService;
 
