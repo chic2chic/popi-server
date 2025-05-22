@@ -13,4 +13,7 @@ dependencies {
 
     // Actuator
     api 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Open Feign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 }
