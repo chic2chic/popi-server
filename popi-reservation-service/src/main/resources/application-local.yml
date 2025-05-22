@@ -48,4 +48,4 @@ spring-doc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-member-service-url: localhost:8080
+manager-service-url: localhost:8080

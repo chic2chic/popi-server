@@ -8,8 +8,6 @@ import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
-import com.lgcns.util.FeignExceptionUtil;
-import feign.FeignException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -32,7 +30,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
         validateYearMonthFormat(date);
 
-        MonthlyReservationDto monthlyReservation = getMonthlyReservation(popupId, date);
+        MonthlyReservationDto monthlyReservation =
+                managerServiceClient.findMonthlyReservation(popupId, date);
 
         Map<LocalDate, Map<LocalTime, Integer>> reservationCountMap =
                 buildReservationCountMap(
@@ -56,14 +55,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
             YearMonth.parse(date);
         } catch (DateTimeParseException e) {
             throw new CustomException(MemberReservationErrorCode.INVALID_DATE_FORMAT);
-        }
-    }
-
-    private MonthlyReservationDto getMonthlyReservation(Long popupId, String date) {
-        try {
-            return managerServiceClient.findMonthlyReservation(popupId, date);
-        } catch (FeignException e) {
-            throw FeignExceptionUtil.from(e);
         }
     }
 
