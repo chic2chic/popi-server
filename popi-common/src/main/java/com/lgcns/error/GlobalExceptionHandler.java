@@ -2,8 +2,10 @@ package com.lgcns.error;
 
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.error.exception.ErrorCode;
+import com.lgcns.error.exception.FeignCustomException;
 import com.lgcns.error.exception.GlobalErrorCode;
 import com.lgcns.response.GlobalResponse;
+import com.lgcns.util.FeignErrorParser;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -78,6 +80,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 GlobalResponse.fail(errorCode.getHttpStatus().value(), errorResponse);
 
         return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
+
+    /** FeignClient 에서 발생한 예외 처리 */
+    @ExceptionHandler(FeignCustomException.class)
+    public ResponseEntity<GlobalResponse> handleFeignCustomException(FeignCustomException e) {
+        Object data = FeignErrorParser.extractData(e.getRawBody());
+        final GlobalResponse response = GlobalResponse.fail(e.getStatus(), data);
+        return ResponseEntity.status(e.getStatus()).body(response);
     }
 
     /** 500번대 에러 처리 */
