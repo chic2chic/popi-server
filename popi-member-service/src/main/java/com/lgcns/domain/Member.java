@@ -1,6 +1,10 @@
 package com.lgcns.domain;
 
 import com.lgcns.entity.BaseTimeEntity;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
+import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

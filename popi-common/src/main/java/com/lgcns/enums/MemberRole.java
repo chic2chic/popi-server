@@ -1,4 +1,4 @@
-package com.lgcns.domain;
+package com.lgcns.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

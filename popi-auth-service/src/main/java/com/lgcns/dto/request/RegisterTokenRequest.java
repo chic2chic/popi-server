@@ -1,7 +1,7 @@
 package com.lgcns.dto.request;
 
-import com.lgcns.domain.MemberAge;
-import com.lgcns.domain.MemberGender;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

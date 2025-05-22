@@ -3,10 +3,10 @@ package com.lgcns.service;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.lgcns.domain.Member;
-import com.lgcns.domain.MemberRole;
-import com.lgcns.domain.MemberStatus;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.response.MemberInfoResponse;
+import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import com.lgcns.repository.MemberRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
