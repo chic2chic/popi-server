@@ -1,6 +1,5 @@
 package com.lgcns.response;
 
-import com.lgcns.annotation.RawResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
@@ -28,8 +27,6 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice {
             ServerHttpRequest request,
             ServerHttpResponse response) {
 
-        if (hasRawResponseAnnotation(returnType)) return body;
-
         HttpServletResponse servletResponse =
                 ((ServletServerHttpResponse) response).getServletResponse();
         int status = servletResponse.getStatus();
@@ -44,10 +41,5 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice {
         }
 
         return body;
-    }
-
-    private boolean hasRawResponseAnnotation(MethodParameter returnType) {
-        return returnType.getMethodAnnotation(RawResponse.class) != null
-                || returnType.getDeclaringClass().getAnnotation(RawResponse.class) != null;
     }
 }
