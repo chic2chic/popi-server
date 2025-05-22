@@ -11,7 +11,7 @@ import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-@RestControllerAdvice(basePackages = "com.lgcns")
+@RestControllerAdvice(basePackages = "com.lgcns.externalApi")
 public class GlobalResponseAdvice implements ResponseBodyAdvice {
 
     @Override
