@@ -20,7 +20,7 @@ def jacocoExcludePatterns = [
         "**/*Exception*",
         "**/*Request*",
         "**/*Response*",
-        "**/*Dto*",
+        "**/client/dto/**",
         "**/*Filter*",
         "**/*Error*/**",
         "**/resources/**",
