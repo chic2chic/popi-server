@@ -1,6 +1,6 @@
 package com.lgcns.client;
 
-import com.lgcns.client.dto.MonthlyReservationDto;
+import com.lgcns.client.dto.MonthlyReservationResponse;
 import com.lgcns.config.FeignConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
         url = "${manager-service-url:}",
         configuration = FeignConfig.class)
 public interface ManagerServiceClient {
-    @GetMapping("/reservations/popups/{popupId}")
-    MonthlyReservationDto findMonthlyReservation(
+    @GetMapping("/internal/reservations/popups/{popupId}")
+    MonthlyReservationResponse findMonthlyReservation(
             @PathVariable Long popupId, @RequestParam String date);
 }

@@ -27,7 +27,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     private final String memberId = "1";
     private final Long popupId = 1L;
-    private final AtomicLong memberIdGenerator = new AtomicLong(100);
+    private final AtomicLong reservationIdGenerator = new AtomicLong(4);
+    private final AtomicLong memberIdGenerator = new AtomicLong(1);
 
     @BeforeEach
     void setUp() {
@@ -44,81 +45,81 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                 "2025-05",
                 200,
                 """
-                    {
-                      "popupOpenDate": "2025-05-31",
-                      "popupCloseDate": "2025-06-02",
-                      "timeCapacity": 5,
-                      "dailyReservations": [
-                        {
-                          "reservationDate": "2025-05-31",
-                          "timeSlots": [
-                            {"reservationId": 1, "time": "12:00"},
-                            {"reservationId": 2, "time": "13:00"},
-                            {"reservationId": 3, "time": "14:00"}
-                          ]
-                        }
-                      ]
-                    }
-                """);
+                            {
+                              "popupOpenDate": "2025-05-31",
+                              "popupCloseDate": "2025-06-02",
+                              "timeCapacity": 5,
+                              "dailyReservations": [
+                                {
+                                  "reservationDate": "2025-05-31",
+                                  "timeSlots": [
+                                    {"reservationId": 1, "time": "12:00"},
+                                    {"reservationId": 2, "time": "13:00"},
+                                    {"reservationId": 3, "time": "14:00"}
+                                  ]
+                                }
+                              ]
+                            }
+                        """);
 
         stub(
                 1L,
                 "2025-06",
                 200,
                 """
-                    {
-                      "popupOpenDate": "2025-05-31",
-                      "popupCloseDate": "2025-06-02",
-                      "timeCapacity": 5,
-                      "dailyReservations": [
-                        {
-                          "reservationDate": "2025-06-01",
-                          "timeSlots": [
-                            {"reservationId": 4, "time": "12:00"},
-                            {"reservationId": 5, "time": "13:00"},
-                            {"reservationId": 6, "time": "14:00"}
-                          ]
-                        },
-                        {
-                          "reservationDate": "2025-06-02",
-                          "timeSlots": [
-                            {"reservationId": 7, "time": "12:00"},
-                            {"reservationId": 8, "time": "13:00"},
-                            {"reservationId": 9, "time": "14:00"}
-                          ]
-                        }
-                      ]
-                    }
-                """);
+                            {
+                              "popupOpenDate": "2025-05-31",
+                              "popupCloseDate": "2025-06-02",
+                              "timeCapacity": 5,
+                              "dailyReservations": [
+                                {
+                                  "reservationDate": "2025-06-01",
+                                  "timeSlots": [
+                                    {"reservationId": 4, "time": "12:00"},
+                                    {"reservationId": 5, "time": "13:00"},
+                                    {"reservationId": 6, "time": "14:00"}
+                                  ]
+                                },
+                                {
+                                  "reservationDate": "2025-06-02",
+                                  "timeSlots": [
+                                    {"reservationId": 7, "time": "12:00"},
+                                    {"reservationId": 8, "time": "13:00"},
+                                    {"reservationId": 9, "time": "14:00"}
+                                  ]
+                                }
+                              ]
+                            }
+                        """);
 
         stub(
                 1L,
                 "2025-07",
                 200,
                 """
-                    {
-                      "popupOpenDate": "2025-05-31",
-                      "popupCloseDate": "2025-06-02",
-                      "timeCapacity": 5,
-                      "dailyReservations": []
-                    }
-                """);
+                            {
+                              "popupOpenDate": "2025-05-31",
+                              "popupCloseDate": "2025-06-02",
+                              "timeCapacity": 5,
+                              "dailyReservations": []
+                            }
+                        """);
 
         stub(
                 999L,
                 "2025-06",
                 404,
                 """
-                    {
-                      "success": false,
-                      "status": 404,
-                      "data": {
-                        "errorClassName": "POPUP_NOT_FOUND",
-                        "message": "해당 팝업이 존재하지 않습니다."
-                      },
-                      "timestamp": "2025-05-23T01:50:46.229657"
-                    }
-                """);
+                            {
+                              "success": false,
+                              "status": 404,
+                              "data": {
+                                "errorClassName": "POPUP_NOT_FOUND",
+                                "message": "해당 팝업이 존재하지 않습니다."
+                              },
+                              "timestamp": "2025-05-23T01:50:46.229657"
+                            }
+                        """);
     }
 
     @Nested
@@ -290,7 +291,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     private void stub(Long popupId, String date, int status, String body) {
         wireMockServer.stubFor(
-                get(urlPathEqualTo("/reservations/popups/" + popupId))
+                get(urlPathEqualTo("/internal/reservations/popups/" + popupId))
                         .withQueryParam("date", equalTo(date))
                         .willReturn(
                                 aResponse()
@@ -304,7 +305,12 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         for (int i = 0; i < 5; i++) {
             MemberReservation reservation =
                     MemberReservation.createMemberReservation(
-                            memberIdGenerator.getAndIncrement(), popupId, null, date, time);
+                            reservationIdGenerator.getAndIncrement(),
+                            memberIdGenerator.getAndIncrement(),
+                            popupId,
+                            null,
+                            date,
+                            time);
             memberReservationRepository.save(reservation);
         }
     }
