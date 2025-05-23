@@ -39,24 +39,27 @@ public class Member extends BaseTimeEntity {
 
     @Builder(access = AccessLevel.PRIVATE)
     private Member(
-            String nickname,
             OauthInfo oauthInfo,
+            String nickname,
             MemberAge age,
             MemberGender gender,
             MemberStatus status,
             MemberRole role) {
-        this.nickname = nickname;
-        this.gender = gender;
-        this.age = age;
         this.oauthInfo = oauthInfo;
+        this.nickname = nickname;
+        this.age = age;
+        this.gender = gender;
         this.status = status;
         this.role = role;
     }
 
-    public static Member createMember(String nickname, OauthInfo oauthInfo) {
+    public static Member createMember(
+            OauthInfo oauthInfo, String nickname, MemberGender gender, MemberAge age) {
         return Member.builder()
-                .nickname(nickname)
                 .oauthInfo(oauthInfo)
+                .nickname(nickname)
+                .gender(gender)
+                .age(age)
                 .status(MemberStatus.NORMAL)
                 .role(MemberRole.USER)
                 .build();

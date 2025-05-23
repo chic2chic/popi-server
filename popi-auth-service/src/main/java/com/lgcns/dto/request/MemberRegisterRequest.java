@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record RegisterTokenRequest(
+public record MemberRegisterRequest(
         @Schema(description = "사용자 닉네임", example = "nickname")
                 @NotBlank(message = "닉네임은 비워둘 수 없습니다.")
                 String nickname,

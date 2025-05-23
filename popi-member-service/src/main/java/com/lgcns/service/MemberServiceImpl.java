@@ -1,7 +1,10 @@
 package com.lgcns.service;
 
 import com.lgcns.domain.Member;
+import com.lgcns.domain.OauthInfo;
+import com.lgcns.dto.request.MemberInternalRegisterRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
+import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
@@ -24,5 +27,23 @@ public class MemberServiceImpl implements MemberService {
                         .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         return MemberInfoResponse.from(member);
+    }
+
+    @Override
+    public MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request) {
+        if (memberRepository.existsByOauthInfo(
+                OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()))) {
+            throw new CustomException(MemberErrorCode.ALREADY_REGISTERED);
+        }
+
+        Member member =
+                Member.createMember(
+                        OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()),
+                        request.nickname(),
+                        request.gender(),
+                        request.age());
+        memberRepository.save(member);
+
+        return MemberInternalRegisterResponse.of(member.getId(), member.getRole());
     }
 }

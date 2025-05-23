@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum MemberErrorCode implements ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
+
+    ALREADY_REGISTERED(HttpStatus.CONFLICT, "이미 가입된 사용자입니다. 로그인 후 이용해주세요."),
     ;
 
     private final HttpStatus httpStatus;

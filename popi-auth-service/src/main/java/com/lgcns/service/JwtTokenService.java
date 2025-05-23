@@ -1,11 +1,9 @@
 package com.lgcns.service;
 
-import com.lgcns.domain.Member;
-import com.lgcns.domain.MemberRole;
 import com.lgcns.domain.RefreshToken;
-import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
+import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
@@ -57,9 +55,9 @@ public class JwtTokenService {
         return refreshTokenDto;
     }
 
-    public AccessTokenDto reissueAccessToken(Member member) {
-        return jwtUtil.generateAccessTokenDto(member.getId(), member.getRole());
-    }
+    //    public AccessTokenDto reissueAccessToken(Member member) {
+    //        return jwtUtil.generateAccessTokenDto(member.getId(), member.getRole());
+    //    }
 
     public RefreshTokenDto validateRefreshToken(String refreshToken) {
         return jwtUtil.parseRefreshToken(refreshToken);
