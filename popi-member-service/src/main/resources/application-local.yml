@@ -41,3 +41,7 @@ spring-doc:
   enable-kotlin: false
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+auth:
+  service:
+    name: auth

@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "auth", configuration = FeignConfig.class)
+@FeignClient(name = "${auth.service.name}", configuration = FeignConfig.class)
 public interface AuthServiceClient {
 
     @DeleteMapping("/internal//{memberId}/refresh-token")
