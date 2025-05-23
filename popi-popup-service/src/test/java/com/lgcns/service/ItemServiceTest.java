@@ -28,6 +28,8 @@ public class ItemServiceTest extends WireMockIntegrationTest {
 
     @BeforeEach
     void setUp() throws JsonProcessingException {
+        wireMockServer.resetAll();
+
         String responseBody1 =
                 objectMapper.writeValueAsString(
                         Map.of(
@@ -115,8 +117,14 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                                 15000)),
                                 "isLast",
                                 true));
-        stubFindAllItems(popupId, null, 4, 200, responseBody1);
-        stubFindAllItems(popupId, 5L, 4, 200, responseBody2);
+
+        String emptyResponseBody =
+                objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
+
+        stubFindItemsByName(popupId, null, null, 4, 200, responseBody1);
+        stubFindItemsByName(popupId, null, 5L, 4, 200, responseBody2);
+        stubFindItemsByName(popupId, "DAZED", null, 4, 200, responseBody2);
+        stubFindItemsByName(popupId, "EMPTY", null, 4, 200, emptyResponseBody);
     }
 
     @Nested
@@ -127,7 +135,8 @@ public class ItemServiceTest extends WireMockIntegrationTest {
             int size = 4;
 
             // when
-            SliceResponse<ItemInfoResponse> result = itemService.findAllItems(popupId, null, size);
+            SliceResponse<ItemInfoResponse> result =
+                    itemService.findItemsByName(popupId, null, null, size);
 
             // then
             Assertions.assertAll(
@@ -151,7 +160,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
 
             // when
             SliceResponse<ItemInfoResponse> result =
-                    itemService.findAllItems(popupId, lastItemId, size);
+                    itemService.findItemsByName(popupId, null, lastItemId, size);
 
             // then
             Assertions.assertAll(
@@ -166,19 +175,57 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(result.isLast()).isTrue() // isLast=true 검증
                     );
         }
+
+        @Test
+        void 상품_검색에_성공한다() {
+            // given
+            String searchName = "DAZED";
+            int size = 4;
+
+            // when
+            SliceResponse<ItemInfoResponse> result =
+                    itemService.findItemsByName(popupId, searchName, null, size);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result.content()).hasSize(4),
+                    () -> assertThat(result.isLast()).isTrue(),
+                    () ->
+                            assertThat(result.content())
+                                    .allSatisfy(
+                                            item ->
+                                                    assertThat(item.name())
+                                                            .contains("DAZED")) // 검색 결과 검증
+                    );
+        }
+
+        @Test
+        void 상품_검색_결과가_없으면_빈_리스트를_반환한다() {
+            // given
+            String searchName = "EMPTY";
+            int size = 4;
+
+            // when
+            SliceResponse<ItemInfoResponse> result =
+                    itemService.findItemsByName(popupId, searchName, null, size);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result.content()).isEmpty(), // 빈 리스트 검증
+                    () -> assertThat(result.isLast()).isTrue());
+        }
     }
 
-    private void stubFindAllItems(
-            Long popupId, Long lastItemId, int size, int status, String body) {
+    private void stubFindItemsByName(
+            Long popupId, String searchName, Long lastItemId, int size, int status, String body) {
         MappingBuilder mappingBuilder =
                 get(urlPathEqualTo("/internal/popups/" + popupId + "/items"))
                         .withQueryParam("size", equalTo(String.valueOf(size)));
 
-        if (lastItemId != null) {
-            mappingBuilder =
-                    mappingBuilder.withQueryParam(
-                            "lastItemId", equalTo(String.valueOf(lastItemId)));
-        }
+        mappingBuilder = applySearchNameIfPresent(mappingBuilder, searchName);
+        mappingBuilder = applyLastItemIdIfPresent(mappingBuilder, lastItemId);
 
         wireMockServer.stubFor(
                 mappingBuilder.willReturn(
@@ -186,5 +233,17 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                 .withStatus(status)
                                 .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                                 .withBody(body)));
+    }
+
+    private MappingBuilder applySearchNameIfPresent(MappingBuilder builder, String searchName) {
+        return (searchName != null)
+                ? builder.withQueryParam("searchName", equalTo(searchName))
+                : builder;
+    }
+
+    private MappingBuilder applyLastItemIdIfPresent(MappingBuilder builder, Long lastItemId) {
+        return (lastItemId != null)
+                ? builder.withQueryParam("lastItemId", equalTo(String.valueOf(lastItemId)))
+                : builder;
     }
 }
