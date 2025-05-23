@@ -14,5 +14,5 @@ public interface ManagerServiceClient {
     SliceResponse<ItemInfoResponse> findAllItems(
             @PathVariable(name = "popupId") Long popupId,
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
-            @RequestParam(name = "size", defaultValue = "4") int size);
+            @RequestParam(name = "size", defaultValue = "8") int size);
 }

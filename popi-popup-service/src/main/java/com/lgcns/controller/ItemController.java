@@ -21,7 +21,7 @@ public class ItemController {
     public SliceResponse<ItemInfoResponse> userItemFindAll(
             @PathVariable(name = "popupId") Long popupId,
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
-            @RequestParam(name = "size", defaultValue = "4") int size) {
+            @RequestParam(name = "size", defaultValue = "8") int size) {
         return itemService.findAllItems(popupId, lastItemId, size);
     }
 }
