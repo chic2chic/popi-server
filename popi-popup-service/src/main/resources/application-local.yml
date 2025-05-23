@@ -28,3 +28,5 @@ spring-doc:
   enable-kotlin: false
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+manager-service-url: http://localhost:8080
