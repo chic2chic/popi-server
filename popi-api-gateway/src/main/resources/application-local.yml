@@ -71,7 +71,7 @@ spring:
         - id: member-withdrawal
           uri: lb://MEMBERS
           predicates:
-            - Path=/member/withdrawal
+            - Path=/members/withdrawal
             - Method=DELETE
           filters:
             - RemoveRequestHeader=Cookie
