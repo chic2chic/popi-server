@@ -27,14 +27,14 @@ public class ItemController {
             @Parameter(description = "팝업 ID", example = "1") @PathVariable(name = "popupId")
                     Long popupId,
             @Parameter(description = "검색할 상품 이름 (비워두면 모든 상품을 반환합니다.)", example = "포토카드")
-                    @RequestParam(name = "searchName", required = false)
-                    String searchName,
+                    @RequestParam(name = "keyWord", required = false)
+                    String keyWord,
             @Parameter(description = "이전 페이지의 마지막 ID (첫 요청 시 비워두세요.)", example = "2")
                     @RequestParam(name = "lastItemId", required = false)
                     Long lastItemId,
             @Parameter(description = "페이지 크기 (기본 8)", example = "8")
                     @RequestParam(name = "size", defaultValue = "8")
                     int size) {
-        return itemService.findItemsByName(popupId, searchName, lastItemId, size);
+        return itemService.findItemsByName(popupId, keyWord, lastItemId, size);
     }
 }
