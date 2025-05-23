@@ -22,6 +22,3 @@ public interface ManagerServiceClient {
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
             @RequestParam(name = "size", defaultValue = "8") int size);
 }
-
-
-
