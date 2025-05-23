@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface ManagerServiceClient {
 
     @GetMapping("/internal/popups/{popupId}/items")
-    SliceResponse<ItemInfoResponse> findAllItems(
+    SliceResponse<ItemInfoResponse> findItemsByName(
             @PathVariable(name = "popupId") Long popupId,
+            @RequestParam(name = "searchName", required = false) String searchName,
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
             @RequestParam(name = "size", defaultValue = "8") int size);
 }
