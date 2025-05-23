@@ -5,7 +5,9 @@ import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
+import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
+import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.enums.MemberRole;
@@ -30,17 +32,19 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
         OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
-        //        Optional<Member> optionalMember = findByOidcUser(oidcUser);
-        //
-        //        if (optionalMember.isPresent()) {
-        //            Member member = optionalMember.get();
-        //
-        //            if (member.getStatus() == MemberStatus.DELETED) {
-        //                member.reEnroll();
-        //            }
-        //
-        //            return getLoginResponse(member);
-        //        }
+
+        MemberInternalInfoResponse response =
+                memberServiceClient.findByOauthInfo(
+                        MemberOauthInfoRequest.of(
+                                oidcUser.getSubject(), oidcUser.getIssuer().toString()));
+
+        if (response != null) {
+            //            if (response.status() == MemberStatus.DELETED) {
+            //
+            //            }
+
+            return getLoginResponse(response.memberId(), response.role());
+        }
 
         String registerToken =
                 jwtTokenService.createRegisterToken(
@@ -118,16 +122,6 @@ public class AuthServiceImpl implements AuthService {
         return SocialLoginResponse.registered(accessToken, refreshToken);
     }
 
-    //    private Optional<Member> findByOidcUser(OidcUser oidcUser) {
-    //        OauthInfo oauthInfo = extractOauthInfo(oidcUser);
-    //        return memberRepository.findByOauthInfo(oauthInfo);
-    //    }
-    //
-    //    private OauthInfo extractOauthInfo(OidcUser oidcUser) {
-    //        return OauthInfo.createOauthInfo(oidcUser.getSubject(),
-    // oidcUser.getIssuer().toString());
-    //    }
-    //
     //    private Member getMember(RefreshTokenDto refreshTokenDto) {
     //        return memberRepository
     //                .findById(refreshTokenDto.memberId())
