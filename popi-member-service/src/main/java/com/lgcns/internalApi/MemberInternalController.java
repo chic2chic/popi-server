@@ -26,4 +26,9 @@ public class MemberInternalController {
     public MemberInternalInfoResponse findOauthInfo(@RequestBody MemberOauthInfoRequest request) {
         return memberService.findOauthInfo(request);
     }
+
+    @GetMapping("/{memberId}")
+    public MemberInternalInfoResponse findMemberId(@PathVariable Long memberId) {
+        return memberService.findMemberId(memberId);
+    }
 }

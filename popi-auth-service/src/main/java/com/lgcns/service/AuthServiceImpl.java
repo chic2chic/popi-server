@@ -2,6 +2,8 @@ package com.lgcns.service;
 
 import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
+import com.lgcns.dto.AccessTokenDto;
+import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
@@ -10,6 +12,7 @@ import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
+import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
@@ -76,23 +79,26 @@ public class AuthServiceImpl implements AuthService {
         return getLoginResponse(response.memberId(), response.role());
     }
 
-    //    @Override
-    //    public TokenReissueResponse reissueToken(String refreshTokenValue) {
-    //        RefreshTokenDto oldRefreshTokenDto =
-    //                jwtTokenService.validateRefreshToken(refreshTokenValue);
-    //
-    //        if (oldRefreshTokenDto == null) {
-    //            throw new CustomException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
-    //        }
-    //
-    //        RefreshTokenDto newRefreshTokenDto =
-    //                jwtTokenService.reissueRefreshToken(oldRefreshTokenDto);
-    //        AccessTokenDto newAccessTokenDto =
-    //                jwtTokenService.reissueAccessToken(getMember(newRefreshTokenDto));
-    //
-    //        return TokenReissueResponse.of(
-    //                newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());
-    //    }
+    @Override
+    public TokenReissueResponse reissueToken(String refreshTokenValue) {
+        RefreshTokenDto oldRefreshTokenDto =
+                jwtTokenService.validateRefreshToken(refreshTokenValue);
+
+        if (oldRefreshTokenDto == null) {
+            throw new CustomException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
+        }
+
+        RefreshTokenDto newRefreshTokenDto =
+                jwtTokenService.reissueRefreshToken(oldRefreshTokenDto);
+
+        MemberInternalInfoResponse response =
+                memberServiceClient.findByMemberId(newRefreshTokenDto.memberId());
+        AccessTokenDto newAccessTokenDto =
+                jwtTokenService.reissueAccessToken(response.memberId(), response.role());
+
+        return TokenReissueResponse.of(
+                newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());
+    }
 
     @Override
     public void logoutMember(String memberId) {
@@ -121,10 +127,4 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtTokenService.createRefreshToken(memberId);
         return SocialLoginResponse.registered(accessToken, refreshToken);
     }
-
-    //    private Member getMember(RefreshTokenDto refreshTokenDto) {
-    //        return memberRepository
-    //                .findById(refreshTokenDto.memberId())
-    //                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
-    //    }
 }

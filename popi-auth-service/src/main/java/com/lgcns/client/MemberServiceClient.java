@@ -6,6 +6,8 @@ import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -17,4 +19,7 @@ public interface MemberServiceClient {
 
     @PostMapping("/internal/oauth-info")
     MemberInternalInfoResponse findByOauthInfo(@RequestBody MemberOauthInfoRequest request);
+
+    @GetMapping("/internal/{memberId}")
+    MemberInternalInfoResponse findByMemberId(@PathVariable Long memberId);
 }

@@ -64,4 +64,15 @@ public class MemberServiceImpl implements MemberService {
 
         return null;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MemberInternalInfoResponse findMemberId(Long memberId) {
+        Member member =
+                memberRepository
+                        .findById(memberId)
+                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        return new MemberInternalInfoResponse(member.getId(), member.getRole(), member.getStatus());
+    }
 }

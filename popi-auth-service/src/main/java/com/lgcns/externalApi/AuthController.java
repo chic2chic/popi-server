@@ -4,6 +4,7 @@ import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
+import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.service.AuthService;
 import com.lgcns.util.CookieUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,19 +49,19 @@ public class AuthController {
         return ResponseEntity.ok().headers(headers).body(response);
     }
 
-    //    @PostMapping("/reissue")
-    //    @Operation(
-    //            summary = "토큰 재발급",
-    //            description = "만료된 엑세스 토큰이 있을 경우, 리프레시 토큰을 이용해 엑세스 및 리프레시 토큰을 재발급합니다.")
-    //    public ResponseEntity<TokenReissueResponse> tokenReissue(
-    //            @RequestHeader("refresh-token") String refreshTokenValue) {
-    //        TokenReissueResponse response = authService.reissueToken(refreshTokenValue);
-    //
-    //        String refreshToken = response.refreshToken();
-    //        HttpHeaders headers = cookieUtil.generateRefreshTokenCookie(refreshToken);
-    //
-    //        return ResponseEntity.ok().headers(headers).body(response);
-    //    }
+    @PostMapping("/reissue")
+    @Operation(
+            summary = "토큰 재발급",
+            description = "만료된 엑세스 토큰이 있을 경우, 리프레시 토큰을 이용해 엑세스 및 리프레시 토큰을 재발급합니다.")
+    public ResponseEntity<TokenReissueResponse> tokenReissue(
+            @RequestHeader("refresh-token") String refreshTokenValue) {
+        TokenReissueResponse response = authService.reissueToken(refreshTokenValue);
+
+        String refreshToken = response.refreshToken();
+        HttpHeaders headers = cookieUtil.generateRefreshTokenCookie(refreshToken);
+
+        return ResponseEntity.ok().headers(headers).body(response);
+    }
 
     @PostMapping("/logout")
     @Operation(summary = "회원 로그아웃", description = "로그아웃 시, 쿠키에 저장된 리프레시 토큰이 삭제됩니다.")

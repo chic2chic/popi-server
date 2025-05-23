@@ -12,4 +12,6 @@ public interface MemberService {
     MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request);
 
     MemberInternalInfoResponse findOauthInfo(MemberOauthInfoRequest request);
+
+    MemberInternalInfoResponse findMemberId(Long memberId);
 }
