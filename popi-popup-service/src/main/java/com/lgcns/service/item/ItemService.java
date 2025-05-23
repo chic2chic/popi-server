@@ -4,5 +4,6 @@ import com.lgcns.dto.item.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
 
 public interface ItemService {
-    SliceResponse<ItemInfoResponse> findAllItems(Long popupId, Long lastItemId, int size);
+    SliceResponse<ItemInfoResponse> findItemsByName(
+            Long popupId, String searchName, Long lastItemId, int size);
 }

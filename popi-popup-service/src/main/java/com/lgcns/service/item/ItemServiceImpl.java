@@ -13,7 +13,8 @@ public class ItemServiceImpl implements ItemService {
     private final ManagerServiceClient managerServiceClient;
 
     @Override
-    public SliceResponse<ItemInfoResponse> findAllItems(Long popupId, Long lastItemId, int size) {
-        return managerServiceClient.findAllItems(popupId, lastItemId, size);
+    public SliceResponse<ItemInfoResponse> findItemsByName(
+            Long popupId, String searchName, Long lastItemId, int size) {
+        return managerServiceClient.findItemsByName(popupId, searchName, lastItemId, size);
     }
 }
