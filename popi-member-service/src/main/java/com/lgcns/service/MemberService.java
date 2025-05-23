@@ -9,6 +9,8 @@ import com.lgcns.dto.response.MemberInternalRegisterResponse;
 public interface MemberService {
     MemberInfoResponse findMemberInfo(String memberId);
 
+    void withdrawalMember(String memberId);
+
     MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request);
 
     MemberInternalInfoResponse findOauthInfo(MemberOauthInfoRequest request);

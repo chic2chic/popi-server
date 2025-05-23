@@ -1,5 +1,6 @@
 package com.lgcns.service;
 
+import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
+    private final AuthServiceClient authServiceClient;
 
     @Transactional(readOnly = true)
     public MemberInfoResponse findMemberInfo(String memberId) {
@@ -30,6 +32,18 @@ public class MemberServiceImpl implements MemberService {
                         .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         return MemberInfoResponse.from(member);
+    }
+
+    @Override
+    public void withdrawalMember(String memberId) {
+        authServiceClient.deleteRefreshToken(memberId);
+
+        Member member =
+                memberRepository
+                        .findById(Long.parseLong(memberId))
+                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        member.withdrawal();
     }
 
     @Override

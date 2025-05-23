@@ -108,18 +108,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void withdrawalMember(String memberId) {
+    public void deleteRefreshToken(String memberId) {
         refreshTokenRepository
                 .findById(Long.parseLong(memberId))
                 .ifPresent(refreshTokenRepository::delete);
-
-        //        Member member =
-        //                memberRepository
-        //                        .findById(Long.parseLong(memberId))
-        //                        .orElseThrow(() -> new
-        // CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
-        //
-        //        member.withdrawal();
     }
 
     private SocialLoginResponse getLoginResponse(Long memberId, MemberRole memberRole) {

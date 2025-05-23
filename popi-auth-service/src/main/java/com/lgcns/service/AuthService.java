@@ -15,5 +15,5 @@ public interface AuthService {
 
     void logoutMember(String memberId);
 
-    void withdrawalMember(String memberId);
+    void deleteRefreshToken(String memberId);
 }

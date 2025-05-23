@@ -5,6 +5,8 @@ import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
 import com.lgcns.enums.MemberStatus;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.MemberErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -63,5 +65,13 @@ public class Member extends BaseTimeEntity {
                 .status(MemberStatus.NORMAL)
                 .role(MemberRole.USER)
                 .build();
+    }
+
+    public void withdrawal() {
+        if (this.status == MemberStatus.DELETED) {
+            throw new CustomException(MemberErrorCode.MEMBER_ALREADY_DELETED);
+        }
+
+        this.status = MemberStatus.DELETED;
     }
 }

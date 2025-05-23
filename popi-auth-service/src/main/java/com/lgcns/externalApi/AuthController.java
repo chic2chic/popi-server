@@ -69,11 +69,4 @@ public class AuthController {
         authService.logoutMember(memberId);
         return ResponseEntity.ok().headers(cookieUtil.deleteRefreshTokenCookie()).build();
     }
-
-    @DeleteMapping("/withdrawal")
-    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
-    public ResponseEntity<Void> memberWithdrawal(@RequestHeader("member-id") String memberId) {
-        authService.withdrawalMember(memberId);
-        return ResponseEntity.ok().headers(cookieUtil.deleteRefreshTokenCookie()).build();
-    }
 }
