@@ -5,6 +5,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.response.MemberInfoResponse;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
 import com.lgcns.enums.MemberStatus;
 import com.lgcns.repository.MemberRepository;
@@ -22,8 +24,10 @@ class MemberServiceTest {
     private Member registerAuthenticatedMember() {
         Member member =
                 Member.createMember(
+                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
                         "testNickname",
-                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"));
+                        MemberGender.MALE,
+                        MemberAge.TWENTIES);
         memberRepository.save(member);
 
         return member;
@@ -42,6 +46,8 @@ class MemberServiceTest {
                 () -> assertThat(response.memberId()).isEqualTo(1L),
                 () -> assertThat(response.nickname()).isEqualTo("testNickname"),
                 () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
+                () -> assertThat(response.gender()).isEqualTo(MemberGender.MALE),
+                () -> assertThat(response.age()).isEqualTo(MemberAge.TWENTIES),
                 () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
     }
 }
