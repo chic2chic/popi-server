@@ -19,6 +19,8 @@ public class MemberReservation extends BaseTimeEntity {
     @Column(name = "member_reservation_id")
     private Long id;
 
+    private Long reservationId;
+
     private Long memberId;
 
     private Long popupId;
@@ -31,6 +33,7 @@ public class MemberReservation extends BaseTimeEntity {
 
     @Builder
     private MemberReservation(
+            Long reservationId,
             Long memberId,
             Long popupId,
             String imageByte,
@@ -44,12 +47,14 @@ public class MemberReservation extends BaseTimeEntity {
     }
 
     public static MemberReservation createMemberReservation(
+            Long reservationId,
             Long memberId,
             Long popupId,
             String imageByte,
             LocalDate reservationDate,
             LocalTime reservationTime) {
         return MemberReservation.builder()
+                .reservationId(reservationId)
                 .memberId(memberId)
                 .popupId(popupId)
                 .imageByte(imageByte)

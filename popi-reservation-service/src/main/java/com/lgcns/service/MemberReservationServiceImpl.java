@@ -2,7 +2,7 @@ package com.lgcns.service;
 
 import com.lgcns.client.ManagerServiceClient;
 import com.lgcns.client.dto.DailyReservation;
-import com.lgcns.client.dto.MonthlyReservationDto;
+import com.lgcns.client.dto.MonthlyReservationResponse;
 import com.lgcns.client.dto.TimeSlot;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
@@ -30,7 +30,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
         validateYearMonthFormat(date);
 
-        MonthlyReservationDto monthlyReservation =
+        MonthlyReservationResponse monthlyReservation =
                 managerServiceClient.findMonthlyReservation(popupId, date);
 
         Map<LocalDate, Map<LocalTime, Integer>> reservationCountMap =
@@ -83,7 +83,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     private List<ReservableDate> buildReservableDateList(
-            MonthlyReservationDto monthlyReservation,
+            MonthlyReservationResponse monthlyReservation,
             Map<LocalDate, Map<LocalTime, Integer>> reservationCountMap,
             int timeCapacity) {
         List<ReservableDate> reservableDateList = new ArrayList<>();
