@@ -39,6 +39,7 @@ public class MemberReservation extends BaseTimeEntity {
             String imageByte,
             LocalDate reservationDate,
             LocalTime reservationTime) {
+        this.reservationId = reservationId;
         this.memberId = memberId;
         this.popupId = popupId;
         this.imageByte = imageByte;
