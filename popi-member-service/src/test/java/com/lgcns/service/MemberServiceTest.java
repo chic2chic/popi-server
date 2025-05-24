@@ -16,7 +16,6 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,28 +25,14 @@ class MemberServiceTest extends IntegrationTest {
     @Autowired private MemberService memberService;
     @Autowired private MemberRepository memberRepository;
 
-    private Member member;
-
-    @BeforeEach
-    void setUp() {
-        member =
-                Member.createMember(
-                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                        "testNickname",
-                        MemberGender.MALE,
-                        MemberAge.TWENTIES);
-        memberRepository.save(member);
-
-        stubFor(
-                delete(urlEqualTo("/internal/1/refresh-token"))
-                        .willReturn(aResponse().withStatus(200)));
-    }
-
     @Nested
     class 회원_정보를_조회할_때 {
 
         @Test
         void 회원이_존재하면_조회에_성공한다() {
+            // given
+            registerAuthenticatedMember();
+
             // when
             MemberInfoResponse response = memberService.findMemberInfo("1");
 
@@ -64,7 +49,7 @@ class MemberServiceTest extends IntegrationTest {
         @Test
         void 회원이_존재하지_않으면_예외가_발생한다() {
             // when & then
-            assertThatThrownBy(() -> memberService.findMemberInfo("999"))
+            assertThatThrownBy(() -> memberService.findMemberInfo("1"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
         }
@@ -75,6 +60,13 @@ class MemberServiceTest extends IntegrationTest {
 
         @Test
         void 회원이_탈퇴하면_상태는_DELETED가_된다() {
+            // given
+            Member member = registerAuthenticatedMember();
+
+            stubFor(
+                    delete(urlEqualTo("/internal/1/refresh-token"))
+                            .willReturn(aResponse().withStatus(200)));
+
             // when
             memberService.withdrawalMember(member.getId().toString());
             Member currentMember = memberRepository.findById(1L).get();
@@ -86,6 +78,12 @@ class MemberServiceTest extends IntegrationTest {
         @Test
         void 이미_탈퇴한_회원이_다시_탈퇴하면_예외가_발생한다() {
             // given
+            Member member = registerAuthenticatedMember();
+
+            stubFor(
+                    delete(urlEqualTo("/internal/1/refresh-token"))
+                            .willReturn(aResponse().withStatus(200)));
+
             memberService.withdrawalMember(member.getId().toString());
 
             // when & then
@@ -93,5 +91,17 @@ class MemberServiceTest extends IntegrationTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_ALREADY_DELETED.getMessage());
         }
+    }
+
+    private Member registerAuthenticatedMember() {
+        Member member =
+                Member.createMember(
+                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                        "testNickname",
+                        MemberGender.MALE,
+                        MemberAge.TWENTIES);
+        memberRepository.save(member);
+
+        return member;
     }
 }
