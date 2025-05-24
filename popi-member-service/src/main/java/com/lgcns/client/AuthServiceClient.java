@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "${auth.service.name}", configuration = FeignConfig.class)
 public interface AuthServiceClient {
 
-    @DeleteMapping("/internal//{memberId}/refresh-token")
+    @DeleteMapping("/internal/{memberId}/refresh-token")
     void deleteRefreshToken(@PathVariable String memberId);
 }
