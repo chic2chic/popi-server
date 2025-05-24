@@ -51,15 +51,6 @@ spring:
             - RemoveRequestHeader=Cookie
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
-        - id: auth-withdrawal
-          uri: lb://AUTH
-          predicates:
-            - Path=/auth/withdrawal
-            - Method=DELETE
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/auth/(?<segment>.*), /$\{segment}
-            - JwtAuthenticationFilter
 
         - id: member-docs
           uri: lb://MEMBERS
@@ -68,11 +59,20 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/members/(?<segment>.*), /$\{segment}
-        - id: member-service
+        - id: member-me
           uri: lb://MEMBERS
           predicates:
-            - Path=/members/**
-            - Method=GET,POST,DELETE
+            - Path=/members/me
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/members/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+        - id: member-withdrawal
+          uri: lb://MEMBERS
+          predicates:
+            - Path=/members/withdrawal
+            - Method=DELETE
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/members/(?<segment>.*), /$\{segment}

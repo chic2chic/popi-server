@@ -8,19 +8,6 @@ spring:
     kubernetes:
       config:
         enabled: false
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${AUTH_DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: create
-    properties:
-      hibernate:
-        format_sql: true
-        default_batch_fetch_size: 100
-    open-in-view: false
   data:
     redis:
       host: ${REDIS_HOST}
@@ -68,3 +55,7 @@ spring-doc:
   enable-kotlin: false
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+member:
+  service:
+    name: members
