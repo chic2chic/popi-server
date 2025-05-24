@@ -127,6 +127,21 @@ public class AuthServiceTest extends WireMockIntegrationTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessage("이미 가입된 사용자입니다. 로그인 후 이용해주세요.");
         }
+
+        @Test
+        void 만료된_레지스터_토큰이면_예외가_발생한다() {
+            // given
+            when(jwtTokenService.validateRegisterToken(anyString())).thenReturn(null);
+
+            MemberRegisterRequest request =
+                    new MemberRegisterRequest(
+                            "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
+
+            // when & then
+            assertThatThrownBy(() -> authService.registerMember("testRefreshTokenValue", request))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(AuthErrorCode.EXPIRED_REGISTER_TOKEN.getMessage());
+        }
     }
 
     @Nested
