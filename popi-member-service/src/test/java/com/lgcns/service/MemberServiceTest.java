@@ -8,7 +8,9 @@ import com.lgcns.IntegrationTest;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
+import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
+import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
@@ -134,6 +136,41 @@ class MemberServiceTest extends IntegrationTest {
             assertThatThrownBy(() -> memberService.registerMember(request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.ALREADY_REGISTERED.getMessage());
+        }
+    }
+
+    @Nested
+    class 인증_서비스의_OAuth_회원_조회_요청을_처리할_때 {
+
+        @Test
+        void 존재하는_회원이면_회원_정보를_반환한다() {
+            // given
+            registerAuthenticatedMember();
+
+            MemberOauthInfoRequest request =
+                    MemberOauthInfoRequest.of("testOauthId", "testOauthProvider");
+
+            // when
+            MemberInternalInfoResponse response = memberService.findOauthInfo(request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.memberId()).isEqualTo(1L),
+                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
+                    () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
+        }
+
+        @Test
+        void 존재하지_않는_회원이면_null을_반환한다() {
+            // given
+            MemberOauthInfoRequest request =
+                    MemberOauthInfoRequest.of("nonOauthId", "nonOauthProvider");
+
+            // when
+            MemberInternalInfoResponse response = memberService.findOauthInfo(request);
+
+            // then
+            assertThat(response).isNull();
         }
     }
 
