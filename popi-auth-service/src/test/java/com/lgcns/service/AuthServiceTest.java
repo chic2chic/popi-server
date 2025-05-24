@@ -11,14 +11,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.OauthProvider;
+import com.lgcns.dto.AccessTokenDto;
+import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
+import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.AuthErrorCode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -201,5 +205,57 @@ public class AuthServiceTest extends WireMockIntegrationTest {
                                 "iss", "https://test-issuer.example.com"));
 
         return new DefaultOidcUser(List.of(), idToken);
+    }
+
+    @Nested
+    class 토큰_재발급할_때 {
+
+        @Test
+        void 유효한_리프레시_토큰이면_새로운_토큰을_반환한다() throws JsonProcessingException {
+            // given
+            RefreshTokenDto oldRefreshTokenDto =
+                    RefreshTokenDto.of(1L, "fake-old-register-token", 604800L);
+            RefreshTokenDto newRefreshTokenDto =
+                    RefreshTokenDto.of(1L, "fake-new-refresh-token", 604800L);
+            AccessTokenDto newAccessTokenDto =
+                    AccessTokenDto.of(1L, MemberRole.USER, "fake-new-access-token");
+
+            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(oldRefreshTokenDto);
+            when(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
+                    .thenReturn(newRefreshTokenDto);
+            when(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
+                    .thenReturn(newAccessTokenDto);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", 1, "role", "USER", "status", "NORMAL"));
+
+            stubFor(
+                    get(urlPathMatching("/internal/\\d+"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            // when
+            TokenReissueResponse response = authService.reissueToken("testRefreshTokenValue");
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-new-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-new-refresh-token"));
+        }
+
+        @Test
+        void 만료된_리프레시_토큰이면_예외가_발생한다() {
+            // given
+            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(null);
+
+            // when & then
+            assertThatThrownBy(() -> authService.reissueToken("testRefreshTokenValue"))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(AuthErrorCode.EXPIRED_REFRESH_TOKEN.getMessage());
+        }
     }
 }
