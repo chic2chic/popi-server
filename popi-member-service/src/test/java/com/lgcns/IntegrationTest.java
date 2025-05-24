@@ -17,12 +17,15 @@ import org.springframework.test.context.TestPropertySource;
             "auth.service.name=auth",
             "auth.service.url=http://localhost:${wiremock.server.port}"
         })
-public abstract class WireMockIntegrationTest {
+public abstract class IntegrationTest {
+
+    @Autowired protected DatabaseCleaner databaseCleaner;
 
     @Autowired private WireMockServer wireMockServer;
 
     @BeforeEach
     void setUp() {
+        databaseCleaner.execute();
         wireMockServer.stop();
         wireMockServer.start();
     }
