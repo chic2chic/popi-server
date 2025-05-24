@@ -10,9 +10,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
-@ActiveProfiles("test")
 @AutoConfigureWireMock(port = 0)
-@TestPropertySource(properties = {"manager-service-url=http://localhost:${wiremock.server.port}"})
+@ActiveProfiles("test")
+@TestPropertySource(properties = {"name={manager.service.name", "url=${manager.service.url}"})
 public abstract class WireMockIntegrationTest {
 
     @Autowired protected WireMockServer wireMockServer;
