@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(
-        name = "popi-manager-service",
-        url = "${manager-service-url:}",
+        name = "${manager.service.name}",
+        url = "${manager.service.url}",
         configuration = FeignConfig.class)
 public interface ManagerServiceClient {
 
