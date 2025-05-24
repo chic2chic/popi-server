@@ -1,4 +1,7 @@
 spring:
+  config:
+    activate:
+      on-profile: "test"
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -25,7 +28,3 @@ jwt:
   register-token-secret: ${JWT_REGISTER_TOKEN_SECRET}
   register-token-expiration-time: ${JWT_REGISTER_TOKEN_EXPIRATION_TIME:300}
   issuer: ${JWT_ISSUER}
-
-member:
-  service:
-    name: members

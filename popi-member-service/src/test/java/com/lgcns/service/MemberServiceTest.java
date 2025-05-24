@@ -2,6 +2,7 @@ package com.lgcns.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.response.MemberInfoResponse;
@@ -13,10 +14,8 @@ import com.lgcns.repository.MemberRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class MemberServiceTest {
+class MemberServiceTest extends WireMockIntegrationTest {
 
     @Autowired private MemberService memberService;
     @Autowired private MemberRepository memberRepository;
