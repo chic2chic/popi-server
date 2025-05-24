@@ -26,8 +26,6 @@ public class PopupServiceTest extends WireMockIntegrationTest {
 
     @BeforeEach
     void setUp() throws JsonProcessingException {
-        wireMockServer.resetAll();
-
         String responseBody1 =
                 objectMapper.writeValueAsString(
                         Map.of(
@@ -133,10 +131,10 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                 "isLast",
                                 true));
 
-        stubFindAllPopups(0L, 2, 200, responseBody3);
-        stubFindAllPopups(4L, 2, 200, responseBody4);
         stubFindAllPopups(0L, 8, 200, responseBody1);
         stubFindAllPopups(null, 8, 200, responseBody2);
+        stubFindAllPopups(0L, 2, 200, responseBody3);
+        stubFindAllPopups(4L, 2, 200, responseBody4);
     }
 
     @Nested
