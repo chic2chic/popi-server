@@ -10,18 +10,25 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
+import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.RegisterTokenDto;
+import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class AuthServiceTest extends WireMockIntegrationTest {
@@ -29,6 +36,7 @@ public class AuthServiceTest extends WireMockIntegrationTest {
     @Autowired AuthService authService;
 
     @MockitoBean JwtTokenService jwtTokenService;
+    @MockitoBean IdTokenVerifier idTokenVerifier;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -112,5 +120,86 @@ public class AuthServiceTest extends WireMockIntegrationTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessage("이미 가입된 사용자입니다. 로그인 후 이용해주세요.");
         }
+    }
+
+    @Nested
+    class 소셜_로그인할_때 {
+
+        @Test
+        void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() throws JsonProcessingException {
+            // given
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createRegisterToken(anyString(), anyString()))
+                    .thenReturn("fake-register-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            String expectedResponse = objectMapper.writeValueAsString(null);
+
+            stubFor(
+                    post(urlEqualTo("/internal/oauth-info"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            // when
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isNull(),
+                    () -> assertThat(response.refreshToken()).isNull(),
+                    () -> assertThat(response.registerToken()).isEqualTo("fake-register-token"),
+                    () -> assertThat(response.isRegistered()).isFalse());
+        }
+
+        @Test
+        void 이미_회원가입된_회원은_로그인에_성공한다() throws JsonProcessingException {
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", 1, "role", "USER", "status", "NORMAL"));
+
+            stubFor(
+                    post(urlEqualTo("/internal/oauth-info"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            // when
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
+        }
+    }
+
+    private OidcUser mockOidcUser() {
+        OidcIdToken idToken =
+                new OidcIdToken(
+                        "fake-id-token",
+                        Instant.now(),
+                        Instant.now().plusSeconds(3600),
+                        Map.of(
+                                "sub", "test-subject",
+                                "iss", "https://test-issuer.example.com"));
+
+        return new DefaultOidcUser(List.of(), idToken);
     }
 }
