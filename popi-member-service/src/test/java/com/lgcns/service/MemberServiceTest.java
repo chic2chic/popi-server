@@ -1,5 +1,6 @@
 package com.lgcns.service;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
@@ -36,6 +37,10 @@ class MemberServiceTest extends IntegrationTest {
                         MemberGender.MALE,
                         MemberAge.TWENTIES);
         memberRepository.save(member);
+
+        stubFor(
+                delete(urlEqualTo("/internal/1/refresh-token"))
+                        .willReturn(aResponse().withStatus(200)));
     }
 
     @Nested
@@ -62,6 +67,31 @@ class MemberServiceTest extends IntegrationTest {
             assertThatThrownBy(() -> memberService.findMemberInfo("999"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
+        }
+    }
+
+    @Nested
+    class 회원_탈퇴할_때 {
+
+        @Test
+        void 회원이_탈퇴하면_상태는_DELETED가_된다() {
+            // when
+            memberService.withdrawalMember(member.getId().toString());
+            Member currentMember = memberRepository.findById(1L).get();
+
+            // then
+            assertThat(currentMember.getStatus()).isEqualTo(MemberStatus.DELETED);
+        }
+
+        @Test
+        void 이미_탈퇴한_회원이_다시_탈퇴하면_예외가_발생한다() {
+            // given
+            memberService.withdrawalMember(member.getId().toString());
+
+            // when & then
+            assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_ALREADY_DELETED.getMessage());
         }
     }
 }
