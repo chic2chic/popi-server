@@ -17,7 +17,8 @@ public abstract class WireMockIntegrationTest {
 
     @BeforeEach
     void restartWireMock() {
-        wireMockServer.resetAll();
+        wireMockServer.stop();
+        wireMockServer.start();
     }
 
     @AfterEach
