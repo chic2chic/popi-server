@@ -48,4 +48,7 @@ spring-doc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-manager-service-url: localhost:8080
+manager:
+  service:
+    name: managers
+    url: http://localhost:8080
