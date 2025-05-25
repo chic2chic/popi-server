@@ -23,10 +23,10 @@ public class PopupServiceTest extends WireMockIntegrationTest {
     @Autowired private ObjectMapper objectMapper;
 
     @Nested
-    class 팝업_목록_조회 {
+    class 팝업_목록을_조회할_때 {
 
         @Test
-        void 팝업_목록_조회에_성공한다() throws JsonProcessingException {
+        void 데이터가_존재하는_경우_리스트를_반환한다() throws JsonProcessingException {
             // given
             Long lastPopupId = 0L;
             int size = 8;
@@ -110,7 +110,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 페이징_처리가_정상적으로_동작한다() throws JsonProcessingException {
+        void 정상적으로_페이징_처리에_성공한다() throws JsonProcessingException {
             // given - 첫 번째 페이지 설정
             Long firstLastPopupId = 0L;
             int size = 2;
