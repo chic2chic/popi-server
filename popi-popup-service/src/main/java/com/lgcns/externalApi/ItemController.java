@@ -1,4 +1,4 @@
-package com.lgcns.controller;
+package com.lgcns.externalApi;
 
 import com.lgcns.dto.item.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;

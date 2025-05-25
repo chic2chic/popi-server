@@ -1,4 +1,4 @@
-package com.lgcns.controller;
+package com.lgcns.externalApi;
 
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.service.MemberReservationService;
