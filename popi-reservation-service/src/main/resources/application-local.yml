@@ -27,6 +27,10 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
       database: 1
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 eureka:
   instance:
