@@ -50,6 +50,11 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                 reservableDateList);
     }
 
+    @Override
+    public List<SurveyChoiceResponse> findSurveyChoicesByPopupId(String memberId, Long popupId) {
+        return managerServiceClient.findSurveyChoicesByPopupId(popupId);
+    }
+
     private void validateYearMonthFormat(String date) {
         try {
             YearMonth.parse(date);

@@ -4,6 +4,8 @@ import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.service.MemberReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.lgcns.dto.response.SurveyChoiceResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,5 +23,12 @@ public class MemberReservationController {
             @PathVariable Long popupId,
             @RequestParam String date) {
         return memberReservationService.findAvailableDate(memberId, popupId, date);
+    }
+
+    @GetMapping("/popups/{popupId}/survey")
+    @Operation(summary = "설문지 조회", description = "해당 팝업에 대한 설문지 선지들을 조회합니다.")
+    public List<SurveyChoiceResponse> choiceListByPopupIdFind(
+            @RequestHeader("member-id") String memberId, @PathVariable Long popupId) {
+        return memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
     }
 }
