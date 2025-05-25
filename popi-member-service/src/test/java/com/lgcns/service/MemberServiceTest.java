@@ -73,10 +73,10 @@ class MemberServiceTest extends IntegrationTest {
 
             // when
             memberService.withdrawalMember(member.getId().toString());
-            Member currentMember = memberRepository.findById(1L).get();
 
             // then
-            assertThat(currentMember.getStatus()).isEqualTo(MemberStatus.DELETED);
+            member = memberRepository.findById(1L).get();
+            assertThat(member.getStatus()).isEqualTo(MemberStatus.DELETED);
         }
 
         @Test
@@ -136,6 +136,32 @@ class MemberServiceTest extends IntegrationTest {
             assertThatThrownBy(() -> memberService.registerMember(request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.ALREADY_REGISTERED.getMessage());
+        }
+    }
+
+    @Nested
+    class 인증_서비스의_회원_재가입_요청을_처리할_때 {
+
+        @Test
+        void 탈퇴한_회원이라면_상태는_NORMAL로_변경된다() {
+            // given
+            Member member = registerAuthenticatedMember();
+            member.withdrawal();
+
+            // when
+            memberService.rejoinMember(1L);
+
+            // then
+            member = memberRepository.findById(1L).get();
+            assertThat(member.getStatus()).isEqualTo(MemberStatus.NORMAL);
+        }
+
+        @Test
+        void 존재하지_않는_회원이면_예외가_발생한다() {
+            // when & then
+            assertThatThrownBy(() -> memberService.rejoinMember(999L))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
         }
     }
 
