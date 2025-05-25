@@ -210,6 +210,40 @@ public class AuthServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(response.registerToken()).isNull(),
                     () -> assertThat(response.isRegistered()).isTrue());
         }
+
+        @Test
+        void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() throws JsonProcessingException {
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", 1, "role", "USER", "status", "DELETED"));
+
+            stubFor(
+                    post(urlEqualTo("/internal/oauth-info"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            stubFor(post(urlEqualTo("/internal/1/rejoin")).willReturn(aResponse().withStatus(200)));
+
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
+        }
     }
 
     private OidcUser mockOidcUser() {
