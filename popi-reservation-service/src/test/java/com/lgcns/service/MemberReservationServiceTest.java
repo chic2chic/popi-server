@@ -11,6 +11,7 @@ import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.ReservableDate;
 import com.lgcns.dto.response.ReservableTime;
+import com.lgcns.dto.response.SurveyChoiceResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
@@ -297,11 +298,95 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 설문지_조회할_때 {
+
+        @Test
+        void 팝업이_존재하면_조회에_성공한다() throws JsonProcessingException {
+            // given
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "surveyId",
+                                            1,
+                                            "options",
+                                            List.of(
+                                                    Map.of("choiceId", 1, "content", "보기1"),
+                                                    Map.of("choiceId", 2, "content", "보기2"),
+                                                    Map.of("choiceId", 3, "content", "보기3"),
+                                                    Map.of("choiceId", 4, "content", "보기4"),
+                                                    Map.of("choiceId", 5, "content", "보기5"))),
+                                    Map.of(
+                                            "surveyId",
+                                            2,
+                                            "options",
+                                            List.of(
+                                                    Map.of("choiceId", 6, "content", "보기1"),
+                                                    Map.of("choiceId", 7, "content", "보기2"),
+                                                    Map.of("choiceId", 8, "content", "보기3"),
+                                                    Map.of("choiceId", 9, "content", "보기4"),
+                                                    Map.of("choiceId", 10, "content", "보기5"))),
+                                    Map.of(
+                                            "surveyId",
+                                            3,
+                                            "options",
+                                            List.of(
+                                                    Map.of("choiceId", 11, "content", "보기1"),
+                                                    Map.of("choiceId", 12, "content", "보기2"),
+                                                    Map.of("choiceId", 13, "content", "보기3"),
+                                                    Map.of("choiceId", 14, "content", "보기4"),
+                                                    Map.of("choiceId", 15, "content", "보기5"))),
+                                    Map.of(
+                                            "surveyId",
+                                            4,
+                                            "options",
+                                            List.of(
+                                                    Map.of("choiceId", 16, "content", "보기1"),
+                                                    Map.of("choiceId", 17, "content", "보기2"),
+                                                    Map.of("choiceId", 18, "content", "보기3"),
+                                                    Map.of("choiceId", 19, "content", "보기4"),
+                                                    Map.of("choiceId", 20, "content", "보기5")))));
+
+            stubFindSurveyChoicesByPopupId(popupId, 200, expectedResponse);
+
+            // when
+            List<SurveyChoiceResponse> choices =
+                    memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
+
+            // then
+            assertThat(choices).isNotEmpty();
+            assertThat(choices.size()).isEqualTo(4);
+
+            for (SurveyChoiceResponse choice : choices) {
+                assertThat(choice.surveyId()).isNotNull();
+                assertThat(choice.options()).isNotEmpty();
+                assertThat(choice.options().size()).isEqualTo(5);
+            }
+        }
+    }
+
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
         try {
             wireMockServer.stubFor(
                     get(urlPathEqualTo("/internal/reservations/popups/" + popupId))
                             .withQueryParam("date", equalTo(date))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(status)
+                                            .withHeader(
+                                                    "Content-Type",
+                                                    MediaType.APPLICATION_JSON_VALUE)
+                                            .withBody(body)));
+        } catch (Exception e) {
+            throw new RuntimeException("직렬화 실패", e);
+        }
+    }
+
+    private void stubFindSurveyChoicesByPopupId(Long popupId, int status, String body) {
+        try {
+            wireMockServer.stubFor(
+                    get(urlPathEqualTo("/internal/reservations/popups/" + popupId + "/survey"))
                             .willReturn(
                                     aResponse()
                                             .withStatus(status)
