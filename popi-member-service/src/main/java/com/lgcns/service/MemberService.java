@@ -16,4 +16,6 @@ public interface MemberService {
     MemberInternalInfoResponse findOauthInfo(MemberOauthInfoRequest request);
 
     MemberInternalInfoResponse findMemberId(Long memberId);
+
+    void rejoinMember(Long memberId);
 }

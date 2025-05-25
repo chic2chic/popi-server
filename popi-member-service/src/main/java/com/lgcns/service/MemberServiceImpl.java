@@ -26,10 +26,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional(readOnly = true)
     public MemberInfoResponse findMemberInfo(String memberId) {
-        Member member =
-                memberRepository
-                        .findById(Long.parseLong(memberId))
-                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+        final Member member = findByMemberId(Long.parseLong(memberId));
 
         return MemberInfoResponse.from(member);
     }
@@ -38,10 +35,7 @@ public class MemberServiceImpl implements MemberService {
     public void withdrawalMember(String memberId) {
         authServiceClient.deleteRefreshToken(memberId);
 
-        Member member =
-                memberRepository
-                        .findById(Long.parseLong(memberId))
-                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+        final Member member = findByMemberId(Long.parseLong(memberId));
 
         member.withdrawal();
     }
@@ -82,11 +76,21 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional(readOnly = true)
     public MemberInternalInfoResponse findMemberId(Long memberId) {
-        Member member =
-                memberRepository
-                        .findById(memberId)
-                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+        final Member member = findByMemberId(memberId);
 
         return new MemberInternalInfoResponse(member.getId(), member.getRole(), member.getStatus());
+    }
+
+    @Override
+    public void rejoinMember(Long memberId) {
+        final Member member = findByMemberId(memberId);
+
+        member.reEnroll();
+    }
+
+    private Member findByMemberId(Long memberId) {
+        return memberRepository
+                .findById(memberId)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
     }
 }

@@ -14,6 +14,7 @@ import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
@@ -42,9 +43,9 @@ public class AuthServiceImpl implements AuthService {
                                 oidcUser.getSubject(), oidcUser.getIssuer().toString()));
 
         if (response != null) {
-            //            if (response.status() == MemberStatus.DELETED) {
-            //
-            //            }
+            if (response.status() == MemberStatus.DELETED) {
+                memberServiceClient.rejoinMember(response.memberId());
+            }
 
             return getLoginResponse(response.memberId(), response.role());
         }

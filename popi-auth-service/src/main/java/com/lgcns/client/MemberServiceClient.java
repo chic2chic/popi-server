@@ -6,10 +6,7 @@ import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(
         name = "${member.service.name}",
@@ -25,4 +22,7 @@ public interface MemberServiceClient {
 
     @GetMapping("/internal/{memberId}")
     MemberInternalInfoResponse findByMemberId(@PathVariable Long memberId);
+
+    @PostMapping("/internal/{memberId}/rejoin")
+    void rejoinMember(@PathVariable Long memberId);
 }

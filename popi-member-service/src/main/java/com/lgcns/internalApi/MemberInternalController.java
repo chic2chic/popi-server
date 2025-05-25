@@ -31,4 +31,9 @@ public class MemberInternalController {
     public MemberInternalInfoResponse findMemberId(@PathVariable Long memberId) {
         return memberService.findMemberId(memberId);
     }
+
+    @PostMapping("/{memberId}/rejoin")
+    public void rejoinMember(@PathVariable Long memberId) {
+        memberService.rejoinMember(memberId);
+    }
 }
