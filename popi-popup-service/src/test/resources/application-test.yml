@@ -5,5 +5,5 @@ spring:
 
 manager:
   service:
-    name: popi-manager-service
+    name: managers
     url: http://localhost:${wiremock.server.port}

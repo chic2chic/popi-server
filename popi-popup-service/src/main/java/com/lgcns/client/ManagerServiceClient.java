@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(
         name = "${manager.service.name}",
-        url = "${manager.service.url}",
+        url = "${manager.service.url:}",
         configuration = FeignConfig.class)
 public interface ManagerServiceClient {
 
