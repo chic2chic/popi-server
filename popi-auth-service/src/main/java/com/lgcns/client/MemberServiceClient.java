@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.*;
 public interface MemberServiceClient {
 
     @PostMapping("/internal/register")
-    MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request);
+    MemberInternalRegisterResponse registerMember(
+            @RequestBody MemberInternalRegisterRequest request);
 
     @PostMapping("/internal/oauth-info")
     MemberInternalInfoResponse findByOauthInfo(@RequestBody MemberOauthInfoRequest request);
