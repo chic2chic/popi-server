@@ -15,12 +15,16 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     properties:
       hibernate:
-        format_sql: true
+        show_sql: true
         default_batch_fetch_size: 100
     open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 eureka:
   instance:
