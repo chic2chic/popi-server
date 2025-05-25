@@ -121,6 +121,23 @@ spring:
             - RewritePath=/notifications/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
+        - id: payment-docs
+          uri: lb://PAYMENTS
+          predicates:
+            - Path=/payments/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/payments/(?<segment>.*), /$\{segment}
+        - id: payment-service
+          uri: lb://PAYMENTS
+          predicates:
+            - Path=/payments/**
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/payments/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+
       globalcors:
         cors-configurations:
           "[/**]":
@@ -158,6 +175,9 @@ springdoc:
     urls[4]:
       name: 알림 서비스
       url: /notifications/v3/api-docs
+    urls[5]:
+      name: 결제 서비스
+      url: /payments/v3/api-docs
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}

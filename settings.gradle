@@ -10,4 +10,5 @@ include(
         "popi-reservation-service",
         "popi-popup-service",
         "popi-notification-service",
+        "popi-payment-service"
 )
