@@ -7,12 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @AutoConfigureWireMock(port = 0)
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"name={manager.service.name", "url=${manager.service.url}"})
 public abstract class WireMockIntegrationTest {
 
     @Autowired protected WireMockServer wireMockServer;
