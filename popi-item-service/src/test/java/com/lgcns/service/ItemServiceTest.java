@@ -32,7 +32,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
             // given
             int size = 4;
 
-            String responseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -76,7 +76,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     false));
 
-            stubFindItemsByName(popupId, null, null, 4, 200, responseBody);
+            stubFindItemsByName(popupId, null, null, 4, 200, expectedResponse);
 
             // when
             SliceResponse<ItemInfoResponse> result =
@@ -102,7 +102,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
             Long lastItemId = 5L;
             int size = 4;
 
-            String responseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -146,7 +146,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindItemsByName(popupId, null, 5L, 4, 200, responseBody);
+            stubFindItemsByName(popupId, null, 5L, 4, 200, expectedResponse);
 
             // when
             SliceResponse<ItemInfoResponse> result =
@@ -172,7 +172,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
             String searchName = "DAZED";
             int size = 4;
 
-            String responseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -216,7 +216,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindItemsByName(popupId, searchName, null, 4, 200, responseBody);
+            stubFindItemsByName(popupId, searchName, null, 4, 200, expectedResponse);
 
             // when
             SliceResponse<ItemInfoResponse> result =
@@ -242,10 +242,10 @@ public class ItemServiceTest extends WireMockIntegrationTest {
             String searchName = "EMPTY";
             int size = 4;
 
-            String emptyResponseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
 
-            stubFindItemsByName(popupId, searchName, null, 4, 200, emptyResponseBody);
+            stubFindItemsByName(popupId, searchName, null, 4, 200, expectedResponse);
 
             // when
             SliceResponse<ItemInfoResponse> result =
