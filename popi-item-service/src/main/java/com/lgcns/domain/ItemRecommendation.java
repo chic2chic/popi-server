@@ -18,7 +18,7 @@ public class ItemRecommendation {
 
     private Long memberId;
 
-    private Long popupId;
+    private Long reservationId;
 
     private Long itemId;
 
@@ -31,13 +31,13 @@ public class ItemRecommendation {
     @Builder(access = AccessLevel.PRIVATE)
     private ItemRecommendation(
             Long memberId,
-            Long popupId,
+            Long reservationId,
             Long itemId,
             String itemName,
             int itemPrice,
             String itemImageUrl) {
         this.memberId = memberId;
-        this.popupId = popupId;
+        this.reservationId = reservationId;
         this.itemId = itemId;
         this.itemName = itemName;
         this.itemPrice = itemPrice;
@@ -46,14 +46,14 @@ public class ItemRecommendation {
 
     public static ItemRecommendation createItemRecommendation(
             Long memberId,
-            Long popupId,
+            Long reservationId,
             Long itemId,
             String itemName,
             int itemPrice,
             String itemImageUrl) {
         return ItemRecommendation.builder()
                 .memberId(memberId)
-                .popupId(popupId)
+                .reservationId(reservationId)
                 .itemId(itemId)
                 .itemName(itemName)
                 .itemPrice(itemPrice)
