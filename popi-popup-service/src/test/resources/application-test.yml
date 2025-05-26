@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: "test"
+
+manager:
+  service:
+    name: popi-manager-service
+    url: http://localhost:${wiremock.server.port}
