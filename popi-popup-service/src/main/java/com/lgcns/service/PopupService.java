@@ -5,8 +5,7 @@ import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
 
 public interface PopupService {
-    SliceResponse<PopupInfoResponse> findPopupsByName(
-            String searchName, Long lastPopupId, int size);
+    SliceResponse<PopupInfoResponse> findPopupsByName(String keyword, Long lastPopupId, int size);
 
     PopupDetailsResponse findPopupDetailsById(Long popupId);
 }
