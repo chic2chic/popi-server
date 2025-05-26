@@ -1,15 +1,15 @@
 package com.lgcns.service;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.lgcns.WireMockIntegrationTest;
-import com.lgcns.dto.item.response.ItemInfoResponse;
+import com.lgcns.dto.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
-import com.lgcns.service.item.ItemService;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;

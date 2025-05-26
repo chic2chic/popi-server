@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: "test"
+
+manager:
+  service:
+    name: managers
+    url: http://localhost:${wiremock.server.port}
