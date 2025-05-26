@@ -21,12 +21,15 @@ public class PopupController {
     @GetMapping("/popups")
     @Operation(summary = "팝업 목록 조회", description = "현재 운영중인 모든 팝업을 무한 스크롤을 위하여 페이징 처리한 뒤 반환합니다.")
     public SliceResponse<PopupInfoResponse> popupFindAll(
-            @Parameter(description = "이전 페이지의 마지막 ID (첫 요청 시 비워두세요.)", example = "2")
+            @Parameter(description = "검색할 팝업 이름 (비워두면 모든 팝업을 반환합니다.)", example = "black")
+                    @RequestParam(name = "keyWord", required = false)
+                    String keyWord,
+            @Parameter(description = "이전 페이지의 마지막 ID (첫 요청 시 비워두세요.)", example = "1")
                     @RequestParam(required = false)
                     Long lastPopupId,
             @Parameter(description = "페이지 크기 (기본 8)", example = "8")
                     @RequestParam(defaultValue = "8")
                     int size) {
-        return popupService.findAllPopups(lastPopupId, size);
+        return popupService.findPopupsByName(keyWord, lastPopupId, size);
     }
 }

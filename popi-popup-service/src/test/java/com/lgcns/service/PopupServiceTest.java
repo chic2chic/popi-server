@@ -81,7 +81,8 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             stubFindAllPopups(lastPopupId, size, 200, responseBody);
 
             // when
-            SliceResponse<PopupInfoResponse> result = popupService.findAllPopups(lastPopupId, size);
+            SliceResponse<PopupInfoResponse> result =
+                    popupService.findPopupsByName(null, lastPopupId, size);
 
             // then
             assertThat(result).isNotNull();
@@ -101,7 +102,8 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             stubFindAllPopupsWithoutLastId(size, 200, responseBody);
 
             // when
-            SliceResponse<PopupInfoResponse> result = popupService.findAllPopups(lastPopupId, size);
+            SliceResponse<PopupInfoResponse> result =
+                    popupService.findPopupsByName(null, lastPopupId, size);
 
             // then
             assertThat(result).isNotNull();
@@ -153,7 +155,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
 
             // when - 첫 번째 페이지 조회
             SliceResponse<PopupInfoResponse> firstResult =
-                    popupService.findAllPopups(firstLastPopupId, size);
+                    popupService.findPopupsByName(null, firstLastPopupId, size);
 
             // then - 첫 번째 페이지 검증
             Assertions.assertAll(
@@ -198,7 +200,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
 
             // when - 두 번째 페이지 조회
             SliceResponse<PopupInfoResponse> secondResult =
-                    popupService.findAllPopups(secondLastPopupId, size);
+                    popupService.findPopupsByName(null, secondLastPopupId, size);
 
             // then - 두 번째 페이지 검증
             Assertions.assertAll(
