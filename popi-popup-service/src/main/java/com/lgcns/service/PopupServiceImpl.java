@@ -1,6 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.client.ManagerServiceClient;
+import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,5 +16,10 @@ public class PopupServiceImpl implements PopupService {
     public SliceResponse<PopupInfoResponse> findPopupsByName(
             String searchName, Long lastPopupId, int size) {
         return managerServiceClient.findPopupsByName(searchName, lastPopupId, size);
+    }
+
+    @Override
+    public PopupDetailsResponse findPopupDetailsById(Long popupId) {
+        return managerServiceClient.findPopupDetailsById(popupId);
     }
 }
