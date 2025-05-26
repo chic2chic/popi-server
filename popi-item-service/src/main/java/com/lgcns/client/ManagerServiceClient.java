@@ -17,7 +17,7 @@ public interface ManagerServiceClient {
     @GetMapping("/internal/popups/{popupId}/items")
     SliceResponse<ItemInfoResponse> findItemsByName(
             @PathVariable(name = "popupId") Long popupId,
-            @RequestParam(name = "searchName", required = false) String searchName,
+            @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
             @RequestParam(name = "size", defaultValue = "8") int size);
 }

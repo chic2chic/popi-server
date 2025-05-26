@@ -14,7 +14,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public SliceResponse<ItemInfoResponse> findItemsByName(
-            Long popupId, String searchName, Long lastItemId, int size) {
-        return managerServiceClient.findItemsByName(popupId, searchName, lastItemId, size);
+            Long popupId, String keyword, Long lastItemId, int size) {
+        return managerServiceClient.findItemsByName(popupId, keyword, lastItemId, size);
     }
 }

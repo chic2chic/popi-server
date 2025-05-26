@@ -169,7 +169,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
         @Test
         void 검색어에_대해_결과가_존재하면_상품_검색에_성공한다() throws JsonProcessingException {
             // given
-            String searchName = "DAZED";
+            String keyword = "DAZED";
             int size = 4;
 
             String expectedResponse =
@@ -216,11 +216,11 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindItemsByName(popupId, searchName, null, 4, 200, expectedResponse);
+            stubFindItemsByName(popupId, keyword, null, 4, 200, expectedResponse);
 
             // when
             SliceResponse<ItemInfoResponse> result =
-                    itemService.findItemsByName(popupId, searchName, null, size);
+                    itemService.findItemsByName(popupId, keyword, null, size);
 
             // then
             Assertions.assertAll(
@@ -239,17 +239,17 @@ public class ItemServiceTest extends WireMockIntegrationTest {
         @Test
         void 검색어에_대해_결과가_없으면_빈_리스트를_반환한다() throws JsonProcessingException {
             // given
-            String searchName = "EMPTY";
+            String keyword = "EMPTY";
             int size = 4;
 
             String expectedResponse =
                     objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
 
-            stubFindItemsByName(popupId, searchName, null, 4, 200, expectedResponse);
+            stubFindItemsByName(popupId, keyword, null, 4, 200, expectedResponse);
 
             // when
             SliceResponse<ItemInfoResponse> result =
-                    itemService.findItemsByName(popupId, searchName, null, size);
+                    itemService.findItemsByName(popupId, keyword, null, size);
 
             // then
             Assertions.assertAll(
@@ -260,12 +260,12 @@ public class ItemServiceTest extends WireMockIntegrationTest {
     }
 
     private void stubFindItemsByName(
-            Long popupId, String searchName, Long lastItemId, int size, int status, String body) {
+            Long popupId, String keyword, Long lastItemId, int size, int status, String body) {
         MappingBuilder mappingBuilder =
                 get(urlPathEqualTo("/internal/popups/" + popupId + "/items"))
                         .withQueryParam("size", equalTo(String.valueOf(size)));
 
-        mappingBuilder = applySearchNameIfPresent(mappingBuilder, searchName);
+        mappingBuilder = applySearchNameIfPresent(mappingBuilder, keyword);
         mappingBuilder = applyLastItemIdIfPresent(mappingBuilder, lastItemId);
 
         wireMockServer.stubFor(
@@ -276,10 +276,8 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                 .withBody(body)));
     }
 
-    private MappingBuilder applySearchNameIfPresent(MappingBuilder builder, String searchName) {
-        return (searchName != null)
-                ? builder.withQueryParam("searchName", equalTo(searchName))
-                : builder;
+    private MappingBuilder applySearchNameIfPresent(MappingBuilder builder, String keyword) {
+        return (keyword != null) ? builder.withQueryParam("keyword", equalTo(keyword)) : builder;
     }
 
     private MappingBuilder applyLastItemIdIfPresent(MappingBuilder builder, Long lastItemId) {
