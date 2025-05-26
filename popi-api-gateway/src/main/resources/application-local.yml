@@ -138,6 +138,13 @@ spring:
             - RewritePath=/payments/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
+        - id: item-docs
+          uri: lb://ITEMS
+          predicates:
+            - Path=/items/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/items/(?<segment>.*), /$\{segment}
         - id: item-service
           uri: lb://ITEMS
           predicates:
@@ -146,6 +153,15 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/items/(?<segment>.*), /$\{segment}
+        - id: item-recommend-items
+          uri: lb://ITEMS
+          predicates:
+            - Path=/items/*/recommendation
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/items/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
 
       globalcors:
         cors-configurations:
