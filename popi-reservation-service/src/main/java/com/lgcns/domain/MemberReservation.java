@@ -25,7 +25,7 @@ public class MemberReservation extends BaseTimeEntity {
 
     private Long popupId;
 
-    private String imageByte;
+    private String qrImage;
 
     private LocalDate reservationDate;
 
@@ -36,13 +36,13 @@ public class MemberReservation extends BaseTimeEntity {
             Long reservationId,
             Long memberId,
             Long popupId,
-            String imageByte,
+            String qrImage,
             LocalDate reservationDate,
             LocalTime reservationTime) {
         this.reservationId = reservationId;
         this.memberId = memberId;
         this.popupId = popupId;
-        this.imageByte = imageByte;
+        this.qrImage = qrImage;
         this.reservationDate = reservationDate;
         this.reservationTime = reservationTime;
     }
@@ -51,14 +51,14 @@ public class MemberReservation extends BaseTimeEntity {
             Long reservationId,
             Long memberId,
             Long popupId,
-            String imageByte,
+            String qrImage,
             LocalDate reservationDate,
             LocalTime reservationTime) {
         return MemberReservation.builder()
                 .reservationId(reservationId)
                 .memberId(memberId)
                 .popupId(popupId)
-                .imageByte(imageByte)
+                .qrImage(qrImage)
                 .reservationDate(reservationDate)
                 .reservationTime(reservationTime)
                 .build();
