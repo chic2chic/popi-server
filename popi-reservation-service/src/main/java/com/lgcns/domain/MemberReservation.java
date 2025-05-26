@@ -20,16 +20,18 @@ public class MemberReservation extends BaseTimeEntity {
     private Long id;
 
     private Long reservationId;
-
     private Long memberId;
-
     private Long popupId;
 
-    private String qrImage;
+    @Lob private String qrImage;
 
     private LocalDate reservationDate;
-
     private LocalTime reservationTime;
+
+    @Enumerated(EnumType.STRING)
+    private MemberReservationStatus status = MemberReservationStatus.PENDING;
+
+    private Boolean isEntered = false;
 
     @Builder
     private MemberReservation(
@@ -62,5 +64,22 @@ public class MemberReservation extends BaseTimeEntity {
                 .reservationDate(reservationDate)
                 .reservationTime(reservationTime)
                 .build();
+    }
+
+    public void updateMemberReservation(
+            Long popupId, String qrImage, LocalDate reservationDate, LocalTime reservationTime) {
+        this.popupId = popupId;
+        this.qrImage = qrImage;
+        this.reservationDate = reservationDate;
+        this.reservationTime = reservationTime;
+        this.status = MemberReservationStatus.RESERVED;
+    }
+
+    public void updateIsEntered() {
+        this.isEntered = true;
+    }
+
+    public void updateMemberReservationStatus(MemberReservationStatus status) {
+        this.status = status;
     }
 }
