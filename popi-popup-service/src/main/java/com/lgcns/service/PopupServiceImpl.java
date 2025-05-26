@@ -1,7 +1,7 @@
-package com.lgcns.service.popup;
+package com.lgcns.service;
 
 import com.lgcns.client.ManagerServiceClient;
-import com.lgcns.dto.popup.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

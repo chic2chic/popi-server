@@ -1,8 +1,8 @@
 package com.lgcns.externalApi;
 
-import com.lgcns.dto.popup.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
-import com.lgcns.service.popup.PopupService;
+import com.lgcns.service.PopupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
