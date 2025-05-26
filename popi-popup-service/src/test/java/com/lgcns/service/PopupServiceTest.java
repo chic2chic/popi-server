@@ -81,7 +81,8 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             stubFindAllPopups(lastPopupId, size, 200, responseBody);
 
             // when
-            SliceResponse<PopupInfoResponse> result = popupService.findAllPopups(lastPopupId, size);
+            SliceResponse<PopupInfoResponse> result =
+                    popupService.findPopupsByName(null, lastPopupId, size);
 
             // then
             assertThat(result).isNotNull();
@@ -101,7 +102,8 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             stubFindAllPopupsWithoutLastId(size, 200, responseBody);
 
             // when
-            SliceResponse<PopupInfoResponse> result = popupService.findAllPopups(lastPopupId, size);
+            SliceResponse<PopupInfoResponse> result =
+                    popupService.findPopupsByName(null, lastPopupId, size);
 
             // then
             assertThat(result).isNotNull();
@@ -153,7 +155,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
 
             // when - 첫 번째 페이지 조회
             SliceResponse<PopupInfoResponse> firstResult =
-                    popupService.findAllPopups(firstLastPopupId, size);
+                    popupService.findPopupsByName(null, firstLastPopupId, size);
 
             // then - 첫 번째 페이지 검증
             Assertions.assertAll(
@@ -198,7 +200,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
 
             // when - 두 번째 페이지 조회
             SliceResponse<PopupInfoResponse> secondResult =
-                    popupService.findAllPopups(secondLastPopupId, size);
+                    popupService.findPopupsByName(null, secondLastPopupId, size);
 
             // then - 두 번째 페이지 검증
             Assertions.assertAll(
@@ -209,6 +211,92 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                             assertThat(secondResult.content().get(0).popupName())
                                     .isEqualTo("뉴진스 팝업스토어"),
                     () -> assertThat(secondResult.isLast()).isTrue());
+        }
+
+        @Test
+        void 검색어와_일치하는_데이터가_존재하면_결과_리스트를_반환한다() throws JsonProcessingException {
+            // given
+            String searchName = "BLACK";
+            Long lastPopupId = null;
+            int size = 8;
+
+            String responseBody =
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "content",
+                                    List.of(
+                                            Map.of(
+                                                    "popupId",
+                                                    3,
+                                                    "popupName",
+                                                    "BLACKPINK 팝업스토어",
+                                                    "imageUrl",
+                                                    "https://bucket/blackpink.jpg",
+                                                    "popupOpenDate",
+                                                    "2025-05-01",
+                                                    "popupCloseDate",
+                                                    "2025-06-01",
+                                                    "address",
+                                                    "서울특별시 강남구 테헤란로 12, 1층 201호")),
+                                    "isLast",
+                                    true));
+
+            stubFindPopupsByName(searchName, size, 200, responseBody);
+
+            // when
+            SliceResponse<PopupInfoResponse> result =
+                    popupService.findPopupsByName(searchName, lastPopupId, size);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result.content()).hasSize(1),
+                    () -> assertThat(result.content().get(0).popupId()).isEqualTo(3L),
+                    () ->
+                            assertThat(result.content().get(0).popupName())
+                                    .isEqualTo("BLACKPINK 팝업스토어"),
+                    () ->
+                            assertThat(result.content().get(0).imageUrl())
+                                    .isEqualTo("https://bucket/blackpink.jpg"),
+                    () ->
+                            assertThat(result.content().get(0).popupOpenDate())
+                                    .isEqualTo("2025-05-01"),
+                    () ->
+                            assertThat(result.content().get(0).popupCloseDate())
+                                    .isEqualTo("2025-06-01"),
+                    () ->
+                            assertThat(result.content().get(0).address())
+                                    .isEqualTo("서울특별시 강남구 테헤란로 12, 1층 201호"),
+                    () -> assertThat(result.isLast()).isTrue(),
+                    () ->
+                            assertThat(result.content())
+                                    .allSatisfy(
+                                            popup ->
+                                                    assertThat(popup.popupName())
+                                                            .contains(searchName)));
+        }
+
+        @Test
+        void 검색어와_일치하는_데이터가_없으면_빈_리스트를_반환한다() throws JsonProcessingException {
+            // given
+            String searchName = "NONEXISTENT";
+            Long lastPopupId = null;
+            int size = 8;
+
+            String emptyResponseBody =
+                    objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
+
+            stubFindPopupsByName(searchName, size, 200, emptyResponseBody);
+
+            // when
+            SliceResponse<PopupInfoResponse> result =
+                    popupService.findPopupsByName(searchName, lastPopupId, size);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result.content()).isEmpty(),
+                    () -> assertThat(result.isLast()).isTrue());
         }
     }
 
@@ -229,7 +317,19 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/internal/popups"))
                         .withQueryParam("size", equalTo(String.valueOf(size)))
-                        // lastPopupId 파라미터가 없는 경우
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader(
+                                                "Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                        .withBody(body)));
+    }
+
+    private void stubFindPopupsByName(String searchName, int size, int status, String body) {
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/internal/popups"))
+                        .withQueryParam("searchName", equalTo(searchName))
+                        .withQueryParam("size", equalTo(String.valueOf(size)))
                         .willReturn(
                                 aResponse()
                                         .withStatus(status)

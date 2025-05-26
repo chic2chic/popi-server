@@ -12,7 +12,8 @@ public class PopupServiceImpl implements PopupService {
     private final ManagerServiceClient managerServiceClient;
 
     @Override
-    public SliceResponse<PopupInfoResponse> findAllPopups(Long lastPopupId, int size) {
-        return managerServiceClient.findAllPopups(lastPopupId, size);
+    public SliceResponse<PopupInfoResponse> findPopupsByName(
+            String searchName, Long lastPopupId, int size) {
+        return managerServiceClient.findPopupsByName(searchName, lastPopupId, size);
     }
 }
