@@ -12,5 +12,7 @@ public interface MemberReservationService {
 
     List<ReservationDetailResponse> findReservationInfo(String memberId);
 
+    void createMemberReservation(String memberId, Long reservationId);
+
     List<Long> findHotPopupIds();
 }
