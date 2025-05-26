@@ -18,4 +18,8 @@ dependencies {
 
     // WireMock
     testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:4.2.1'
+
+    // Flyway
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
 }
