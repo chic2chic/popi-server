@@ -6,5 +6,7 @@ CREATE TABLE member_reservation
     popup_id              BIGINT NULL,
     image_byte            BLOB NULL,
     reservation_date      DATE,
-    reservation_time      TIME
+    reservation_time      TIME,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME
 );
