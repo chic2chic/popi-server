@@ -14,5 +14,9 @@ public interface MemberReservationService {
 
     void createMemberReservation(String memberId, Long reservationId);
 
+    void updateMemberReservation(Long memberReservationId);
+
+    void cancelMemberReservation(Long memberReservationId);
+
     List<Long> findHotPopupIds();
 }

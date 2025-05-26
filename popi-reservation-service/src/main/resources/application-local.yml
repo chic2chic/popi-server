@@ -15,7 +15,7 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -52,7 +52,29 @@ spring-doc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
+resilience4j:
+  retry:
+    instances:
+      redisRetry:
+        max-attempts: 5
+        wait-duration: 200ms
+        retry-exceptions:
+          - java.lang.RuntimeException
+
+  circuitbreaker:
+    instances:
+      redisCircuitBreaker:
+        failure-rate-threshold: 50
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+
 manager:
   service:
     name: managers
     url: http://localhost:8080
+member:
+  service:
+    name: members

@@ -9,9 +9,11 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.response.DailyReservation;
 import com.lgcns.client.managerClient.dto.response.MonthlyReservationResponse;
+import com.lgcns.client.managerClient.dto.response.ReservationInfoResponse;
 import com.lgcns.client.managerClient.dto.response.TimeSlot;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
@@ -141,6 +143,55 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         }
 
         eventPublisher.publishEvent(MemberReservationUpdateEvent.of(memberReservation.getId(), 0L));
+    }
+
+    @Override
+    public void updateMemberReservation(Long memberReservationId) {
+        MemberReservation memberReservation =
+                memberReservationRepository
+                        .findById(memberReservationId)
+                        .orElseThrow(
+                                (() ->
+                                        new CustomException(
+                                                MemberReservationErrorCode
+                                                        .MEMBER_RESERVATION_NOT_FOUND)));
+
+        ReservationInfoResponse reservationInfoResponse =
+                managerServiceClient.reservationFindById(memberReservation.getReservationId());
+        String imageByte =
+                createMemberReservationImageString(
+                        memberReservation.getId(),
+                        memberReservation.getReservationId(),
+                        memberReservation.getMemberId(),
+                        reservationInfoResponse.popupId(),
+                        reservationInfoResponse.reservationDate(),
+                        reservationInfoResponse.reservationTime());
+
+        memberReservation.updateMemberReservation(
+                reservationInfoResponse.popupId(),
+                imageByte,
+                reservationInfoResponse.reservationDate(),
+                reservationInfoResponse.reservationTime());
+    }
+
+    @Override
+    public void cancelMemberReservation(Long memberReservationId) {
+        MemberReservation memberReservation =
+                memberReservationRepository
+                        .findById(memberReservationId)
+                        .orElseThrow(
+                                (() ->
+                                        new CustomException(
+                                                MemberReservationErrorCode
+                                                        .MEMBER_RESERVATION_NOT_FOUND)));
+
+        memberReservation.updateMemberReservationStatus(MemberReservationStatus.CANCELED);
+
+        Long reservationId = memberReservation.getReservationId();
+        if (reservationId == null)
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_NOT_FOUND);
+
+        safeIncrement(reservationId.toString());
     }
 
     private Long validateMemberId(Long memberId) {
