@@ -138,6 +138,15 @@ spring:
             - RewritePath=/payments/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
+        - id: popup-service
+          uri: lb://POPUPS
+          predicates:
+            - Path=/popups/**
+            - Method=GET,POST,DELETE
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/popups/(?<segment>.*), /$\{segment}
+
       globalcors:
         cors-configurations:
           "[/**]":
@@ -178,6 +187,9 @@ springdoc:
     urls[5]:
       name: 결제 서비스
       url: /payments/v3/api-docs
+    urls[6]:
+      name: 상품 서비스
+      url: /items/v3/api-docs
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}
