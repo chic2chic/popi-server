@@ -2,12 +2,16 @@ package com.lgcns.service;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
+import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
+import com.lgcns.error.exception.CustomException;
 import com.lgcns.response.SliceResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +34,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             Long lastPopupId = 0L;
             int size = 8;
 
-            String responseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -77,7 +81,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindAllPopups(lastPopupId, size, 200, responseBody);
+            stubFindAllPopups(lastPopupId, size, 200, expectedResponse);
 
             // when
             SliceResponse<PopupInfoResponse> result =
@@ -95,10 +99,10 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             Long lastPopupId = null;
             int size = 8;
 
-            String responseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
 
-            stubFindAllPopupsWithoutLastId(size, 200, responseBody);
+            stubFindAllPopupsWithoutLastId(size, 200, expectedResponse);
 
             // when
             SliceResponse<PopupInfoResponse> result =
@@ -116,7 +120,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             Long firstLastPopupId = 0L;
             int size = 2;
 
-            String firstPageResponse =
+            String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -150,7 +154,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     false));
 
-            stubFindAllPopups(firstLastPopupId, size, 200, firstPageResponse);
+            stubFindAllPopups(firstLastPopupId, size, 200, expectedResponse);
 
             // when - 첫 번째 페이지 조회
             SliceResponse<PopupInfoResponse> firstResult =
@@ -174,7 +178,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             wireMockServer.resetMappings();
 
             Long secondLastPopupId = 4L;
-            String secondPageResponse =
+            expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -195,7 +199,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindAllPopups(secondLastPopupId, size, 200, secondPageResponse);
+            stubFindAllPopups(secondLastPopupId, size, 200, expectedResponse);
 
             // when - 두 번째 페이지 조회
             SliceResponse<PopupInfoResponse> secondResult =
@@ -219,7 +223,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             Long lastPopupId = null;
             int size = 8;
 
-            String responseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "content",
@@ -240,7 +244,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindPopupsByName(searchName, size, 200, responseBody);
+            stubFindPopupsByName(searchName, size, 200, expectedResponse);
 
             // when
             SliceResponse<PopupInfoResponse> result =
@@ -282,10 +286,10 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             Long lastPopupId = null;
             int size = 8;
 
-            String emptyResponseBody =
+            String expectedResponse =
                     objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
 
-            stubFindPopupsByName(searchName, size, 200, emptyResponseBody);
+            stubFindPopupsByName(searchName, size, 200, expectedResponse);
 
             // when
             SliceResponse<PopupInfoResponse> result =
@@ -296,6 +300,85 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(result).isNotNull(),
                     () -> assertThat(result.content()).isEmpty(),
                     () -> assertThat(result.isLast()).isTrue());
+        }
+    }
+
+    @Nested
+    class 상품_상세_정보를_조회할_때 {
+
+        @Test
+        void 존재하는_팝업_아이디로_조회에_성공한다() throws JsonProcessingException {
+            // given
+            Long popupId = 1L;
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("popupId", 1);
+            responseData.put("popupName", "BLACKPINK 팝업스토어");
+            responseData.put("imageUrl", "https://bucket/blackpink.jpg");
+            responseData.put("popupOpenDate", "2025-01-01");
+            responseData.put("popupCloseDate", "2025-01-31");
+            responseData.put("reservationOpenDateTime", "2025-01-01 10:00:00");
+            responseData.put("reservationCloseDateTime", "2025-01-31 20:00:00");
+            responseData.put("address", "서울특별시 강남구 테헤란로 123, 3층 A호");
+            responseData.put("runOpenTime", "10:00:00");
+            responseData.put("runCloseTime", "20:00:00");
+            responseData.put("latitude", 37.123456);
+            responseData.put("longitude", 127.123456);
+
+            String expectedResponse = objectMapper.writeValueAsString(responseData);
+
+            stubFindPopupDetailsById(popupId, 200, expectedResponse);
+
+            // when
+            PopupDetailsResponse result = popupService.findPopupDetailsById(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result.popupId()).isEqualTo(1L),
+                    () -> assertThat(result.popupName()).isEqualTo("BLACKPINK 팝업스토어"),
+                    () -> assertThat(result.imageUrl()).isEqualTo("https://bucket/blackpink.jpg"),
+                    () -> assertThat(result.popupOpenDate()).isEqualTo("2025-01-01"),
+                    () -> assertThat(result.popupCloseDate()).isEqualTo("2025-01-31"),
+                    () ->
+                            assertThat(result.reservationOpenDateTime())
+                                    .isEqualTo("2025-01-01 10:00:00"),
+                    () ->
+                            assertThat(result.reservationCloseDateTime())
+                                    .isEqualTo("2025-01-31 20:00:00"),
+                    () -> assertThat(result.address()).isEqualTo("서울특별시 강남구 테헤란로 123, 3층 A호"),
+                    () -> assertThat(result.runOpenTime()).isEqualTo("10:00:00"),
+                    () -> assertThat(result.runCloseTime()).isEqualTo("20:00:00"),
+                    () -> assertThat(result.latitude()).isEqualTo(37.123456),
+                    () -> assertThat(result.longitude()).isEqualTo(127.123456));
+        }
+
+        @Test
+        void 존재하지_않는_팝업_아이디로_조회하면_예외가_발생한다() throws JsonProcessingException {
+            // given
+            Long nonExistentPopupId = 9999L;
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "success",
+                                    false,
+                                    "status",
+                                    404,
+                                    "data",
+                                    Map.of(
+                                            "errorClassName", "POPUP_NOT_FOUND",
+                                            "message", "팝업을 찾을 수 없습니다."),
+                                    "timestamp",
+                                    "2025-05-26T15:30:00"));
+
+            stubFindPopupDetailsById(nonExistentPopupId, 404, expectedResponse);
+
+            // when & then
+            assertThatThrownBy(() -> popupService.findPopupDetailsById(nonExistentPopupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue("errorCode.errorName", "POPUP_NOT_FOUND")
+                    .hasMessageContaining("팝업을 찾을 수 없습니다.");
         }
     }
 
@@ -329,6 +412,17 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                 get(urlPathEqualTo("/internal/popups"))
                         .withQueryParam("searchName", equalTo(searchName))
                         .withQueryParam("size", equalTo(String.valueOf(size)))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader(
+                                                "Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                        .withBody(body)));
+    }
+
+    private void stubFindPopupDetailsById(Long popupId, int status, String body) {
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/internal/popups/" + popupId))
                         .willReturn(
                                 aResponse()
                                         .withStatus(status)
