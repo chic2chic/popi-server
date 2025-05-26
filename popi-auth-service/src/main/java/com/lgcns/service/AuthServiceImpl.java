@@ -1,22 +1,23 @@
 package com.lgcns.service;
 
-import com.lgcns.domain.Member;
-import com.lgcns.domain.MemberStatus;
-import com.lgcns.domain.OauthInfo;
+import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
-import com.lgcns.dto.request.RegisterTokenRequest;
+import com.lgcns.dto.request.MemberInternalRegisterRequest;
+import com.lgcns.dto.request.MemberOauthInfoRequest;
+import com.lgcns.dto.request.MemberRegisterRequest;
+import com.lgcns.dto.response.MemberInternalInfoResponse;
+import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
+import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
-import com.lgcns.exception.MemberErrorCode;
-import com.lgcns.repository.MemberRepository;
 import com.lgcns.repository.RefreshTokenRepository;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
@@ -29,22 +30,24 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenService jwtTokenService;
     private final IdTokenVerifier idTokenVerifier;
-    private final MemberRepository memberRepository;
+    private final MemberServiceClient memberServiceClient;
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
         OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
-        Optional<Member> optionalMember = findByOidcUser(oidcUser);
 
-        if (optionalMember.isPresent()) {
-            Member member = optionalMember.get();
+        MemberInternalInfoResponse response =
+                memberServiceClient.findByOauthInfo(
+                        MemberOauthInfoRequest.of(
+                                oidcUser.getSubject(), oidcUser.getIssuer().toString()));
 
-            if (member.getStatus() == MemberStatus.DELETED) {
-                member.reEnroll();
+        if (response != null) {
+            if (response.status() == MemberStatus.DELETED) {
+                memberServiceClient.rejoinMember(response.memberId());
             }
 
-            return getLoginResponse(member);
+            return getLoginResponse(response.memberId(), response.role());
         }
 
         String registerToken =
@@ -55,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public SocialLoginResponse registerMember(
-            String registerTokenValue, RegisterTokenRequest request) {
+            String registerTokenValue, MemberRegisterRequest request) {
         RegisterTokenDto registerTokenDto =
                 jwtTokenService.validateRegisterToken(registerTokenValue);
 
@@ -63,22 +66,18 @@ public class AuthServiceImpl implements AuthService {
             throw new CustomException(AuthErrorCode.EXPIRED_REGISTER_TOKEN);
         }
 
-        if (memberRepository.existsByOauthInfo(
-                OauthInfo.createOauthInfo(
-                        registerTokenDto.oauthId(), registerTokenDto.oauthProvider()))) {
-            throw new CustomException(AuthErrorCode.ALREADY_REGISTERED);
-        }
-
-        Member member =
-                Member.createMember(
-                        OauthInfo.createOauthInfo(
-                                registerTokenDto.oauthId(), registerTokenDto.oauthProvider()),
+        MemberInternalRegisterRequest registerRequest =
+                new MemberInternalRegisterRequest(
+                        registerTokenDto.oauthId(),
+                        registerTokenDto.oauthProvider(),
                         request.nickname(),
-                        request.gender(),
-                        request.age());
-        memberRepository.save(member);
+                        request.age(),
+                        request.gender());
 
-        return getLoginResponse(member);
+        MemberInternalRegisterResponse response =
+                memberServiceClient.registerMember(registerRequest);
+
+        return getLoginResponse(response.memberId(), response.role());
     }
 
     @Override
@@ -92,8 +91,11 @@ public class AuthServiceImpl implements AuthService {
 
         RefreshTokenDto newRefreshTokenDto =
                 jwtTokenService.reissueRefreshToken(oldRefreshTokenDto);
+
+        MemberInternalInfoResponse response =
+                memberServiceClient.findByMemberId(newRefreshTokenDto.memberId());
         AccessTokenDto newAccessTokenDto =
-                jwtTokenService.reissueAccessToken(getMember(newRefreshTokenDto));
+                jwtTokenService.reissueAccessToken(response.memberId(), response.role());
 
         return TokenReissueResponse.of(
                 newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());
@@ -107,37 +109,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void withdrawalMember(String memberId) {
+    public void deleteRefreshToken(String memberId) {
         refreshTokenRepository
                 .findById(Long.parseLong(memberId))
                 .ifPresent(refreshTokenRepository::delete);
-
-        Member member =
-                memberRepository
-                        .findById(Long.parseLong(memberId))
-                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
-
-        member.withdrawal();
     }
 
-    private SocialLoginResponse getLoginResponse(Member member) {
-        String accessToken = jwtTokenService.createAccessToken(member.getId(), member.getRole());
-        String refreshToken = jwtTokenService.createRefreshToken(member.getId());
+    private SocialLoginResponse getLoginResponse(Long memberId, MemberRole memberRole) {
+        String accessToken = jwtTokenService.createAccessToken(memberId, memberRole);
+        String refreshToken = jwtTokenService.createRefreshToken(memberId);
         return SocialLoginResponse.registered(accessToken, refreshToken);
-    }
-
-    private Optional<Member> findByOidcUser(OidcUser oidcUser) {
-        OauthInfo oauthInfo = extractOauthInfo(oidcUser);
-        return memberRepository.findByOauthInfo(oauthInfo);
-    }
-
-    private OauthInfo extractOauthInfo(OidcUser oidcUser) {
-        return OauthInfo.createOauthInfo(oidcUser.getSubject(), oidcUser.getIssuer().toString());
-    }
-
-    private Member getMember(RefreshTokenDto refreshTokenDto) {
-        return memberRepository
-                .findById(refreshTokenDto.memberId())
-                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
     }
 }

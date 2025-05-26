@@ -1,106 +1,348 @@
 package com.lgcns.service;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-import com.lgcns.domain.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgcns.WireMockIntegrationTest;
+import com.lgcns.domain.OauthProvider;
+import com.lgcns.domain.RefreshToken;
+import com.lgcns.dto.AccessTokenDto;
+import com.lgcns.dto.RefreshTokenDto;
+import com.lgcns.dto.RegisterTokenDto;
+import com.lgcns.dto.request.IdTokenRequest;
+import com.lgcns.dto.request.MemberRegisterRequest;
+import com.lgcns.dto.response.SocialLoginResponse;
+import com.lgcns.dto.response.TokenReissueResponse;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
+import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
-import com.lgcns.exception.MemberErrorCode;
-import com.lgcns.repository.MemberRepository;
+import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
-public class AuthServiceTest {
+public class AuthServiceTest extends WireMockIntegrationTest {
 
-    @Autowired private AuthService memberService;
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private RefreshTokenRepository refreshTokenRepository;
+    @Autowired AuthService authService;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
 
-    private Member registerAuthenticatedMember() {
-        Member member =
-                Member.createMember(
-                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                        "testNickname",
-                        MemberGender.MALE,
-                        MemberAge.TWENTIES);
-        memberRepository.save(member);
+    @MockitoBean JwtTokenService jwtTokenService;
+    @MockitoBean IdTokenVerifier idTokenVerifier;
 
-        UserDetails userDetails =
-                User.withUsername(member.getId().toString())
-                        .password("")
-                        .authorities(member.getRole().toString())
-                        .build();
-        UsernamePasswordAuthenticationToken token =
-                new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(token);
-
-        return member;
-    }
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Nested
-    class 로그아웃_시 {
-        @Test
-        void 로그아웃하면_리프레시_토큰이_삭제된다() {
-            // given
-            Member member = registerAuthenticatedMember();
+    class 회원가입할_때 {
 
-            RefreshToken refreshToken =
-                    RefreshToken.builder()
-                            .memberId(member.getId())
-                            .token("testRefreshToken")
-                            .build();
-            refreshTokenRepository.save(refreshToken);
+        @Test
+        void 아직_회원가입하지_않은_회원이라면_가입에_성공한다() throws JsonProcessingException {
+            // given
+            when(jwtTokenService.validateRegisterToken(anyString()))
+                    .thenReturn(
+                            RegisterTokenDto.of(
+                                    "testOauthId", "testOauthProvider", "fake-register-token"));
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            MemberRegisterRequest request =
+                    new MemberRegisterRequest(
+                            "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(Map.of("memberId", 1, "role", "USER"));
+
+            stubFor(
+                    post(urlEqualTo("/internal/register"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
 
             // when
-            memberService.logoutMember(member.getId().toString());
+            SocialLoginResponse response =
+                    authService.registerMember("testRegisterTokenValue", request);
 
             // then
-            assertThat(refreshTokenRepository.findById(member.getId())).isEmpty();
-        }
-    }
-
-    @Nested
-    class 회원_탈퇴_시 {
-        @Test
-        void 탈퇴하지_않은_유저면_성공한다() {
-            // given
-            Member member = registerAuthenticatedMember();
-
-            RefreshToken refreshToken =
-                    RefreshToken.builder()
-                            .memberId(member.getId())
-                            .token("testRefreshToken")
-                            .build();
-            refreshTokenRepository.save(refreshToken);
-
-            // when
-            memberService.withdrawalMember(member.getId().toString());
-            Member currentMember = memberRepository.findById(member.getId()).get();
-
-            // then
-            assertThat(refreshTokenRepository.findById(member.getId())).isEmpty();
-            assertThat(currentMember.getStatus()).isEqualTo(MemberStatus.DELETED);
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
         }
 
         @Test
-        void 탈퇴한_유저면_예외가_발생한다() {
+        void 이미_회원가입된_회원이_다시_회원가입하면_예외가_발생한다() throws JsonProcessingException {
             // given
-            Member member = registerAuthenticatedMember();
-            memberService.withdrawalMember(member.getId().toString());
+            when(jwtTokenService.validateRegisterToken(anyString()))
+                    .thenReturn(
+                            RegisterTokenDto.of(
+                                    "testOauthId", "testOauthProvider", "fake-register-token"));
+
+            MemberRegisterRequest request =
+                    new MemberRegisterRequest(
+                            "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "success",
+                                    false,
+                                    "status",
+                                    409,
+                                    "data",
+                                    Map.of(
+                                            "errorClassName", "ALREADY_REGISTERED",
+                                            "message", "이미 가입된 사용자입니다. 로그인 후 이용해주세요."),
+                                    "timestamp",
+                                    "2025-05-22T00:07:44.787516"));
+
+            stubFor(
+                    post(urlEqualTo("/internal/register"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(409)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
 
             // when & then
-            assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
+            assertThatThrownBy(() -> authService.registerMember("testRegisterTokenValue", request))
                     .isInstanceOf(CustomException.class)
-                    .hasMessage(MemberErrorCode.MEMBER_ALREADY_DELETED.getMessage());
+                    .hasMessage("이미 가입된 사용자입니다. 로그인 후 이용해주세요.");
+        }
+
+        @Test
+        void 만료된_레지스터_토큰이면_예외가_발생한다() {
+            // given
+            when(jwtTokenService.validateRegisterToken(anyString())).thenReturn(null);
+
+            MemberRegisterRequest request =
+                    new MemberRegisterRequest(
+                            "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
+
+            // when & then
+            assertThatThrownBy(() -> authService.registerMember("testRefreshTokenValue", request))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(AuthErrorCode.EXPIRED_REGISTER_TOKEN.getMessage());
+        }
+    }
+
+    @Nested
+    class 소셜_로그인할_때 {
+
+        @Test
+        void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() throws JsonProcessingException {
+            // given
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createRegisterToken(anyString(), anyString()))
+                    .thenReturn("fake-register-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            String expectedResponse = objectMapper.writeValueAsString(null);
+
+            stubFor(
+                    post(urlEqualTo("/internal/oauth-info"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            // when
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isNull(),
+                    () -> assertThat(response.refreshToken()).isNull(),
+                    () -> assertThat(response.registerToken()).isEqualTo("fake-register-token"),
+                    () -> assertThat(response.isRegistered()).isFalse());
+        }
+
+        @Test
+        void 이미_회원가입된_회원은_로그인에_성공한다() throws JsonProcessingException {
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", 1, "role", "USER", "status", "NORMAL"));
+
+            stubFor(
+                    post(urlEqualTo("/internal/oauth-info"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            // when
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
+        }
+
+        @Test
+        void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() throws JsonProcessingException {
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", 1, "role", "USER", "status", "DELETED"));
+
+            stubFor(
+                    post(urlEqualTo("/internal/oauth-info"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            stubFor(post(urlEqualTo("/internal/1/rejoin")).willReturn(aResponse().withStatus(200)));
+
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
+        }
+    }
+
+    private OidcUser mockOidcUser() {
+        OidcIdToken idToken =
+                new OidcIdToken(
+                        "fake-id-token",
+                        Instant.now(),
+                        Instant.now().plusSeconds(3600),
+                        Map.of(
+                                "sub", "test-subject",
+                                "iss", "https://test-issuer.example.com"));
+
+        return new DefaultOidcUser(List.of(), idToken);
+    }
+
+    @Nested
+    class 토큰_재발급할_때 {
+
+        @Test
+        void 유효한_리프레시_토큰이면_새로운_토큰을_반환한다() throws JsonProcessingException {
+            // given
+            RefreshTokenDto oldRefreshTokenDto =
+                    RefreshTokenDto.of(1L, "fake-old-register-token", 604800L);
+            RefreshTokenDto newRefreshTokenDto =
+                    RefreshTokenDto.of(1L, "fake-new-refresh-token", 604800L);
+            AccessTokenDto newAccessTokenDto =
+                    AccessTokenDto.of(1L, MemberRole.USER, "fake-new-access-token");
+
+            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(oldRefreshTokenDto);
+            when(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
+                    .thenReturn(newRefreshTokenDto);
+            when(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
+                    .thenReturn(newAccessTokenDto);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", 1, "role", "USER", "status", "NORMAL"));
+
+            stubFor(
+                    get(urlPathMatching("/internal/\\d+"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(expectedResponse)));
+
+            // when
+            TokenReissueResponse response = authService.reissueToken("testRefreshTokenValue");
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-new-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-new-refresh-token"));
+        }
+
+        @Test
+        void 만료된_리프레시_토큰이면_예외가_발생한다() {
+            // given
+            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(null);
+
+            // when & then
+            assertThatThrownBy(() -> authService.reissueToken("testRefreshTokenValue"))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(AuthErrorCode.EXPIRED_REFRESH_TOKEN.getMessage());
+        }
+    }
+
+    @Nested
+    class 로그아웃할_때 {
+
+        @Test
+        void 리프레시_토큰이_존재하면_삭제된다() {
+            // given
+            RefreshToken refreshToken =
+                    RefreshToken.builder().memberId(1L).token("testRefreshToken").build();
+            refreshTokenRepository.save(refreshToken);
+
+            // when
+            authService.logoutMember(String.valueOf(1L));
+
+            // then
+            assertThat(refreshTokenRepository.findById(1L)).isEmpty();
+        }
+    }
+
+    @Nested
+    class 회원_서비스의_토큰_삭제_요청을_처리할_때 {
+        @Test
+        void 리프레시_토큰이_존재하면_삭제된다() {
+            // given
+            RefreshToken refreshToken =
+                    RefreshToken.builder().memberId(1L).token("testRefreshToken").build();
+            refreshTokenRepository.save(refreshToken);
+
+            // when
+            authService.deleteRefreshToken(String.valueOf(1L));
+
+            // then
+            assertThat(refreshTokenRepository.findById(1L)).isEmpty();
         }
     }
 }

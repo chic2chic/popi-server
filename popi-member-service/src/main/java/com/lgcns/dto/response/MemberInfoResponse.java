@@ -1,6 +1,10 @@
 package com.lgcns.dto.response;
 
 import com.lgcns.domain.*;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
+import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record MemberInfoResponse(

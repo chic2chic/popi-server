@@ -1,6 +1,12 @@
 package com.lgcns.domain;
 
 import com.lgcns.entity.BaseTimeEntity;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
+import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.MemberErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -35,26 +41,41 @@ public class Member extends BaseTimeEntity {
 
     @Builder(access = AccessLevel.PRIVATE)
     private Member(
-            String nickname,
             OauthInfo oauthInfo,
+            String nickname,
             MemberAge age,
             MemberGender gender,
             MemberStatus status,
             MemberRole role) {
-        this.nickname = nickname;
-        this.gender = gender;
-        this.age = age;
         this.oauthInfo = oauthInfo;
+        this.nickname = nickname;
+        this.age = age;
+        this.gender = gender;
         this.status = status;
         this.role = role;
     }
 
-    public static Member createMember(String nickname, OauthInfo oauthInfo) {
+    public static Member createMember(
+            OauthInfo oauthInfo, String nickname, MemberGender gender, MemberAge age) {
         return Member.builder()
-                .nickname(nickname)
                 .oauthInfo(oauthInfo)
+                .nickname(nickname)
+                .gender(gender)
+                .age(age)
                 .status(MemberStatus.NORMAL)
                 .role(MemberRole.USER)
                 .build();
+    }
+
+    public void withdrawal() {
+        if (this.status == MemberStatus.DELETED) {
+            throw new CustomException(MemberErrorCode.MEMBER_ALREADY_DELETED);
+        }
+
+        this.status = MemberStatus.DELETED;
+    }
+
+    public void reEnroll() {
+        this.status = MemberStatus.NORMAL;
     }
 }

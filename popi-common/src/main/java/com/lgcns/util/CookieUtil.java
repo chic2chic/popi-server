@@ -1,7 +1,5 @@
 package com.lgcns.util;
 
-import static com.lgcns.constants.SecurityConstants.REFRESH_TOKEN_COOKIE_NAME;
-
 import org.springframework.boot.web.server.Cookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -9,6 +7,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CookieUtil {
+
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
     public HttpHeaders generateRefreshTokenCookie(String refreshToken) {
         ResponseCookie refreshTokenCookie =
