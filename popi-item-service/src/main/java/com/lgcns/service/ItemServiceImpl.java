@@ -1,7 +1,7 @@
-package com.lgcns.service.item;
+package com.lgcns.service;
 
 import com.lgcns.client.ManagerServiceClient;
-import com.lgcns.dto.item.response.ItemInfoResponse;
+import com.lgcns.dto.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

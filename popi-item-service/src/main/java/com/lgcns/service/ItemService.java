@@ -1,6 +1,6 @@
-package com.lgcns.service.item;
+package com.lgcns.service;
 
-import com.lgcns.dto.item.response.ItemInfoResponse;
+import com.lgcns.dto.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
 
 public interface ItemService {

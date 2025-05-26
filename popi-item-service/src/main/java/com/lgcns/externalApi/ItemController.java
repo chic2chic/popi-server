@@ -1,8 +1,8 @@
 package com.lgcns.externalApi;
 
-import com.lgcns.dto.item.response.ItemInfoResponse;
+import com.lgcns.dto.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
-import com.lgcns.service.item.ItemService;
+import com.lgcns.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
