@@ -394,9 +394,7 @@ public class ItemServiceTest extends WireMockIntegrationTest {
     }
 
     private MappingBuilder applyKeywordIfPresent(MappingBuilder builder, String keyword) {
-        return (keyword != null)
-                ? builder.withQueryParam("keyeword", equalTo(keyword))
-                : builder;
+        return (keyword != null) ? builder.withQueryParam("keyword", equalTo(keyword)) : builder;
     }
 
     private MappingBuilder applyLastItemIdIfPresent(MappingBuilder builder, Long lastItemId) {
