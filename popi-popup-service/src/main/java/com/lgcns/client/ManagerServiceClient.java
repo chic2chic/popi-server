@@ -22,5 +22,5 @@ public interface ManagerServiceClient {
             @RequestParam(name = "size", defaultValue = "8") int size);
 
     @GetMapping("/internal/popups/{popupId}")
-    PopupDetailsResponse findPopupDetailsById(@PathVariable Long popupId);
+    PopupDetailsResponse findPopupDetailsById(@PathVariable(name = "popupId") Long popupId);
 }
