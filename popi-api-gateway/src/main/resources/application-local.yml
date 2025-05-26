@@ -138,14 +138,14 @@ spring:
             - RewritePath=/payments/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
-        - id: popup-service
-          uri: lb://POPUPS
+        - id: item-service
+          uri: lb://ITEMS
           predicates:
-            - Path=/popups/**
-            - Method=GET,POST,DELETE
+            - Path=/items/**
+            - Method=GET,POST
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/popups/(?<segment>.*), /$\{segment}
+            - RewritePath=/items/(?<segment>.*), /$\{segment}
 
       globalcors:
         cors-configurations:
