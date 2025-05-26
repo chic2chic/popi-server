@@ -149,14 +149,14 @@ spring:
           uri: lb://ITEMS
           predicates:
             - Path=/items/**
-            - Method=GET,POST
+            - Method=GET
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/items/(?<segment>.*), /$\{segment}
-        - id: item-recommend-items
+        - id: item-recommendations
           uri: lb://ITEMS
           predicates:
-            - Path=/items/*/recommendation
+            - Path=/items/*/recommendations
             - Method=GET
           filters:
             - RemoveRequestHeader=Cookie
