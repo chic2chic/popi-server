@@ -1,5 +1,6 @@
 package com.lgcns.externalApi;
 
+import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
 import com.lgcns.service.PopupService;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,5 +33,11 @@ public class PopupController {
                     @RequestParam(defaultValue = "8")
                     int size) {
         return popupService.findPopupsByName(keyWord, lastPopupId, size);
+    }
+
+    @GetMapping("/popups/{popupId}")
+    @Operation(summary = "팝업 상세 조회", description = "팝업에 대한 상세 정보를 반환합니다.")
+    public PopupDetailsResponse popupDetailsFindById(@PathVariable(name = "popupId") Long popupId) {
+        return popupService.findPopupDetailsById(popupId);
     }
 }
