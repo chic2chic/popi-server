@@ -157,7 +157,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                                                         .MEMBER_RESERVATION_NOT_FOUND)));
 
         ReservationInfoResponse reservationInfoResponse =
-                managerServiceClient.reservationFindById(memberReservation.getReservationId());
+                managerServiceClient.findReservationById(memberReservation.getReservationId());
         String imageByte =
                 createMemberReservationImageString(
                         memberReservation.getId(),
