@@ -219,7 +219,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         @Test
         void 검색어와_일치하는_데이터가_존재하면_결과_리스트를_반환한다() throws JsonProcessingException {
             // given
-            String searchName = "BLACK";
+            String keyword = "BLACK";
             Long lastPopupId = null;
             int size = 8;
 
@@ -244,11 +244,11 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                     "isLast",
                                     true));
 
-            stubFindPopupsByName(searchName, size, 200, expectedResponse);
+            stubFindPopupsByName(keyword, size, 200, expectedResponse);
 
             // when
             SliceResponse<PopupInfoResponse> result =
-                    popupService.findPopupsByName(searchName, lastPopupId, size);
+                    popupService.findPopupsByName(keyword, lastPopupId, size);
 
             // then
             Assertions.assertAll(
@@ -276,24 +276,24 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                     .allSatisfy(
                                             popup ->
                                                     assertThat(popup.popupName())
-                                                            .contains(searchName)));
+                                                            .contains(keyword)));
         }
 
         @Test
         void 검색어와_일치하는_데이터가_없으면_빈_리스트를_반환한다() throws JsonProcessingException {
             // given
-            String searchName = "NONEXISTENT";
+            String keyword = "NONEXISTENT";
             Long lastPopupId = null;
             int size = 8;
 
             String expectedResponse =
                     objectMapper.writeValueAsString(Map.of("content", List.of(), "isLast", true));
 
-            stubFindPopupsByName(searchName, size, 200, expectedResponse);
+            stubFindPopupsByName(keyword, size, 200, expectedResponse);
 
             // when
             SliceResponse<PopupInfoResponse> result =
-                    popupService.findPopupsByName(searchName, lastPopupId, size);
+                    popupService.findPopupsByName(keyword, lastPopupId, size);
 
             // then
             Assertions.assertAll(
@@ -407,10 +407,10 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                         .withBody(body)));
     }
 
-    private void stubFindPopupsByName(String searchName, int size, int status, String body) {
+    private void stubFindPopupsByName(String keyword, int size, int status, String body) {
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/internal/popups"))
-                        .withQueryParam("searchName", equalTo(searchName))
+                        .withQueryParam("searchName", equalTo(keyword))
                         .withQueryParam("size", equalTo(String.valueOf(size)))
                         .willReturn(
                                 aResponse()
