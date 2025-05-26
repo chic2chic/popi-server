@@ -31,5 +31,5 @@ spring-doc:
 
 manager:
   service:
-    name: popi-manager-service
+    name: managers
     url: http://localhost:8080

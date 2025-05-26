@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(
         name = "${manager.service.name}",
-        url = "${manager.service.url}",
+        url = "${manager.service.url:}",
         configuration = FeignConfig.class)
 public interface ManagerServiceClient {
 
@@ -21,8 +21,9 @@ public interface ManagerServiceClient {
             @RequestParam(name = "size", defaultValue = "8") int size);
 
     @GetMapping("/internal/popups/{popupId}/items")
-    SliceResponse<ItemInfoResponse> findAllItems(
+    SliceResponse<ItemInfoResponse> findItemsByName(
             @PathVariable(name = "popupId") Long popupId,
+            @RequestParam(name = "searchName", required = false) String searchName,
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
             @RequestParam(name = "size", defaultValue = "8") int size);
 }

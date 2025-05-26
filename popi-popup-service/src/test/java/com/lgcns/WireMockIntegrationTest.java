@@ -16,12 +16,13 @@ public abstract class WireMockIntegrationTest {
     @Autowired protected WireMockServer wireMockServer;
 
     @BeforeEach
-    void restartWireMock() {
-        wireMockServer.resetAll();
+    void setUp() {
+        wireMockServer.stop();
+        wireMockServer.start();
     }
 
     @AfterEach
-    void resetWireMock() {
+    void afterEach() {
         wireMockServer.resetAll();
     }
 }
