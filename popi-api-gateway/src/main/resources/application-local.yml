@@ -138,6 +138,31 @@ spring:
             - RewritePath=/payments/(?<segment>.*), /$\{segment}
             - JwtAuthenticationFilter
 
+        - id: item-docs
+          uri: lb://ITEMS
+          predicates:
+            - Path=/items/v3/api-docs
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/items/(?<segment>.*), /$\{segment}
+        - id: item-service
+          uri: lb://ITEMS
+          predicates:
+            - Path=/items/**
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/items/(?<segment>.*), /$\{segment}
+        - id: item-recommendations
+          uri: lb://ITEMS
+          predicates:
+            - Path=/items/*/recommendations
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/items/(?<segment>.*), /$\{segment}
+            - JwtAuthenticationFilter
+
       globalcors:
         cors-configurations:
           "[/**]":
@@ -178,6 +203,9 @@ springdoc:
     urls[5]:
       name: 결제 서비스
       url: /payments/v3/api-docs
+    urls[6]:
+      name: 상품 서비스
+      url: /items/v3/api-docs
 
 jwt:
   access-token-secret: ${JWT_ACCESS_TOKEN_SECRET}

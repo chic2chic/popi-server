@@ -1,0 +1,52 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: items
+  cloud:
+    kubernetes:
+      config:
+        enabled: false
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${ITEM_DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+eureka:
+  instance:
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.instance_id:${random.value}}
+    leaseRenewalIntervalInSeconds: 10
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+
+spring-doc:
+  api-docs:
+    version: openapi_3_1
+    enabled: true
+  enable-kotlin: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+manager:
+  service:
+    name: managers
+    url: http://localhost:8080
