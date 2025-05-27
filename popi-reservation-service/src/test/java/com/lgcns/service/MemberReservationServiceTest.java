@@ -428,6 +428,89 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 인기_팝업_아이디를_조회할_때 {
+
+        @Test
+        void 예약된_팝업이_4개_이상이면_크기가_4인_리스트를_예약자_수_내림차순으로_반환한다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            insertMultipleReservations(1L, 10);
+            insertMultipleReservations(2L, 8);
+            insertMultipleReservations(3L, 6);
+            insertMultipleReservations(4L, 4);
+            insertMultipleReservations(5L, 2);
+
+            // when
+            List<Long> expectedIds = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(expectedIds).hasSize(4);
+            assertThat(expectedIds).containsExactly(1L, 2L, 3L, 4L);
+        }
+
+        @Test
+        void 예약자_수가_모두_같은_경우_팝업_아이디_오름차순으로_반환한다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            insertMultipleReservations(3L, 5);
+            insertMultipleReservations(1L, 5);
+            insertMultipleReservations(4L, 5);
+            insertMultipleReservations(2L, 5);
+
+            // when
+            List<Long> expectedIds = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(expectedIds).hasSize(4);
+            assertThat(expectedIds).containsExactly(1L, 2L, 3L, 4L); // 팝업 ID 오름차순
+        }
+
+        @Test
+        void 예약된_팝업이_2개인_경우_크키가_2인_리스트를_예약자_수_내림차순으로_반환한다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            insertMultipleReservations(1L, 5);
+            insertMultipleReservations(2L, 7);
+
+            // when
+            List<Long> expectedIds = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(expectedIds).hasSize(2);
+            assertThat(expectedIds).containsExactly(2L, 1L);
+        }
+
+        @Test
+        void 예약된_팝없이_없는_경우_빈_리스트를_반환한다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            // when
+            List<Long> expectedIds = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(expectedIds).isEmpty();
+        }
+    }
+
+    private void insertMultipleReservations(Long popupId, int count) {
+        for (int i = 0; i < count; i++) {
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(
+                            reservationIdGenerator.getAndIncrement(),
+                            memberIdGenerator.getAndIncrement(),
+                            popupId,
+                            null,
+                            LocalDate.of(2025, 6, 1),
+                            LocalTime.of(12, 0));
+            memberReservationRepository.save(reservation);
+        }
+    }
+
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
         try {
             wireMockServer.stubFor(
