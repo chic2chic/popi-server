@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FcmToken {
+public class FcmDevice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,12 +20,12 @@ public class FcmToken {
     private String token;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private FcmToken(String username, String token) {
+    private FcmDevice(String username, String token) {
         this.username = username;
         this.token = token;
     }
 
-    public static FcmToken of(String username, String token) {
-        return FcmToken.builder().username(username).token(token).build();
+    public static FcmDevice of(String username, String token) {
+        return FcmDevice.builder().username(username).token(token).build();
     }
 }

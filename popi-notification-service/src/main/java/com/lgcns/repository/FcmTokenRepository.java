@@ -1,6 +1,6 @@
 package com.lgcns.repository;
 
-import com.lgcns.domain.FcmToken;
+import com.lgcns.domain.FcmDevice;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {}
+public interface FcmTokenRepository extends JpaRepository<FcmDevice, Long> {}
