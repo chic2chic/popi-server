@@ -21,10 +21,10 @@ public class MemberReservationUpdateEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMemberReservationUpdateEvent(MemberReservationUpdateEvent event) {
-        retryWithBackoff(event.memberReservationId(), event.waitTime(), 0);
+        tryUpdateEvent(event.memberReservationId(), event.waitTime(), 0);
     }
 
-    private void retryWithBackoff(Long memberReservationId, long waitTime, int retryCount) {
+    private void tryUpdateEvent(Long memberReservationId, long waitTime, int retryCount) {
         final long INITIAL_WAIT = waitTime == 0L ? 1000L : waitTime;
 
         try {
@@ -68,6 +68,6 @@ public class MemberReservationUpdateEventHandler {
                 memberReservationId,
                 retryCount + 1,
                 nextWait);
-        retryWithBackoff(memberReservationId, nextWait, retryCount + 1);
+        tryUpdateEvent(memberReservationId, nextWait, retryCount + 1);
     }
 }
