@@ -7,6 +7,7 @@ import com.lgcns.service.PopupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,5 +40,11 @@ public class PopupController {
     @Operation(summary = "팝업 상세 조회", description = "팝업에 대한 상세 정보를 반환합니다.")
     public PopupDetailsResponse popupDetailsFindById(@PathVariable(name = "popupId") Long popupId) {
         return popupService.findPopupDetailsById(popupId);
+    }
+
+    @GetMapping("/popups/hot")
+    @Operation(summary = "인기 팝업 목록 조회", description = "예약자 수가 많은 상위 4개의 팝업 리스트를 반환합니다.")
+    public List<PopupInfoResponse> hotPopupsFind() {
+        return popupService.findHotPopups();
     }
 }
