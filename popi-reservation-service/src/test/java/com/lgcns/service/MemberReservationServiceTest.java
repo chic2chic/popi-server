@@ -7,11 +7,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
+import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
-import com.lgcns.dto.response.AvailableDateResponse;
-import com.lgcns.dto.response.ReservableDate;
-import com.lgcns.dto.response.ReservableTime;
-import com.lgcns.dto.response.SurveyChoiceResponse;
+import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
@@ -366,6 +364,70 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 예약_목록_조회할_때 {
+
+        @Test
+        void 사용자의_예약이_존재하면_조회에_성공한다() throws JsonProcessingException {
+            // given
+            String memberId = "1";
+            PopupIdsRequest request = PopupIdsRequest.of(List.of(popupId));
+
+            insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BLACK PINK 팝업스토어",
+                                            "reservationDate", "2025-06-01",
+                                            "reservationTime", "12:00",
+                                            "reservationDay", "SUN",
+                                            "address", "서울특별시 영등포구 여의대로 108, 5층",
+                                            "latitude", 37.527097,
+                                            "longitude", 126.927301,
+                                            "qrImage", "iVBORw0KGgoAAAA...")));
+
+            stubFindReservationInfo(request, 200, expectedResponse);
+
+            // when
+            List<ReservationInfoResponse> reservations =
+                    memberReservationService.findReservationInfo(memberId);
+
+            // then
+            assertThat(reservations).isNotEmpty();
+            assertThat(reservations.size()).isEqualTo(1);
+
+            ReservationInfoResponse reservationInfo = reservations.get(0);
+
+            Assertions.assertAll(
+                    () -> assertThat(reservationInfo.popupId()).isEqualTo(1L),
+                    () -> assertThat(reservationInfo.popupName()).isEqualTo("BLACK PINK 팝업스토어"),
+                    () -> assertThat(reservationInfo.reservationTime()).isEqualTo("12:00"),
+                    () -> assertThat(reservationInfo.reservationDay()).isEqualTo("SUN"),
+                    () ->
+                            assertThat(reservationInfo.address())
+                                    .isEqualTo("서울특별시 영등포구 여의대로 108, 5층"),
+                    () -> assertThat(reservationInfo.latitude()).isEqualTo(37.527097),
+                    () -> assertThat(reservationInfo.longitude()).isEqualTo(126.927301),
+                    () -> assertThat(reservationInfo.qrImage()).isEqualTo("iVBORw0KGgoAAAA..."));
+        }
+
+        @Test
+        void 사용자의_예약이_존재하지_않으면_빈_리스트를_반환한다() {
+            // given
+            String memberId = "99";
+
+            // when
+            List<ReservationInfoResponse> reservations =
+                    memberReservationService.findReservationInfo(memberId);
+
+            // then
+            assertThat(reservations).isEmpty();
+        }
+    }
+
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
         try {
             wireMockServer.stubFor(
@@ -399,6 +461,19 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    private void stubFindReservationInfo(PopupIdsRequest request, int status, String body)
+            throws JsonProcessingException {
+        wireMockServer.stubFor(
+                post(urlPathEqualTo("/internal/reservations"))
+                        .withRequestBody(equalToJson(objectMapper.writeValueAsString(request)))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader(
+                                                "Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                        .withBody(body)));
+    }
+
     private void insertMemberReservation(LocalDate date, LocalTime time) {
         for (int i = 0; i < 5; i++) {
             MemberReservation reservation =
@@ -406,7 +481,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             reservationIdGenerator.getAndIncrement(),
                             memberIdGenerator.getAndIncrement(),
                             popupId,
-                            null,
+                            "iVBORw0KGgoAAAA...",
                             date,
                             time);
             memberReservationRepository.save(reservation);
