@@ -1,16 +1,19 @@
 package com.lgcns.service;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
 import java.time.LocalDate;
@@ -19,21 +22,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     @Autowired private MemberReservationService memberReservationService;
-
     @Autowired private MemberReservationRepository memberReservationRepository;
+    @Autowired private RedisTemplate<String, String> redisTemplate;
+    @Autowired private DatabaseCleaner databaseCleaner;
+
+    @MockitoBean private ApplicationEventPublisher eventPublisher;
+    @Captor ArgumentCaptor<MemberReservationUpdateEvent> eventCaptor;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String memberId = "1";
     private final Long popupId = 1L;
+    private final Long reservationId = 1L;
+
     private final AtomicLong reservationIdGenerator = new AtomicLong(4);
     private final AtomicLong memberIdGenerator = new AtomicLong(1);
+
+    @BeforeEach
+    void cleanDatabase() {
+        databaseCleaner.execute();
+    }
+
+    @BeforeEach
+    void injectMockito() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @BeforeEach
     void setUp() throws JsonProcessingException {
@@ -365,6 +388,109 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     }
 
     @Nested
+    class 회원이_예약_생성_할_때 {
+
+        @Test
+        void 예약이_존재하고_예약_가능한_상태이면_예약에_성공한다() throws JsonProcessingException {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
+
+            // when
+            memberReservationService.createMemberReservation(memberId, reservationId);
+
+            // then
+
+            Assertions.assertAll(
+                    () ->
+                            assertThat(
+                                            memberReservationRepository
+                                                    .existsMemberReservationByMemberIdAndReservationId(
+                                                            Long.parseLong(memberId),
+                                                            reservationId))
+                                    .isTrue(),
+                    () ->
+                            assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
+                                    .isEqualTo("9"));
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 이미_예약한_사용자는_예외가_발생한다() throws JsonProcessingException {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
+
+            memberReservationRepository.save(
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId), null, null, null, null));
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_ALREADY_EXISTS.getMessage());
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 예약가능수량이_없으면_예약에_실패하고_Redis_복구가_일어난다() throws JsonProcessingException {
+            // given
+            Long reservationId = 1L;
+            redisTemplate.opsForValue().set(reservationId.toString(), "0");
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(RESERVATION_FAILED.getMessage());
+
+            assertThat(redisTemplate.opsForValue().get(reservationId.toString())).isEqualTo("0");
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void MEMBER_INFO_조회_FEIGN_CLIENT_API_호출_실패시_예약에_실패한다() {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+
+            stubForFindMemberInternalInfo(memberId, 500, "");
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("Feign 예외 디코딩 실패");
+            redisTemplate.delete(reservationId.toString());
+        }
+    }
+
+    @Nested
     class 예약_목록_조회할_때 {
 
         @Test
@@ -532,6 +658,38 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         try {
             wireMockServer.stubFor(
                     get(urlPathEqualTo("/internal/reservations/popups/" + popupId + "/survey"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(status)
+                                            .withHeader(
+                                                    "Content-Type",
+                                                    MediaType.APPLICATION_JSON_VALUE)
+                                            .withBody(body)));
+        } catch (Exception e) {
+            throw new RuntimeException("직렬화 실패", e);
+        }
+    }
+
+    private void stubForFindMemberInternalInfo(String memberId, int status, String body) {
+        try {
+            wireMockServer.stubFor(
+                    get(urlPathEqualTo("/internal/" + memberId))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(status)
+                                            .withHeader(
+                                                    "Content-Type",
+                                                    MediaType.APPLICATION_JSON_VALUE)
+                                            .withBody(body)));
+        } catch (Exception e) {
+            throw new RuntimeException("직렬화 실패", e);
+        }
+    }
+
+    private void stubFindReservationById(Long reservationId, int status, String body) {
+        try {
+            wireMockServer.stubFor(
+                    get(urlPathEqualTo("/internal/reservations/" + reservationId))
                             .willReturn(
                                     aResponse()
                                             .withStatus(status)
