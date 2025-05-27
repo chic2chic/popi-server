@@ -48,3 +48,7 @@ spring-doc:
 
 firebase:
   credentials-json: ${FIREBASE_SDK_KEY}
+
+reservation:
+  service:
+    name: reservation
