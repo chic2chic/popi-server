@@ -12,5 +12,5 @@ import org.springframework.web.bind.annotation.GetMapping;
 public interface ReservationServiceClient {
 
     @GetMapping("/internal/popups/hot")
-    List<Long> getHotPopupIds();
+    List<Long> findHotPopupIds();
 }

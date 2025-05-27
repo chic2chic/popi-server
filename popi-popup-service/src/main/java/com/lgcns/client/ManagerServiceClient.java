@@ -4,10 +4,9 @@ import com.lgcns.config.FeignConfig;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
+import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(
         name = "${manager.service.name}",
@@ -23,4 +22,7 @@ public interface ManagerServiceClient {
 
     @GetMapping("/internal/popups/{popupId}")
     PopupDetailsResponse findPopupDetailsById(@PathVariable(name = "popupId") Long popupId);
+
+    @PostMapping("/internal/popups/hot")
+    List<PopupInfoResponse> findHotPopupsByIds(@RequestBody List<Long> popupIds);
 }
