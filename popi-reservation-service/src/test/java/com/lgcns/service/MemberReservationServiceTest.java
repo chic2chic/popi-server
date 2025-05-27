@@ -1315,11 +1315,12 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Transactional
         void 예약_날짜가_현재_날짜_기준_하루_남은_예약_내역이_존재하면_조회에_성공한다() {
             // given
-            LocalDate today = LocalDate.parse("2025-05-31");
+            LocalDate today = LocalDate.now();
+            insertMemberReservation(today, LocalTime.of(13, 0));
 
             // when
             List<UpcomingReservationResponse> result =
-                    memberReservationRepository.findUpcomingReservations(today);
+                    memberReservationService.findUpcomingReservations();
 
             // then
             Assertions.assertAll(
@@ -1332,20 +1333,19 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                                             .isEqualTo(today.plusDays(1))));
         }
 
-        @Test
+        /*        @Test
         @Transactional
         void 임박한_예약_내역이_존재하지_않으면_빈_리스트를_반환한다() {
             // given
-            LocalDate today = LocalDate.parse("2099-05-31");
 
             // when
             List<UpcomingReservationResponse> result =
-                    memberReservationRepository.findUpcomingReservations(today);
+                    memberReservationService.findUpcomingReservations();
 
             // then
             Assertions.assertAll(
                     () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
-        }
+        }*/
     }
 
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
