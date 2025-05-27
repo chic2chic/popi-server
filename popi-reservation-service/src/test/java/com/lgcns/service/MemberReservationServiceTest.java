@@ -11,9 +11,9 @@ import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
-import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
 import java.time.LocalDate;
@@ -35,9 +35,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     @Autowired private MemberReservationRepository memberReservationRepository;
     @Autowired private RedisTemplate<String, String> redisTemplate;
     @Autowired private DatabaseCleaner databaseCleaner;
-
-    @MockitoBean private ApplicationEventPublisher eventPublisher;
-    @Captor ArgumentCaptor<MemberReservationUpdateEvent> eventCaptor;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -487,6 +484,56 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining("Feign 예외 디코딩 실패");
             redisTemplate.delete(reservationId.toString());
+        }
+    }
+
+    @Nested
+    class 회원의_예약_상태를_취소로_변경할_때 {
+
+        @Test
+        void 예약이_존재하고_취소_가능한_상태이면_예약_상태를_취소로_변경한다() throws JsonProcessingException {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId),
+                            reservationId,
+                            popupId,
+                            null,
+                            LocalDate.of(2025, 6, 1),
+                            LocalTime.of(12, 0));
+            memberReservationRepository.save(memberReservation);
+
+            // when
+            memberReservationService.cancelMemberReservation(memberReservation.getId());
+
+            // then
+            MemberReservation updatedMemberReservation =
+                    memberReservationRepository.findById(memberReservation.getId()).get();
+            Assertions.assertAll(
+                    () ->
+                            assertThat(updatedMemberReservation.getStatus())
+                                    .isEqualTo(MemberReservationStatus.CANCELED),
+                    () ->
+                            assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
+                                    .isEqualTo("11"));
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 예약이_존재하지_않으면_예외가_발생한다() {
+            // given
+            Long invalidMemberReservationId = -1L;
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.cancelMemberReservation(
+                                            invalidMemberReservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
         }
     }
 
