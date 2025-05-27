@@ -15,6 +15,7 @@ import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
+import com.lgcns.client.managerClient.dto.response.UpcomingReservationResponse;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
@@ -294,6 +295,10 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     public DailyMemberReservationCountResponse findDailyMemberReservationCount(Long popupId) {
         LocalDate today = LocalDate.now();
         return memberReservationRepository.findDailyMemberReservationCount(popupId, today);
+    }
+
+    public List<UpcomingReservationResponse> findUpcomingReservations() {
+        return memberReservationRepository.findUpcomingReservations();
     }
 
     private void validateYearMonthFormat(String date) {

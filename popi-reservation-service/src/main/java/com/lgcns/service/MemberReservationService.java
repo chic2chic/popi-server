@@ -2,6 +2,7 @@ package com.lgcns.service;
 
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
+import com.lgcns.client.managerClient.dto.response.UpcomingReservationResponse;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.DailyMemberReservationCountResponse;
 import com.lgcns.dto.response.ReservationDetailResponse;
@@ -30,4 +31,6 @@ public interface MemberReservationService {
     void createMemberAnswer(Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices);
 
     void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId);
+
+    List<UpcomingReservationResponse> findUpcomingReservations();
 }
