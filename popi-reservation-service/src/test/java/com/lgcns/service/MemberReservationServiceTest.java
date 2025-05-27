@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
+import com.lgcns.client.managerClient.dto.response.UpcomingReservationResponse;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
@@ -38,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 
 class MemberReservationServiceTest extends WireMockIntegrationTest {
 
@@ -1303,6 +1305,46 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             .reservationTime(LocalTime.of(12, 0))
                             .build();
             memberReservationRepository.save(reservation);
+        }
+    }
+
+    @Nested
+    class 임박한_예약_내역_리스트를_조회할_때 {
+
+        @Test
+        @Transactional
+        void 예약_날짜가_현재_날짜_기준_하루_남은_예약_내역이_존재하면_조회에_성공한다() {
+            // given
+            LocalDate today = LocalDate.parse("2025-05-31");
+
+            // when
+            List<UpcomingReservationResponse> result =
+                    memberReservationRepository.findUpcomingReservations(today);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () ->
+                            assertThat(result)
+                                    .allSatisfy(
+                                            response ->
+                                                    assertThat(response.reservationDate())
+                                                            .isEqualTo(today.plusDays(1))));
+        }
+
+        @Test
+        @Transactional
+        void 임박한_예약_내역이_존재하지_않으면_빈_리스트를_반환한다() {
+            // given
+            LocalDate today = LocalDate.parse("2099-05-31");
+
+            // when
+            List<UpcomingReservationResponse> result =
+                    memberReservationRepository.findUpcomingReservations(today);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
         }
     }
 

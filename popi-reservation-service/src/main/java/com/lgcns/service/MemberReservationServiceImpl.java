@@ -298,7 +298,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     public List<UpcomingReservationResponse> findUpcomingReservations() {
-        return memberReservationRepository.findUpcomingReservations();
+        LocalDate today = LocalDate.now();
+        return memberReservationRepository.findUpcomingReservations(today);
     }
 
     private void validateYearMonthFormat(String date) {

@@ -135,9 +135,7 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
                 .fetchOne();
     }
 
-    public List<UpcomingReservationResponse> findUpcomingReservations() {
-        LocalDate today = LocalDate.now();
-
+    public List<UpcomingReservationResponse> findUpcomingReservations(LocalDate today) {
         return queryFactory
                 .select(
                         Projections.constructor(

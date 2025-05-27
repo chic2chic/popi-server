@@ -22,5 +22,5 @@ public interface MemberReservationRepositoryCustom {
     DailyMemberReservationCountResponse findDailyMemberReservationCount(
             Long popupId, LocalDate today);
 
-    List<UpcomingReservationResponse> findUpcomingReservations();
+    List<UpcomingReservationResponse> findUpcomingReservations(LocalDate today);
 }
