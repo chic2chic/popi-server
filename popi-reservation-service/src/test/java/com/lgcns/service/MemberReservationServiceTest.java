@@ -14,6 +14,7 @@ import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.error.feign.FeignErrorCode;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
 import java.time.LocalDate;
@@ -484,6 +485,131 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining("Feign 예외 디코딩 실패");
             redisTemplate.delete(reservationId.toString());
+        }
+    }
+
+    @Nested
+    class 회원의_예약_정보를_업데이트할_때 {
+
+        @Test
+        void 예약이_존재하고_업데이트_가능한_상태이면_예약_정보를_업데이트한다() throws JsonProcessingException {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId, popupId, null, null, null);
+            memberReservationRepository.save(memberReservation);
+
+            stubFindReservationById(
+                    reservationId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "reservationId",
+                                    reservationId,
+                                    "popupId",
+                                    popupId,
+                                    "reservationDate",
+                                    "2025-06-01",
+                                    "reservationTime",
+                                    "12:00")));
+
+            // when
+            memberReservationService.updateMemberReservation(memberReservation.getId());
+
+            // then
+            MemberReservation updatedMemberReservation =
+                    memberReservationRepository.findById(memberReservation.getId()).get();
+            Assertions.assertAll(
+                    () ->
+                            assertThat(updatedMemberReservation.getStatus())
+                                    .isEqualTo(MemberReservationStatus.RESERVED),
+                    () ->
+                            assertThat(updatedMemberReservation.getReservationDate())
+                                    .isEqualTo(LocalDate.of(2025, 6, 1)),
+                    () ->
+                            assertThat(updatedMemberReservation.getReservationTime())
+                                    .isEqualTo(LocalTime.of(12, 0)));
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 회원_예약이_존재하지_않으면_예외가_발생한다() {
+            // given
+            Long invalidMemberReservationId = -1L;
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            invalidMemberReservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void FEIGN_CLIENT_API_호출_실패시_예외가_발생한다() {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId, popupId, null, null, null);
+            memberReservationRepository.save(memberReservation);
+
+            stubFindReservationById(reservationId, 500, "");
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            memberReservation.getId()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("Feign 예외 디코딩 실패");
+        }
+
+        @Test
+        void 예약이_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId, popupId, null, null, null);
+            memberReservationRepository.save(memberReservation);
+
+            stubFor(
+                    get(urlEqualTo("/internal/reservations/" + reservationId))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(404)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
+                    {
+                      "success": false,
+                      "status": 404,
+                      "data": {
+                        "errorClassName": "RESERVATION_NOT_FOUND",
+                        "message": "해당 예약을 찾을 수 없습니다."
+                      },
+                      "timestamp": "2025-05-27T17:24:45.082753"
+                    }
+                    """)));
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            memberReservation.getId()))
+                    .isInstanceOf(CustomException.class)
+                    .satisfies(
+                            ex -> {
+                                CustomException ce = (CustomException) ex;
+                                assertThat(ce.getErrorCode()).isInstanceOf(FeignErrorCode.class);
+
+                                FeignErrorCode errorCode = (FeignErrorCode) ce.getErrorCode();
+                                assertThat(errorCode.getErrorName())
+                                        .isEqualTo("RESERVATION_NOT_FOUND");
+                                assertThat(errorCode.getMessage()).contains("해당 예약을 찾을 수 없습니다.");
+                            });
         }
     }
 
