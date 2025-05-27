@@ -10,5 +10,8 @@ public interface MemberReservationService {
 
     List<SurveyChoiceResponse> findSurveyChoicesByPopupId(String memberId, Long popupId);
 
+
     List<ReservationDetailResponse> findReservationInfo(String memberId);
+
+    List<>
 }
