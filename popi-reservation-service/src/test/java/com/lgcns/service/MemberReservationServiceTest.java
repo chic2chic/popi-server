@@ -640,7 +640,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
         try {
             wireMockServer.stubFor(
-                    get(urlPathEqualTo("/internal/reservations/popups/" + popupId))
+                    get(urlPathEqualTo("/internal/reservations/" + popupId))
                             .withQueryParam("date", equalTo(date))
                             .willReturn(
                                     aResponse()
@@ -657,7 +657,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void stubFindSurveyChoicesByPopupId(Long popupId, int status, String body) {
         try {
             wireMockServer.stubFor(
-                    get(urlPathEqualTo("/internal/reservations/popups/" + popupId + "/survey"))
+                    get(urlPathEqualTo("/internal/reservations/" + popupId + "/survey"))
                             .willReturn(
                                     aResponse()
                                             .withStatus(status)
