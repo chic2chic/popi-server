@@ -16,16 +16,16 @@ public class FcmDevice {
     @Column(name = "fcm_token_id")
     private Long id;
 
-    private String username;
+    private Long memberId;
     private String token;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private FcmDevice(String username, String token) {
-        this.username = username;
+    private FcmDevice(Long memberId, String token) {
+        this.memberId = memberId;
         this.token = token;
     }
 
-    public static FcmDevice of(String username, String token) {
-        return FcmDevice.builder().username(username).token(token).build();
+    public static FcmDevice of(Long memberId, String token) {
+        return FcmDevice.builder().memberId(memberId).token(token).build();
     }
 }
