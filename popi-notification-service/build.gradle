@@ -31,4 +31,7 @@ dependencies {
 	// Flyway
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-mysql'
+
+	// Quartz
+	implementation 'org.springframework.boot:spring-boot-starter-quartz:3.5.0'
 }
