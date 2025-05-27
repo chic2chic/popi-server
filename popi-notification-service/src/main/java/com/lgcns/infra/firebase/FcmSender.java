@@ -18,7 +18,7 @@ public class FcmSender {
 
     private final FirebaseMessaging firebaseMessaging;
 
-    public void sendFCM(FcmRequest fcmRequest) {
+    public void sendFcm(FcmRequest fcmRequest) {
         Notification notification =
                 Notification.builder()
                         .setTitle(fcmRequest.title())
@@ -29,7 +29,7 @@ public class FcmSender {
                 Message.builder()
                         .setToken(fcmRequest.fcmToken())
                         .setNotification(notification)
-                        .putData("key", fcmRequest.key())
+                        // .putData("key", fcmRequest.key()) // 추후 redirectUrl 추가하면서 리팩토링
                         .build();
 
         try {
