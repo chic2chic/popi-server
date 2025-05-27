@@ -33,3 +33,7 @@ manager:
   service:
     name: managers
     url: http://localhost:8080
+
+reservation:
+  service:
+    name: reservations
