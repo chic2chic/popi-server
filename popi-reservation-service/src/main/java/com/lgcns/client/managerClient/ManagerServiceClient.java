@@ -1,6 +1,6 @@
-package com.lgcns.client;
+package com.lgcns.client.managerClient;
 
-import com.lgcns.client.dto.MonthlyReservationResponse;
+import com.lgcns.client.managerClient.dto.response.MonthlyReservationResponse;
 import com.lgcns.config.FeignConfig;
 import com.lgcns.dto.response.SurveyChoiceResponse;
 import java.util.List;
