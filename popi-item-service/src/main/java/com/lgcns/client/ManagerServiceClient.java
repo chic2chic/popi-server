@@ -3,6 +3,7 @@ package com.lgcns.client;
 import com.lgcns.config.FeignConfig;
 import com.lgcns.dto.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
+import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,4 +21,7 @@ public interface ManagerServiceClient {
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "lastItemId", required = false) Long lastItemId,
             @RequestParam(name = "size", defaultValue = "8") int size);
+
+    @GetMapping("/internal/popups/{popupId}/items/default")
+    List<ItemInfoResponse> findItemsDefault(@PathVariable(name = "popupId") Long popupId);
 }

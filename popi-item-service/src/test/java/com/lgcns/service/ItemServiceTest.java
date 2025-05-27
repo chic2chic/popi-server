@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.dto.response.ItemInfoResponse;
 import com.lgcns.response.SliceResponse;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -259,13 +260,117 @@ public class ItemServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 기본_상품_목록을_조회할_때 {
+        @Test
+        void 무작위로_선택된_4개의_상품_조회에_성공한다() throws JsonProcessingException {
+            // given
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "itemId",
+                                            18,
+                                            "name",
+                                            "크룽크 라운드백",
+                                            "imageUrl",
+                                            "https://ygselect.com/web/product/big/shop1_cdf3bd187203a3987f4c262e73061334.png",
+                                            "price",
+                                            20000),
+                                    Map.of(
+                                            "itemId",
+                                            4,
+                                            "name",
+                                            "DAZED 리사",
+                                            "imageUrl",
+                                            "https://image.aladin.co.kr/product/17920/59/cover500/k142534034_1.jpg",
+                                            "price",
+                                            8000),
+                                    Map.of(
+                                            "itemId",
+                                            17,
+                                            "name",
+                                            "크룽크 미니백",
+                                            "imageUrl",
+                                            "https://ygselect.com/web/product/big/shop1_738be1088b092afab065be5299d5e2a4.png",
+                                            "price",
+                                            15000),
+                                    Map.of(
+                                            "itemId",
+                                            9,
+                                            "name",
+                                            "피규어 지수",
+                                            "imageUrl",
+                                            "https://m.ygselect.com/web/product/big/202110/51086d5fd28f00991986031b2ed3f742.jpg",
+                                            "price",
+                                            84000)));
+
+            stubFindItemsDefault(popupId, 200, expectedResponse);
+
+            // when
+            List<ItemInfoResponse> result = itemService.findItemsDefault(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(4),
+                    () -> assertThat(new HashSet<>(result)).hasSize(result.size()));
+        }
+
+        @Test
+        void 상품_데이터가_4개보다_적으면_전체_데이터_수_만큼_상품이_조회된다() throws JsonProcessingException {
+            // given
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "itemId",
+                                            18,
+                                            "name",
+                                            "크룽크 라운드백",
+                                            "imageUrl",
+                                            "https://ygselect.com/web/product/big/shop1_cdf3bd187203a3987f4c262e73061334.png",
+                                            "price",
+                                            20000),
+                                    Map.of(
+                                            "itemId",
+                                            4,
+                                            "name",
+                                            "DAZED 리사",
+                                            "imageUrl",
+                                            "https://image.aladin.co.kr/product/17920/59/cover500/k142534034_1.jpg",
+                                            "price",
+                                            8000),
+                                    Map.of(
+                                            "itemId",
+                                            9,
+                                            "name",
+                                            "피규어 지수",
+                                            "imageUrl",
+                                            "https://m.ygselect.com/web/product/big/202110/51086d5fd28f00991986031b2ed3f742.jpg",
+                                            "price",
+                                            84000)));
+
+            stubFindItemsDefault(popupId, 200, expectedResponse);
+
+            // when
+            List<ItemInfoResponse> result = itemService.findItemsDefault(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(3),
+                    () -> assertThat(new HashSet<>(result)).hasSize(result.size()));
+        }
+    }
+
     private void stubFindItemsByName(
             Long popupId, String keyword, Long lastItemId, int size, int status, String body) {
         MappingBuilder mappingBuilder =
                 get(urlPathEqualTo("/internal/popups/" + popupId + "/items"))
                         .withQueryParam("size", equalTo(String.valueOf(size)));
 
-        mappingBuilder = applySearchNameIfPresent(mappingBuilder, keyword);
+        mappingBuilder = applyKeywordIfPresent(mappingBuilder, keyword);
         mappingBuilder = applyLastItemIdIfPresent(mappingBuilder, lastItemId);
 
         wireMockServer.stubFor(
@@ -276,7 +381,19 @@ public class ItemServiceTest extends WireMockIntegrationTest {
                                 .withBody(body)));
     }
 
-    private MappingBuilder applySearchNameIfPresent(MappingBuilder builder, String keyword) {
+    private void stubFindItemsDefault(Long popupId, int status, String body) {
+        MappingBuilder mappingBuilder =
+                get(urlPathEqualTo("/internal/popups/" + popupId + "/items/default"));
+
+        wireMockServer.stubFor(
+                mappingBuilder.willReturn(
+                        aResponse()
+                                .withStatus(status)
+                                .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                .withBody(body)));
+    }
+
+    private MappingBuilder applyKeywordIfPresent(MappingBuilder builder, String keyword) {
         return (keyword != null) ? builder.withQueryParam("keyword", equalTo(keyword)) : builder;
     }
 
