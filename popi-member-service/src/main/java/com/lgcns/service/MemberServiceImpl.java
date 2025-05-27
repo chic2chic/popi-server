@@ -67,7 +67,7 @@ public class MemberServiceImpl implements MemberService {
         if (optionalMember.isPresent()) {
             Member member = optionalMember.get();
             return new MemberInternalInfoResponse(
-                    member.getId(), member.getRole(), member.getStatus());
+                    member.getId(), member.getNickname(), member.getRole(), member.getStatus());
         }
 
         return null;
@@ -78,7 +78,8 @@ public class MemberServiceImpl implements MemberService {
     public MemberInternalInfoResponse findMemberId(Long memberId) {
         final Member member = findByMemberId(memberId);
 
-        return new MemberInternalInfoResponse(member.getId(), member.getRole(), member.getStatus());
+        return new MemberInternalInfoResponse(
+                member.getId(), member.getNickname(), member.getRole(), member.getStatus());
     }
 
     @Override
