@@ -131,7 +131,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         try {
             memberReservation =
                     MemberReservation.createMemberReservation(
-                            reservationId, Long.parseLong(memberId), null, null, null, null);
+                            reservationId, Long.parseLong(memberId));
             memberReservationRepository.save(memberReservation);
         } catch (Exception e) {
             safeIncrement(reservationId.toString());

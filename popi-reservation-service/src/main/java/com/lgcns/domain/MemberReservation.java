@@ -51,21 +51,8 @@ public class MemberReservation extends BaseTimeEntity {
         this.isEntered = false;
     }
 
-    public static MemberReservation createMemberReservation(
-            Long reservationId,
-            Long memberId,
-            Long popupId,
-            String qrImage,
-            LocalDate reservationDate,
-            LocalTime reservationTime) {
-        return MemberReservation.builder()
-                .reservationId(reservationId)
-                .memberId(memberId)
-                .popupId(popupId)
-                .qrImage(qrImage)
-                .reservationDate(reservationDate)
-                .reservationTime(reservationTime)
-                .build();
+    public static MemberReservation createMemberReservation(Long reservationId, Long memberId) {
+        return MemberReservation.builder().reservationId(reservationId).memberId(memberId).build();
     }
 
     public void updateMemberReservation(
