@@ -394,12 +394,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // given
             redisTemplate.opsForValue().set(reservationId.toString(), "10");
 
-            stubForFindMemberInternalInfo(
-                    memberId,
-                    200,
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
-
             // when
             memberReservationService.createMemberReservation(memberId, reservationId);
 
@@ -425,12 +419,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // given
             redisTemplate.opsForValue().set(reservationId.toString(), "10");
 
-            stubForFindMemberInternalInfo(
-                    memberId,
-                    200,
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
-
             memberReservationRepository.save(
                     MemberReservation.createMemberReservation(
                             reservationId, Long.parseLong(memberId), null, null, null, null));
@@ -453,12 +441,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             Long reservationId = 1L;
             redisTemplate.opsForValue().set(reservationId.toString(), "0");
 
-            stubForFindMemberInternalInfo(
-                    memberId,
-                    200,
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
-
             // when & then
             assertThatThrownBy(
                             () ->
@@ -468,23 +450,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     .hasMessageContaining(RESERVATION_FAILED.getMessage());
 
             assertThat(redisTemplate.opsForValue().get(reservationId.toString())).isEqualTo("0");
-            redisTemplate.delete(reservationId.toString());
-        }
-
-        @Test
-        void MEMBER_INFO_조회_FEIGN_CLIENT_API_호출_실패시_예약에_실패한다() {
-            // given
-            redisTemplate.opsForValue().set(reservationId.toString(), "10");
-
-            stubForFindMemberInternalInfo(memberId, 500, "");
-
-            // when & then
-            assertThatThrownBy(
-                            () ->
-                                    memberReservationService.createMemberReservation(
-                                            memberId, reservationId))
-                    .isInstanceOf(CustomException.class)
-                    .hasMessageContaining("Feign 예외 디코딩 실패");
             redisTemplate.delete(reservationId.toString());
         }
     }
@@ -499,6 +464,24 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     MemberReservation.createMemberReservation(
                             Long.parseLong(memberId), reservationId, popupId, null, null, null);
             memberReservationRepository.save(memberReservation);
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "memberId",
+                                    memberId,
+                                    "nickname",
+                                    "testUser",
+                                    "age",
+                                    "TWENTIES",
+                                    "gender",
+                                    "MALE",
+                                    "role",
+                                    "USER",
+                                    "status",
+                                    "NORMAL")));
 
             stubFindReservationById(
                     reservationId,
@@ -550,12 +533,30 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void FEIGN_CLIENT_API_호출_실패시_예외가_발생한다() {
+        void FEIGN_CLIENT_API_호출_실패시_예외가_발생한다() throws JsonProcessingException {
             // given
             MemberReservation memberReservation =
                     MemberReservation.createMemberReservation(
                             Long.parseLong(memberId), reservationId, popupId, null, null, null);
             memberReservationRepository.save(memberReservation);
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "memberId",
+                                    memberId,
+                                    "nickname",
+                                    "testUser",
+                                    "age",
+                                    "TWENTIES",
+                                    "gender",
+                                    "MALE",
+                                    "role",
+                                    "USER",
+                                    "status",
+                                    "NORMAL")));
 
             stubFindReservationById(reservationId, 500, "");
 
@@ -576,14 +577,28 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             Long.parseLong(memberId), reservationId, popupId, null, null, null);
             memberReservationRepository.save(memberReservation);
 
-            stubFor(
-                    get(urlEqualTo("/internal/reservations/" + reservationId))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(404)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(
-                                                    """
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "memberId",
+                                    memberId,
+                                    "nickname",
+                                    "testUser",
+                                    "age",
+                                    "TWENTIES",
+                                    "gender",
+                                    "MALE",
+                                    "role",
+                                    "USER",
+                                    "status",
+                                    "NORMAL")));
+
+            stubFindReservationById(
+                    reservationId,
+                    404,
+                    """
                     {
                       "success": false,
                       "status": 404,
@@ -593,7 +608,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                       },
                       "timestamp": "2025-05-27T17:24:45.082753"
                     }
-                    """)));
+                    """);
 
             // when & then
             assertThatThrownBy(
@@ -813,7 +828,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
         try {
             wireMockServer.stubFor(
-                    get(urlPathEqualTo("/internal/reservations/" + popupId))
+                    get(urlPathEqualTo("/internal/reservations/popups/" + popupId))
                             .withQueryParam("date", equalTo(date))
                             .willReturn(
                                     aResponse()
@@ -830,7 +845,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void stubFindSurveyChoicesByPopupId(Long popupId, int status, String body) {
         try {
             wireMockServer.stubFor(
-                    get(urlPathEqualTo("/internal/reservations/" + popupId + "/survey"))
+                    get(urlPathEqualTo("/internal/reservations/popups/" + popupId + "/survey"))
                             .willReturn(
                                     aResponse()
                                             .withStatus(status)
