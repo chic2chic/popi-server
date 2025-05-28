@@ -19,7 +19,7 @@ public class MemberReservationController {
 
     private final MemberReservationService memberReservationService;
 
-    @GetMapping("/{popupId}")
+    @GetMapping("/popups/{popupId}")
     @Operation(summary = "가능한 예약 날짜 조회", description = "특정 연월에 대한 예약 가능 날짜를 조회합니다.")
     public AvailableDateResponse availableDateFind(
             @RequestHeader("member-id") String memberId,
