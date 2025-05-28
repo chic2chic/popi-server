@@ -564,7 +564,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
     private void stubFindPopupsByName(String keyword, int size, int status, String body) {
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/internal/popups"))
-                        .withQueryParam("searchName", equalTo(keyword))
+                        .withQueryParam("keyword", equalTo(keyword))
                         .withQueryParam("size", equalTo(String.valueOf(size)))
                         .willReturn(
                                 aResponse()
