@@ -22,17 +22,14 @@ public class MemberReservationController {
     @GetMapping("/popups/{popupId}")
     @Operation(summary = "가능한 예약 날짜 조회", description = "특정 연월에 대한 예약 가능 날짜를 조회합니다.")
     public AvailableDateResponse availableDateFind(
-            @RequestHeader("member-id") String memberId,
-            @PathVariable Long popupId,
-            @RequestParam String date) {
-        return memberReservationService.findAvailableDate(memberId, popupId, date);
+            @PathVariable Long popupId, @RequestParam String date) {
+        return memberReservationService.findAvailableDate(popupId, date);
     }
 
     @GetMapping("/popups/{popupId}/survey")
     @Operation(summary = "설문지 조회", description = "해당 팝업에 대한 설문지 선지들을 조회합니다.")
-    public List<SurveyChoiceResponse> choiceListByPopupIdFind(
-            @RequestHeader("member-id") String memberId, @PathVariable Long popupId) {
-        return memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
+    public List<SurveyChoiceResponse> choiceListByPopupIdFind(@PathVariable Long popupId) {
+        return memberReservationService.findSurveyChoicesByPopupId(popupId);
     }
 
     @PostMapping("/{reservationId}")

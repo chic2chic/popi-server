@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
@@ -45,7 +45,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private final Long popupId = 1L;
     private final Long reservationId = 1L;
 
-    private final AtomicLong reservationIdGenerator = new AtomicLong(4);
+    private final AtomicLong reservationIdGenerator = new AtomicLong(1);
     private final AtomicLong memberIdGenerator = new AtomicLong(1);
 
     @BeforeEach
@@ -58,108 +58,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    @BeforeEach
-    void setUp() throws JsonProcessingException {
-        // 6월 1일은 모두 찬 상태
-        insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
-        insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(13, 0));
-        insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(14, 0));
-
-        // 6월 2일은 일부만 찬 상태
-        insertMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(13, 0));
-
-        String fullyBooked =
-                objectMapper.writeValueAsString(
-                        Map.of(
-                                "popupOpenDate",
-                                "2025-05-31",
-                                "popupCloseDate",
-                                "2025-06-02",
-                                "timeCapacity",
-                                5,
-                                "dailyReservations",
-                                List.of(
-                                        Map.of(
-                                                "reservationDate",
-                                                "2025-06-01",
-                                                "timeSlots",
-                                                List.of(
-                                                        Map.of("reservationId", 4, "time", "12:00"),
-                                                        Map.of("reservationId", 5, "time", "13:00"),
-                                                        Map.of(
-                                                                "reservationId",
-                                                                6,
-                                                                "time",
-                                                                "14:00"))),
-                                        Map.of(
-                                                "reservationDate",
-                                                "2025-06-02",
-                                                "timeSlots",
-                                                List.of(
-                                                        Map.of("reservationId", 7, "time", "12:00"),
-                                                        Map.of("reservationId", 8, "time", "13:00"),
-                                                        Map.of(
-                                                                "reservationId",
-                                                                9,
-                                                                "time",
-                                                                "14:00"))))));
-
-        String partiallyAvailable =
-                objectMapper.writeValueAsString(
-                        Map.of(
-                                "popupOpenDate",
-                                "2025-05-31",
-                                "popupCloseDate",
-                                "2025-06-02",
-                                "timeCapacity",
-                                5,
-                                "dailyReservations",
-                                List.of(
-                                        Map.of(
-                                                "reservationDate",
-                                                "2025-05-31",
-                                                "timeSlots",
-                                                List.of(
-                                                        Map.of("reservationId", 1, "time", "12:00"),
-                                                        Map.of("reservationId", 2, "time", "13:00"),
-                                                        Map.of(
-                                                                "reservationId",
-                                                                3,
-                                                                "time",
-                                                                "14:00"))))));
-
-        String noReservations =
-                objectMapper.writeValueAsString(
-                        Map.of(
-                                "popupOpenDate",
-                                "2025-05-31",
-                                "popupCloseDate",
-                                "2025-06-02",
-                                "timeCapacity",
-                                5,
-                                "dailyReservations",
-                                List.of()));
-
-        String popupNotFound =
-                objectMapper.writeValueAsString(
-                        Map.of(
-                                "success",
-                                false,
-                                "status",
-                                404,
-                                "data",
-                                Map.of(
-                                        "errorClassName", "POPUP_NOT_FOUND",
-                                        "message", "해당 팝업이 존재하지 않습니다."),
-                                "timestamp",
-                                "2025-05-23T01:50:46.229657"));
-
-        stubFindAvailableDate(1L, "2025-05", 200, partiallyAvailable);
-        stubFindAvailableDate(1L, "2025-06", 200, fullyBooked);
-        stubFindAvailableDate(1L, "2025-07", 200, noReservations);
-        stubFindAvailableDate(999L, "2025-06", 404, popupNotFound);
-    }
-
     @Nested
     class 예약_가능한_날짜를_조회할_때 {
 
@@ -169,10 +67,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             String date = "2025-June";
 
             // when & then
-            assertThatThrownBy(
-                            () ->
-                                    memberReservationService.findAvailableDate(
-                                            memberId, popupId, date))
+            assertThatThrownBy(() -> memberReservationService.findAvailableDate(popupId, date))
                     .isInstanceOf(CustomException.class)
                     .hasFieldOrPropertyWithValue(
                             "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
@@ -184,10 +79,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             String date = "2025-5";
 
             // when & then
-            assertThatThrownBy(
-                            () ->
-                                    memberReservationService.findAvailableDate(
-                                            memberId, popupId, date))
+            assertThatThrownBy(() -> memberReservationService.findAvailableDate(popupId, date))
                     .isInstanceOf(CustomException.class)
                     .hasFieldOrPropertyWithValue(
                             "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
@@ -199,10 +91,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             String date = "2025-13";
 
             // when & then
-            assertThatThrownBy(
-                            () ->
-                                    memberReservationService.findAvailableDate(
-                                            memberId, popupId, date))
+            assertThatThrownBy(() -> memberReservationService.findAvailableDate(popupId, date))
                     .isInstanceOf(CustomException.class)
                     .hasFieldOrPropertyWithValue(
                             "errorCode", MemberReservationErrorCode.INVALID_DATE_FORMAT);
@@ -212,8 +101,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         void 예약이_없는_경우_모든_시간_예약_가능() throws JsonProcessingException {
             // given
             String date = "2025-05";
-
-            createMemberReservation();
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
@@ -231,7 +118,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // when
             AvailableDateResponse response =
-                    memberReservationService.findAvailableDate(memberId, popupId, date);
+                    memberReservationService.findAvailableDate(popupId, date);
 
             // then
             assertPopupDate(response);
@@ -270,6 +157,26 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                                     List.of(
                                                             Map.of(
                                                                     "reservationId",
+                                                                    1,
+                                                                    "time",
+                                                                    "12:00"),
+                                                            Map.of(
+                                                                    "reservationId",
+                                                                    2,
+                                                                    "time",
+                                                                    "13:00"),
+                                                            Map.of(
+                                                                    "reservationId",
+                                                                    3,
+                                                                    "time",
+                                                                    "14:00"))),
+                                            Map.of(
+                                                    "reservationDate",
+                                                    "2025-06-02",
+                                                    "timeSlots",
+                                                    List.of(
+                                                            Map.of(
+                                                                    "reservationId",
                                                                     4,
                                                                     "time",
                                                                     "12:00"),
@@ -282,35 +189,15 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                                                     "reservationId",
                                                                     6,
                                                                     "time",
-                                                                    "14:00"))),
-                                            Map.of(
-                                                    "reservationDate",
-                                                    "2025-06-02",
-                                                    "timeSlots",
-                                                    List.of(
-                                                            Map.of(
-                                                                    "reservationId",
-                                                                    7,
-                                                                    "time",
-                                                                    "12:00"),
-                                                            Map.of(
-                                                                    "reservationId",
-                                                                    8,
-                                                                    "time",
-                                                                    "13:00"),
-                                                            Map.of(
-                                                                    "reservationId",
-                                                                    9,
-                                                                    "time",
                                                                     "14:00"))))));
 
             stubFindAvailableDate(popupId, date, 200, expectedResponse);
 
             // when
             AvailableDateResponse response =
-                    memberReservationService.findAvailableDate(memberId, popupId, date);
+                    memberReservationService.findAvailableDate(popupId, date);
 
-            ReservableDate fullyBooked =
+            ReservableDate reservableDate =
                     response.reservableDate().stream()
                             .filter(d -> d.date().equals(LocalDate.of(2025, 6, 1)))
                             .findFirst()
@@ -318,9 +205,9 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // then
             assertPopupDate(response);
-            assertThat(fullyBooked.isReservable()).isFalse();
+            assertThat(reservableDate.isReservable()).isFalse();
 
-            for (ReservableTime reservableTime : fullyBooked.timeSlots()) {
+            for (ReservableTime reservableTime : reservableDate.timeSlots()) {
                 assertThat(reservableTime.isPossible()).isFalse(); // 모두 불가해야 함
             }
         }
@@ -388,7 +275,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // when
             AvailableDateResponse response =
-                    memberReservationService.findAvailableDate(memberId, popupId, date);
+                    memberReservationService.findAvailableDate(popupId, date);
 
             ReservableDate reservableDate =
                     response.reservableDate().stream()
@@ -430,7 +317,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // when
             AvailableDateResponse response =
-                    memberReservationService.findAvailableDate(memberId, popupId, date);
+                    memberReservationService.findAvailableDate(popupId, date);
 
             // then
             assertPopupDate(response);
@@ -461,9 +348,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // when & then
             assertThatThrownBy(
-                            () ->
-                                    memberReservationService.findAvailableDate(
-                                            memberId, invalidPopupId, date))
+                            () -> memberReservationService.findAvailableDate(invalidPopupId, date))
                     .isInstanceOf(CustomException.class)
                     .satisfies(
                             ex -> {
@@ -531,7 +416,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // when
             List<SurveyChoiceResponse> choices =
-                    memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
+                    memberReservationService.findSurveyChoicesByPopupId(popupId);
 
             // then
             assertThat(choices).isNotEmpty();
@@ -907,20 +792,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         insertMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(13, 0));
     }
 
-    private void insertMemberReservation(LocalDate date, LocalTime time) {
-        for (int i = 0; i < 5; i++) {
-            MemberReservation reservation =
-                    MemberReservation.createMemberReservation(
-                            reservationIdGenerator.getAndIncrement(),
-                            memberIdGenerator.getAndIncrement(),
-                            popupId,
-                            "iVBORw0KGgoAAAA...",
-                            date,
-                            time);
-            memberReservationRepository.save(reservation);
-        }
-    }
-
     @Nested
     class 인기_팝업_아이디를_조회할_때 {
 
@@ -987,6 +858,38 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // then
             assertThat(expectedIds).isEmpty();
+        }
+    }
+
+    @Nested
+    class 가장_가까운_예약_조회할_때 {
+
+        @Test
+        void 현재_시간_이후의_예약이_있으면_가장_가까운_예약을_반환한다() {
+            // given
+
+            // when
+
+            // then
+        }
+
+        @Test
+        void 예약_날짜가_현재_시간보다_이전이면_NULL을_반환한다() {
+            // given
+
+            // when
+
+            // then
+        }
+
+        @Test
+        void 예약_정보가_존재하지_않으면_NULL을_반환한다() {
+            // given
+
+            // when
+
+            // then
+
         }
     }
 
@@ -1093,8 +996,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             .memberId(memberIdGenerator.getAndIncrement())
                             .popupId(popupId)
                             .qrImage("iVBORw0KGgoAAAA...")
-                            .reservationDate(LocalDate.of(2025, 6, 1))
-                            .reservationTime(LocalTime.of(12, 0))
+                            .reservationDate(date)
+                            .reservationTime(time)
                             .build();
             memberReservationRepository.save(reservation);
         }

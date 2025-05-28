@@ -1,3 +1,0 @@
-ALTER TABLE member_reservation
-    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-ADD COLUMN is_entered BOOLEAN NOT NULL DEFAULT false;
