@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.*;
         url = "${manager.service.url:}",
         configuration = FeignConfig.class)
 public interface ManagerServiceClient {
-    @GetMapping("/internal/reservations/{popupId}")
+    @GetMapping("/internal/reservations/popups/{popupId}")
     MonthlyReservationResponse findMonthlyReservation(
             @PathVariable Long popupId, @RequestParam String date);
 
-    @GetMapping("/internal/reservations/{popupId}/survey")
+    @GetMapping("/internal/reservations/popups/{popupId}/survey")
     List<SurveyChoiceResponse> findSurveyChoicesByPopupId(@PathVariable Long popupId);
 
     @PostMapping("/internal/reservations")

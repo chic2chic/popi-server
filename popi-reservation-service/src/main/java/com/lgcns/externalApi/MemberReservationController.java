@@ -28,7 +28,7 @@ public class MemberReservationController {
         return memberReservationService.findAvailableDate(memberId, popupId, date);
     }
 
-    @GetMapping("/{popupId}/survey")
+    @GetMapping("/popups/{popupId}/survey")
     @Operation(summary = "설문지 조회", description = "해당 팝업에 대한 설문지 선지들을 조회합니다.")
     public List<SurveyChoiceResponse> choiceListByPopupIdFind(
             @RequestHeader("member-id") String memberId, @PathVariable Long popupId) {
