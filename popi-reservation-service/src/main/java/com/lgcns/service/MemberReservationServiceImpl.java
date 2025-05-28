@@ -121,8 +121,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     @Override
     public void createMemberReservation(String memberId, Long reservationId) {
-        Long memberIdLong = validateMemberId(Long.parseLong(memberId));
-        validateMemberReservationExists(memberIdLong, reservationId);
+        validateMemberReservationExists(Long.parseLong(memberId), reservationId);
 
         Long possibleCount = redisTemplate.opsForValue().decrement(reservationId.toString());
         if (possibleCount == null || possibleCount < 0) {
@@ -134,7 +133,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         try {
             memberReservation =
                     MemberReservation.createMemberReservation(
-                            reservationId, memberIdLong, null, null, null, null);
+                            reservationId, Long.parseLong(memberId), null, null, null, null);
             memberReservationRepository.save(memberReservation);
         } catch (Exception e) {
             safeIncrement(reservationId.toString());
@@ -194,11 +193,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
             throw new CustomException(MemberReservationErrorCode.RESERVATION_NOT_FOUND);
 
         safeIncrement(reservationId.toString());
-    }
-
-    private Long validateMemberId(Long memberId) {
-        MemberInternalInfoResponse memberInfo = memberServiceClient.findMemberInfo(memberId);
-        return memberInfo.memberId();
     }
 
     private void validateMemberReservationExists(Long memberId, Long reservationId) {
