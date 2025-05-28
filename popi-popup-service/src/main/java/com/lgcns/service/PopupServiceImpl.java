@@ -29,7 +29,12 @@ public class PopupServiceImpl implements PopupService {
 
     @Override
     public List<PopupInfoResponse> findHotPopups() {
-        List<Long> popupIds = reservationServiceClient.getHotPopupIds();
-        // TODO: Manager에 popupIds를 보내 List<PopupInfoResponse>를 받아온다.
+        List<Long> popupIds = reservationServiceClient.findHotPopupIds();
+
+        if (popupIds == null || popupIds.isEmpty()) {
+            return List.of();
+        }
+
+        return managerServiceClient.findHotPopupsByIds(popupIds);
     }
 }
