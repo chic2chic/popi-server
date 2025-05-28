@@ -11,6 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
         configuration = FeignConfig.class)
 public interface ReservationServiceClient {
 
-    @GetMapping("/internal/popups/hot")
+    @GetMapping("/internal/popups/popularity")
     List<Long> findHotPopupIds();
 }

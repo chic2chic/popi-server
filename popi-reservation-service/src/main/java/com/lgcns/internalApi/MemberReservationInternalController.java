@@ -14,7 +14,7 @@ public class MemberReservationInternalController {
 
     private final MemberReservationService memberReservationService;
 
-    @GetMapping("/popups/hot")
+    @GetMapping("/popups/popularity")
     public List<Long> findHotPopups() {
         return memberReservationService.findHotPopupIds();
     }

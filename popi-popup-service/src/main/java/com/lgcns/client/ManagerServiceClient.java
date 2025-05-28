@@ -23,6 +23,6 @@ public interface ManagerServiceClient {
     @GetMapping("/internal/popups/{popupId}")
     PopupDetailsResponse findPopupDetailsById(@PathVariable(name = "popupId") Long popupId);
 
-    @PostMapping("/internal/popups/hot")
+    @PostMapping("/internal/popups/popularity")
     List<PopupInfoResponse> findHotPopupsByIds(@RequestBody List<Long> popupIds);
 }

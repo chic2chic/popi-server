@@ -461,7 +461,8 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
 
             // verify
-            wireMockServer.verify(0, postRequestedFor(urlPathEqualTo("/internal/popups/hot")));
+            wireMockServer.verify(
+                    0, postRequestedFor(urlPathEqualTo("/internal/popups/popularity")));
         }
 
         @Test
@@ -508,7 +509,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
 
     private void stubFindHotPopupIds(int status, String body) {
         wireMockServer.stubFor(
-                get(urlPathEqualTo("/internal/popups/hot"))
+                get(urlPathEqualTo("/internal/popups/popularity"))
                         .willReturn(
                                 aResponse()
                                         .withStatus(status)
@@ -522,7 +523,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             String requestBody = objectMapper.writeValueAsString(popupIds);
 
             wireMockServer.stubFor(
-                    post(urlPathEqualTo("/internal/popups/hot"))
+                    post(urlPathEqualTo("/internal/popups/popularity"))
                             .withRequestBody(equalToJson(requestBody))
                             .willReturn(
                                     aResponse()

@@ -42,7 +42,7 @@ public class PopupController {
         return popupService.findPopupDetailsById(popupId);
     }
 
-    @GetMapping("/popups/hot")
+    @GetMapping("/popups/popularity")
     @Operation(summary = "인기 팝업 목록 조회", description = "예약자 수가 많은 상위 4개의 팝업 리스트를 반환합니다.")
     public List<PopupInfoResponse> hotPopupsFind() {
         return popupService.findHotPopups();
