@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -614,10 +615,10 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     }
 
     @Nested
-    class 회원의_예약_상태를_취소로_변경할_때 {
+    class 회원의_예약이_취소될_때 {
 
         @Test
-        void 예약이_존재하고_취소_가능한_상태이면_예약_상태를_취소로_변경한다() throws JsonProcessingException {
+        void 예약이_존재하면_예약을_취소한다() throws JsonProcessingException {
             // given
             redisTemplate.opsForValue().set(reservationId.toString(), "10");
             MemberReservation memberReservation =
@@ -634,12 +635,11 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             memberReservationService.cancelMemberReservation(memberReservation.getId());
 
             // then
-            MemberReservation updatedMemberReservation =
-                    memberReservationRepository.findById(memberReservation.getId()).get();
+
+            Optional<MemberReservation> optionalMemberReservation =
+                    memberReservationRepository.findById(memberReservation.getId());
             Assertions.assertAll(
-                    () ->
-                            assertThat(updatedMemberReservation.getStatus())
-                                    .isEqualTo(MemberReservationStatus.CANCELED),
+                    () -> assertThat(optionalMemberReservation).isEmpty(),
                     () ->
                             assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
                                     .isEqualTo("11"));

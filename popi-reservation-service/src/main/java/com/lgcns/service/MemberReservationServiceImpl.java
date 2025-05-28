@@ -13,7 +13,6 @@ import com.lgcns.client.managerClient.dto.response.ReservationInfoResponse;
 import com.lgcns.client.managerClient.dto.response.TimeSlot;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
-import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
@@ -155,6 +154,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                                         new CustomException(
                                                 MemberReservationErrorCode
                                                         .MEMBER_RESERVATION_NOT_FOUND)));
+        MemberInternalInfoResponse memberInfo =
+                memberServiceClient.findMemberInfo(memberReservation.getMemberId());
 
         ReservationInfoResponse reservationInfoResponse =
                 managerServiceClient.findReservationById(memberReservation.getReservationId());
@@ -164,6 +165,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                         memberReservation.getReservationId(),
                         memberReservation.getMemberId(),
                         reservationInfoResponse.popupId(),
+                        memberInfo.age().toString(),
+                        memberInfo.gender().toString(),
                         reservationInfoResponse.reservationDate(),
                         reservationInfoResponse.reservationTime());
 
@@ -185,9 +188,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                                                 MemberReservationErrorCode
                                                         .MEMBER_RESERVATION_NOT_FOUND)));
 
-        memberReservation.updateMemberReservationStatus(MemberReservationStatus.CANCELED);
-
         Long reservationId = memberReservation.getReservationId();
+        memberReservationRepository.delete(memberReservation);
         if (reservationId == null)
             throw new CustomException(MemberReservationErrorCode.RESERVATION_NOT_FOUND);
 
@@ -227,18 +229,22 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     private String createMemberReservationImageString(
             Long id,
-            Long reservationId,
             Long memberId,
+            Long reservationId,
             Long popupId,
+            String age,
+            String gender,
             LocalDate reservationDate,
             LocalTime reservationTime) {
 
         try {
             Map<String, Object> data = new HashMap<>();
             data.put("id", id);
-            data.put("reservationId", reservationId);
             data.put("memberId", memberId);
+            data.put("reservationId", reservationId);
             data.put("popupId", popupId);
+            data.put("age", age);
+            data.put("gender", gender);
             data.put("reservationDate", reservationDate.toString());
             data.put("reservationTime", reservationTime.toString());
 

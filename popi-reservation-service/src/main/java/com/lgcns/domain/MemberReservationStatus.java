@@ -7,7 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum MemberReservationStatus {
     PENDING("PENDING"),
-    CANCELED("CANCELED"),
     RESERVED("RESERVED"),
     ;
 
