@@ -33,7 +33,7 @@ public class MemberReservationController {
         return memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
     }
 
-    @GetMapping("/")
+    @GetMapping
     @Operation(summary = "내 예약 목록 조회", description = "사용자의 예약 목록을 조회합니다.")
     public List<ReservationDetailResponse> reservationInfoFind(
             @RequestHeader("member-id") String memberId) {
