@@ -19,7 +19,9 @@ import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -643,16 +645,16 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     reservationId,
                     404,
                     """
-                    {
-                      "success": false,
-                      "status": 404,
-                      "data": {
-                        "errorClassName": "RESERVATION_NOT_FOUND",
-                        "message": "해당 예약을 찾을 수 없습니다."
-                      },
-                      "timestamp": "2025-05-27T17:24:45.082753"
-                    }
-                    """);
+                            {
+                              "success": false,
+                              "status": 404,
+                              "data": {
+                                "errorClassName": "RESERVATION_NOT_FOUND",
+                                "message": "해당 예약을 찾을 수 없습니다."
+                              },
+                              "timestamp": "2025-05-27T17:24:45.082753"
+                            }
+                            """);
 
             // when & then
             assertThatThrownBy(
@@ -731,17 +733,18 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     objectMapper.writeValueAsString(
                             List.of(
                                     Map.of(
-                                            "popupId", 1,
-                                            "popupName", "BLACK PINK 팝업스토어",
-                                            "reservationDate", "2025-06-01",
-                                            "reservationTime", "12:00",
-                                            "reservationDay", "SUN",
-                                            "address", "서울특별시 영등포구 여의대로 108, 5층",
-                                            "latitude", 37.527097,
-                                            "longitude", 126.927301,
-                                            "qrImage", "iVBORw0KGgoAAAA...")));
+                                            "popupId",
+                                            1,
+                                            "popupName",
+                                            "BLACK PINK 팝업스토어",
+                                            "address",
+                                            "서울특별시 영등포구 여의대로 108, 5층",
+                                            "latitude",
+                                            37.527097,
+                                            "longitude",
+                                            126.927301)));
 
-            stubFindReservationInfo(request, 200, expectedResponse);
+            stubFindReservationInfoList(request, 200, expectedResponse);
 
             // when
             List<ReservationDetailResponse> reservations =
@@ -865,31 +868,78 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     class 가장_가까운_예약_조회할_때 {
 
         @Test
-        void 현재_시간_이후의_예약이_있으면_가장_가까운_예약을_반환한다() {
+        void 현재_시간_이후의_예약이_있으면_가장_가까운_예약을_반환한다() throws JsonProcessingException {
             // given
+            LocalDate now = LocalDate.now();
+            insertMemberReservation(now.plusDays(1), LocalTime.of(12, 0));
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "popupId",
+                                    1,
+                                    "popupName",
+                                    "BLACK PINK 팝업스토어",
+                                    "address",
+                                    "서울특별시 영등포구 여의대로 108, 5층",
+                                    "latitude",
+                                    37.527097,
+                                    "longitude",
+                                    126.927301));
+
+            stubFindReservationInfo(popupId, 200, expectedResponse);
 
             // when
+            ReservationDetailResponse response =
+                    memberReservationService.findUpcomingReservationInfo(memberId);
 
             // then
+            Assertions.assertAll(
+                    () -> assertThat(response.popupId()).isEqualTo(1L),
+                    () -> assertThat(response.popupName()).isEqualTo("BLACK PINK 팝업스토어"),
+                    () ->
+                            assertThat(response.reservationDate())
+                                    .isEqualTo(now.plusDays(1).toString()),
+                    () -> assertThat(response.reservationTime()).isEqualTo("12:00"),
+                    () ->
+                            assertThat(response.reservationDay())
+                                    .isEqualTo(
+                                            now.plusDays(1)
+                                                    .getDayOfWeek()
+                                                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+                                                    .toUpperCase()),
+                    () -> assertThat(response.address()).isEqualTo("서울특별시 영등포구 여의대로 108, 5층"),
+                    () -> assertThat(response.latitude()).isEqualTo(37.527097),
+                    () -> assertThat(response.longitude()).isEqualTo(126.927301),
+                    () -> assertThat(response.qrImage()).isEqualTo("iVBORw0KGgoAAAA..."));
         }
 
         @Test
-        void 예약_날짜가_현재_시간보다_이전이면_NULL을_반환한다() {
+        void 예약_날짜가_현재_시간보다_이전이면_NULL을_반환한다() throws JsonProcessingException {
             // given
+            LocalDate now = LocalDate.now();
+            insertMemberReservation(now.minusDays(1), LocalTime.of(12, 0));
+
+            String expectedResponse = objectMapper.writeValueAsString(null);
+
+            stubFindReservationInfo(popupId, 200, expectedResponse);
 
             // when
+            ReservationDetailResponse response =
+                    memberReservationService.findUpcomingReservationInfo(memberId);
 
             // then
+            assertThat(response).isEqualTo(null);
         }
 
         @Test
-        void 예약_정보가_존재하지_않으면_NULL을_반환한다() {
-            // given
-
-            // when
+        void 예약_정보가_존재하지_않으면_NULL을_반환한다() throws JsonProcessingException {
+            // given & when
+            ReservationDetailResponse response =
+                    memberReservationService.findUpcomingReservationInfo(memberId);
 
             // then
-
+            assertThat(response).isEqualTo(null);
         }
     }
 
@@ -964,7 +1014,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
-    private void stubFindReservationInfo(PopupIdsRequest request, int status, String body)
+    private void stubFindReservationInfoList(PopupIdsRequest request, int status, String body)
             throws JsonProcessingException {
         wireMockServer.stubFor(
                 post(urlPathEqualTo("/internal/reservations"))
@@ -977,9 +1027,9 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                         .withBody(body)));
     }
 
-    private void stubFindUpcomingReservationInfo(int status, String body) {
+    private void stubFindReservationInfo(Long popupId, int status, String body) {
         wireMockServer.stubFor(
-                get(urlPathEqualTo("/internal/reservations/upcoming"))
+                get(urlPathEqualTo("/internal/popups" + "/" + popupId))
                         .willReturn(
                                 aResponse()
                                         .withStatus(status)
