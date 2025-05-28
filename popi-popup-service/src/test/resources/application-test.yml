@@ -7,3 +7,8 @@ manager:
   service:
     name: managers
     url: http://localhost:${wiremock.server.port}
+
+reservation:
+  service:
+    name: reservations
+    url: http://localhost:${wiremock.server.port}

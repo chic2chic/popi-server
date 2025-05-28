@@ -382,6 +382,160 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 인기_팝업_목록을_조회할_때 {
+
+        @Test
+        void 인기_팝업_아이디가_존재하면_해당_팝업들의_정보를_반환한다() throws JsonProcessingException {
+            // given
+            List<Long> hotPopupIds = List.of(1L, 3L, 5L, 7L);
+
+            String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 1, 1층"),
+                                    Map.of(
+                                            "popupId", 3,
+                                            "popupName", "BLACKPINK 팝업스토어",
+                                            "imageUrl", "https://bucket/blackpink.jpg",
+                                            "popupOpenDate", "2025-05-10",
+                                            "popupCloseDate", "2025-06-10",
+                                            "address", "서울특별시 강남구 테헤란로 3, 2층"),
+                                    Map.of(
+                                            "popupId", 5,
+                                            "popupName", "뉴진스 팝업스토어",
+                                            "imageUrl", "https://bucket/newjeans.jpg",
+                                            "popupOpenDate", "2025-05-15",
+                                            "popupCloseDate", "2025-06-15",
+                                            "address", "서울특별시 강남구 테헤란로 5, 3층"),
+                                    Map.of(
+                                            "popupId", 7,
+                                            "popupName", "에스파 팝업스토어",
+                                            "imageUrl", "https://bucket/aespa.jpg",
+                                            "popupOpenDate", "2025-05-20",
+                                            "popupCloseDate", "2025-06-20",
+                                            "address", "서울특별시 강남구 테헤란로 7, 4층")));
+
+            stubFindHotPopupIds(200, expectedIdsResponse);
+            stubFindHotPopupsByIds(hotPopupIds, 200, expectedResponse);
+
+            // when
+            List<PopupInfoResponse> result = popupService.findHotPopups();
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(4),
+                    () -> assertThat(result.get(0).popupId()).isEqualTo(1L),
+                    () -> assertThat(result.get(0).popupName()).isEqualTo("BTS 팝업스토어"),
+                    () -> assertThat(result.get(0).imageUrl()).isEqualTo("https://bucket/bts.jpg"),
+                    () -> assertThat(result.get(1).popupId()).isEqualTo(3L),
+                    () -> assertThat(result.get(1).popupName()).isEqualTo("BLACKPINK 팝업스토어"),
+                    () -> assertThat(result.get(2).popupId()).isEqualTo(5L),
+                    () -> assertThat(result.get(2).popupName()).isEqualTo("뉴진스 팝업스토어"),
+                    () -> assertThat(result.get(3).popupId()).isEqualTo(7L),
+                    () -> assertThat(result.get(3).popupName()).isEqualTo("에스파 팝업스토어"));
+        }
+
+        @Test
+        void 인기_팝_아이디가_빈_리스트면_두_번째_호출_없이_빈_리스트를_반환한다() throws JsonProcessingException {
+            // given
+            List<Long> emptyPopupIds = List.of();
+            String expectedIdsResponse = objectMapper.writeValueAsString(emptyPopupIds);
+
+            stubFindHotPopupIds(200, expectedIdsResponse);
+
+            // when
+            List<PopupInfoResponse> result = popupService.findHotPopups();
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
+
+            // verify
+            wireMockServer.verify(0, postRequestedFor(urlPathEqualTo("/internal/popups/hot")));
+        }
+
+        @Test
+        void 인기_팝업이_4개_미만이면_실제_개수만큼_반환한다() throws JsonProcessingException {
+            // given
+            List<Long> hotPopupIds = List.of(2L, 4L);
+
+            String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 2,
+                                            "popupName", "IVE 팝업스토어",
+                                            "imageUrl", "https://bucket/ive.jpg",
+                                            "popupOpenDate", "2025-05-05",
+                                            "popupCloseDate", "2025-06-05",
+                                            "address", "서울특별시 홍대입구역 2번 출구"),
+                                    Map.of(
+                                            "popupId", 4,
+                                            "popupName", "레드벨벳 팝업스토어",
+                                            "imageUrl", "https://bucket/redvelvet.jpg",
+                                            "popupOpenDate", "2025-05-25",
+                                            "popupCloseDate", "2025-06-25",
+                                            "address", "부산광역시 해운대구 마린시티")));
+
+            stubFindHotPopupIds(200, expectedIdsResponse);
+            stubFindHotPopupsByIds(hotPopupIds, 200, expectedResponse);
+
+            // when
+            List<PopupInfoResponse> result = popupService.findHotPopups();
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(2),
+                    () -> assertThat(result.get(0).popupId()).isEqualTo(2L),
+                    () -> assertThat(result.get(0).popupName()).isEqualTo("IVE 팝업스토어"),
+                    () -> assertThat(result.get(1).popupId()).isEqualTo(4L),
+                    () -> assertThat(result.get(1).popupName()).isEqualTo("레드벨벳 팝업스토어"));
+        }
+    }
+
+    private void stubFindHotPopupIds(int status, String body) {
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/internal/popups/hot"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader(
+                                                "Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                        .withBody(body)));
+    }
+
+    private void stubFindHotPopupsByIds(List<Long> popupIds, int status, String body) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(popupIds);
+
+            wireMockServer.stubFor(
+                    post(urlPathEqualTo("/internal/popups/hot"))
+                            .withRequestBody(equalToJson(requestBody))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(status)
+                                            .withHeader(
+                                                    "Content-Type",
+                                                    MediaType.APPLICATION_JSON_VALUE)
+                                            .withBody(body)));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JSON 직렬화 실패", e);
+        }
+    }
+
     private void stubFindAllPopups(Long lastPopupId, int size, int status, String body) {
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/internal/popups"))
