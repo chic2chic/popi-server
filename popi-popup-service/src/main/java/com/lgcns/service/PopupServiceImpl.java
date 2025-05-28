@@ -31,7 +31,7 @@ public class PopupServiceImpl implements PopupService {
     public List<PopupInfoResponse> findHotPopups() {
         List<Long> popupIds = reservationServiceClient.findHotPopupIds();
 
-        if (popupIds == null || popupIds.isEmpty()) {
+        if (popupIds.isEmpty()) {
             return List.of();
         }
 
