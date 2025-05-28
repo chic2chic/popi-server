@@ -62,7 +62,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-<<<<<<< HEAD
     public List<ReservationDetailResponse> findReservationInfo(String memberId) {
         List<MemberReservation> memberReservationList =
                 memberReservationRepository.findByMemberId(Long.parseLong(memberId));
@@ -94,10 +93,11 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                                         reservation,
                                         reservationPopupInfoMap.get(reservation.getPopupId())))
                 .toList();
-=======
+    }
+
+    @Override
     public List<Long> findHotPopupIds() {
         return memberReservationRepository.findHotPopupIds();
->>>>>>> 06a8c1d ([LCR-223] feat: 인기 팝업 id 리스트를 반환하는 서비스 구현)
     }
 
     private void validateYearMonthFormat(String date) {
