@@ -1,0 +1,1 @@
+ALTER TABLE member_reservation MODIFY qr_image LONGTEXT;
