@@ -94,7 +94,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                         .toList();
 
         List<ReservationPopupInfoResponse> reservationPopupInfoList =
-                managerServiceClient.findReservedPopupInfo(PopupIdsRequest.of(popupIds));
+                managerServiceClient.findReservedPopupInfoList(PopupIdsRequest.of(popupIds));
 
         Map<Long, ReservationPopupInfoResponse> reservationPopupInfoMap =
                 reservationPopupInfoList.stream()

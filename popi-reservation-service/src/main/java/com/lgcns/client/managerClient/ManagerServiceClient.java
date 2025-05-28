@@ -26,7 +26,8 @@ public interface ManagerServiceClient {
     List<SurveyChoiceResponse> findSurveyChoicesByPopupId(@PathVariable Long popupId);
 
     @PostMapping("/internal/reservations")
-    List<ReservationPopupInfoResponse> findReservedPopupInfo(@RequestBody PopupIdsRequest request);
+    List<ReservationPopupInfoResponse> findReservedPopupInfoList(
+            @RequestBody PopupIdsRequest request);
 
     @GetMapping("/internal/popups/{popupId}")
     ReservationPopupInfoResponse findReservedPopupInfo(@PathVariable Long popupId);
