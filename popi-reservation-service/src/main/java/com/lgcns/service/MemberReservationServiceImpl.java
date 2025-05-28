@@ -143,14 +143,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     @Override
     public void updateMemberReservation(Long memberReservationId) {
-        MemberReservation memberReservation =
-                memberReservationRepository
-                        .findById(memberReservationId)
-                        .orElseThrow(
-                                (() ->
-                                        new CustomException(
-                                                MemberReservationErrorCode
-                                                        .MEMBER_RESERVATION_NOT_FOUND)));
+        MemberReservation memberReservation = findMemberReservationById(memberReservationId);
         MemberInternalInfoResponse memberInfo =
                 memberServiceClient.findMemberInfo(memberReservation.getMemberId());
 
@@ -176,21 +169,22 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     @Override
     public void cancelMemberReservation(Long memberReservationId) {
-        MemberReservation memberReservation =
-                memberReservationRepository
-                        .findById(memberReservationId)
-                        .orElseThrow(
-                                (() ->
-                                        new CustomException(
-                                                MemberReservationErrorCode
-                                                        .MEMBER_RESERVATION_NOT_FOUND)));
-
+        MemberReservation memberReservation = findMemberReservationById(memberReservationId);
         Long reservationId = memberReservation.getReservationId();
         memberReservationRepository.delete(memberReservation);
         if (reservationId == null)
             throw new CustomException(MemberReservationErrorCode.RESERVATION_NOT_FOUND);
 
         safeIncrement(reservationId.toString());
+    }
+
+    private MemberReservation findMemberReservationById(Long memberReservationId) {
+        return memberReservationRepository
+                .findById(memberReservationId)
+                .orElseThrow(
+                        () ->
+                                new CustomException(
+                                        MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND));
     }
 
     private void validateMemberReservationExists(Long memberId, Long reservationId) {
