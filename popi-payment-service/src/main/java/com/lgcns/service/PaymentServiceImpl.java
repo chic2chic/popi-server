@@ -27,7 +27,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final ManagerServiceClient managerServiceClient;
 
     @Override
-    public PaymentReadyResponse preparePayment(String memberId, PaymentReadyRequest request) {
+    public synchronized PaymentReadyResponse preparePayment(
+            String memberId, PaymentReadyRequest request) {
         String buyerName = memberServiceClient.findMemberInfo(Long.valueOf(memberId)).nickname();
 
         List<Long> itemIds =
