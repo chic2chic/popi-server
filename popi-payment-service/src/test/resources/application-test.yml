@@ -1,7 +1,18 @@
 spring:
-  profiles:
-    active: test
+  config:
+    activate:
+      on-profile: "test"
   datasource:
     url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;MODE=MYSQL
   flyway:
     enabled: false
+
+manager:
+  service:
+    name: managers
+    url: http://localhost:${wiremock.server.port}
+
+member:
+  service:
+    name: members
+    url: http://localhost:${wiremock.server.port}
