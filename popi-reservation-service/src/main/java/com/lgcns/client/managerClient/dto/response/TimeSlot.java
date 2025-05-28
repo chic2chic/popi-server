@@ -1,4 +1,4 @@
-package com.lgcns.client.dto;
+package com.lgcns.client.managerClient.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalTime;

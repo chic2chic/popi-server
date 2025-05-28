@@ -1,9 +1,12 @@
 package com.lgcns.service;
 
-import com.lgcns.client.ManagerServiceClient;
-import com.lgcns.client.dto.DailyReservation;
-import com.lgcns.client.dto.MonthlyReservationResponse;
-import com.lgcns.client.dto.TimeSlot;
+import com.lgcns.client.managerClient.ManagerServiceClient;
+import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
+import com.lgcns.client.managerClient.dto.response.DailyReservation;
+import com.lgcns.client.managerClient.dto.response.MonthlyReservationResponse;
+import com.lgcns.client.managerClient.dto.response.ReservationPopupInfoResponse;
+import com.lgcns.client.managerClient.dto.response.TimeSlot;
+import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberReservationErrorCode;
@@ -13,13 +16,16 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class MemberReservationServiceImpl implements MemberReservationService {
 
     private final ManagerServiceClient managerServiceClient;
@@ -53,6 +59,40 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public List<SurveyChoiceResponse> findSurveyChoicesByPopupId(String memberId, Long popupId) {
         return managerServiceClient.findSurveyChoicesByPopupId(popupId);
+    }
+
+    @Override
+    public List<ReservationDetailResponse> findReservationInfo(String memberId) {
+        List<MemberReservation> memberReservationList =
+                memberReservationRepository.findByMemberId(Long.parseLong(memberId));
+
+        if (memberReservationList.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> popupIds =
+                memberReservationList.stream()
+                        .map(MemberReservation::getPopupId)
+                        .distinct()
+                        .toList();
+
+        List<ReservationPopupInfoResponse> reservationPopupInfoList =
+                managerServiceClient.findReservedPopupInfo(PopupIdsRequest.of(popupIds));
+
+        Map<Long, ReservationPopupInfoResponse> reservationPopupInfoMap =
+                reservationPopupInfoList.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ReservationPopupInfoResponse::popupId,
+                                        popupInfo -> popupInfo));
+
+        return memberReservationList.stream()
+                .map(
+                        reservation ->
+                                ReservationDetailResponse.of(
+                                        reservation,
+                                        reservationPopupInfoMap.get(reservation.getPopupId())))
+                .toList();
     }
 
     private void validateYearMonthFormat(String date) {
