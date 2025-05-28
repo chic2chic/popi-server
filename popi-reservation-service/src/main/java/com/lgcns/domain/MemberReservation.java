@@ -29,9 +29,9 @@ public class MemberReservation extends BaseTimeEntity {
     private LocalTime reservationTime;
 
     @Enumerated(EnumType.STRING)
-    private MemberReservationStatus status = MemberReservationStatus.PENDING;
+    private MemberReservationStatus status;
 
-    private Boolean isEntered = false;
+    private Boolean isEntered;
 
     @Builder
     private MemberReservation(
@@ -47,6 +47,8 @@ public class MemberReservation extends BaseTimeEntity {
         this.qrImage = qrImage;
         this.reservationDate = reservationDate;
         this.reservationTime = reservationTime;
+        this.status = MemberReservationStatus.PENDING;
+        this.isEntered = false;
     }
 
     public static MemberReservation createMemberReservation(
