@@ -49,4 +49,12 @@ public class MemberReservationController {
             @RequestHeader("member-id") String memberId) {
         return memberReservationService.findReservationInfo(memberId);
     }
+
+    @DeleteMapping("/{memberReservationId}")
+    @Operation(summary = "회원 예약 취소", description = "예약 ID를 사용하여 회원의 예약을 취소합니다.")
+    public ResponseEntity<Void> cancelMemberReservation(
+            @PathVariable("memberReservationId") Long memberReservationId) {
+        memberReservationService.cancelMemberReservation(memberReservationId);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }
