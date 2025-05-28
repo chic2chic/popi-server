@@ -5,11 +5,16 @@ import com.lgcns.client.managerClient.dto.request.ItemIdsForPaymentRequest;
 import com.lgcns.client.managerClient.dto.response.ItemForPaymentResponse;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
+import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.repository.PaymentRepository;
+import com.siot.IamportRestClient.IamportClient;
+import com.siot.IamportRestClient.exception.IamportResponseException;
+import com.siot.IamportRestClient.response.IamportResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final MemberServiceClient memberServiceClient;
     private final ManagerServiceClient managerServiceClient;
+    private final IamportClient iamportClient;
 
     @Override
     public synchronized PaymentReadyResponse preparePayment(
@@ -72,5 +78,32 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(Payment.createPayment(Long.valueOf(memberId), merchantUid, amount));
 
         return PaymentReadyResponse.of(buyerName, name, amount, merchantUid);
+    }
+
+    @Override
+    public void findPaymentByImpUid(String impUid) throws IamportResponseException, IOException {
+        IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse =
+                iamportClient.paymentByImpUid(impUid);
+        com.siot.IamportRestClient.response.Payment iamportPayment = iamportResponse.getResponse();
+
+        String merchantUid = iamportPayment.getMerchantUid();
+        String pgProvider = iamportPayment.getPgProvider();
+        int amount = iamportPayment.getAmount().intValue();
+        PaymentStatus status = PaymentStatus.valueOf(iamportPayment.getStatus());
+
+        Payment payment =
+                paymentRepository
+                        .findByMerchantUid(merchantUid)
+                        .orElseThrow(() -> new CustomException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+
+        if (amount != payment.getAmount()) {
+            throw new CustomException(PaymentErrorCode.INVALID_AMOUNT);
+        }
+
+        if (status != PaymentStatus.PAID) {
+            throw new CustomException(PaymentErrorCode.NOT_PAID);
+        }
+
+        payment.updatePayment(impUid, pgProvider, amount);
     }
 }

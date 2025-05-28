@@ -1,6 +1,9 @@
 package com.lgcns.repository;
 
 import com.lgcns.domain.Payment;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PaymentRepository extends JpaRepository<Payment, Long> {}
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    Optional<Payment> findByMerchantUid(String merchantUid);
+}

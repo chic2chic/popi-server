@@ -3,13 +3,12 @@ package com.lgcns.externalApi;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.service.PaymentService;
+import com.siot.IamportRestClient.exception.IamportResponseException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,5 +24,14 @@ public class PaymentController {
     public PaymentReadyResponse paymentPrepare(
             @RequestHeader("member-id") String memberId, @RequestBody PaymentReadyRequest request) {
         return paymentService.preparePayment(memberId, request);
+    }
+
+    @PostMapping("/verify/{impUid}")
+    @Operation(
+            summary = "impUid 기반 결제 검증",
+            description = "impUid에 해당하는 결제 정보를 아임포트에서 조회하고, 결제 금액과 상태를 검증합니다.")
+    public void paymentByImpUidFind(@PathVariable("impUid") String impUid)
+            throws IamportResponseException, IOException {
+        paymentService.findPaymentByImpUid(impUid);
     }
 }
