@@ -222,7 +222,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     private String createMemberReservationImageString(
-            Long id,
+            Long memberReservationId,
             Long memberId,
             Long reservationId,
             Long popupId,
@@ -233,8 +233,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
         try {
             Map<String, Object> data = new HashMap<>();
-            data.put("id", id);
-            data.put("memberId", memberId);
+            data.put("memberReservationId", memberReservationId);
             data.put("reservationId", reservationId);
             data.put("popupId", popupId);
             data.put("age", age);
