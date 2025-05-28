@@ -16,7 +16,7 @@ public interface ManagerServiceClient {
 
     @GetMapping("/internal/popups")
     SliceResponse<PopupInfoResponse> findPopupsByName(
-            @RequestParam(name = "searchName", required = false) String searchName,
+            @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "lastPopupId", required = false) Long lastPopupId,
             @RequestParam(name = "size", defaultValue = "8") int size);
 
