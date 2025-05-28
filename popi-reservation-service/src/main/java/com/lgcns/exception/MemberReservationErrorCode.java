@@ -13,7 +13,6 @@ public enum MemberReservationErrorCode implements ErrorCode {
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
 
     MEMBER_RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "회원 예약을 찾을 수 없습니다."),
-    MEMBER_FEIGN_CLIENT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "회원 서비스와의 통신에 실패했습니다."),
 
     NO_MORE_RESERVATIONS_AVAILABLE(HttpStatus.BAD_REQUEST, "예약 가능한 수량이 없습니다."),
     QR_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "QR 코드 생성에 실패했습니다."),
