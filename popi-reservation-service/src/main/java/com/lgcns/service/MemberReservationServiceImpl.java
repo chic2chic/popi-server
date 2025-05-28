@@ -95,6 +95,11 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                 .toList();
     }
 
+    @Override
+    public List<Long> findHotPopupIds() {
+        return memberReservationRepository.findHotPopupIds();
+    }
+
     private void validateYearMonthFormat(String date) {
         try {
             YearMonth.parse(date);

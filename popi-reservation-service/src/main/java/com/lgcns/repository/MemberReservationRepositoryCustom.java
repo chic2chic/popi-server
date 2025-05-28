@@ -8,4 +8,6 @@ public interface MemberReservationRepositoryCustom {
 
     List<DailyReservationCountResponse> findDailyReservationCount(
             Long popupId, LocalDate popupOpenDate, LocalDate popupCloseDate, String date);
+
+    List<Long> findHotPopupIds();
 }

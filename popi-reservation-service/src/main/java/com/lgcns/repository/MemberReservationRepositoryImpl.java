@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -33,6 +34,29 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
         List<Tuple> tuples = getHourlyReservationCounts(popupId, start, end);
 
         return convertToResponseList(tuples);
+    }
+
+    @Override
+    public List<Long> findHotPopupIds() {
+        List<Tuple> results =
+                queryFactory
+                        .select(memberReservation.popupId, memberReservation.popupId.count())
+                        .from(memberReservation)
+                        .where(memberReservation.popupId.isNotNull())
+                        .groupBy(memberReservation.popupId)
+                        .orderBy(
+                                memberReservation.popupId.count().desc(),
+                                memberReservation.popupId.asc())
+                        .limit(4)
+                        .fetch();
+
+        return extractPopupIds(results);
+    }
+
+    private List<Long> extractPopupIds(List<Tuple> tuples) {
+        return tuples.stream()
+                .map(tuple -> tuple.get(memberReservation.popupId))
+                .collect(Collectors.toList());
     }
 
     private LocalDate getStartDate(YearMonth yearMonth, LocalDate openDate) {
