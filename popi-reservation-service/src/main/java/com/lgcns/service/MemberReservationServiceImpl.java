@@ -62,7 +62,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public List<ReservationInfoResponse> findReservationInfo(String memberId) {
+    public List<ReservationDetailResponse> findReservationInfo(String memberId) {
         List<MemberReservation> memberReservationList =
                 memberReservationRepository.findByMemberId(Long.parseLong(memberId));
 
@@ -89,7 +89,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         return memberReservationList.stream()
                 .map(
                         reservation ->
-                                ReservationInfoResponse.of(
+                                ReservationDetailResponse.of(
                                         reservation,
                                         reservationPopupInfoMap.get(reservation.getPopupId())))
                 .toList();

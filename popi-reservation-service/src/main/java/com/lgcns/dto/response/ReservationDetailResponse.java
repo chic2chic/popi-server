@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.format.TextStyle;
 import java.util.Locale;
 
-public record ReservationInfoResponse(
+public record ReservationDetailResponse(
         @Schema(description = "예약 ID", example = "23") Long reservationId,
         @Schema(description = "팝업 ID", example = "1") Long popupId,
         @Schema(description = "팝업 이름", example = "블랙핑크 팝업스토어") String popupName,
@@ -18,9 +18,9 @@ public record ReservationInfoResponse(
         @Schema(description = "경도", example = "127.37123456123456") Double longitude,
         @Schema(description = "QR 이미지 (Base64 인코딩)", example = "iVBORw0KGgoAAAA...")
                 String qrImage) {
-    public static ReservationInfoResponse of(
+    public static ReservationDetailResponse of(
             MemberReservation reservation, ReservationPopupInfoResponse reservationPopupInfo) {
-        return new ReservationInfoResponse(
+        return new ReservationDetailResponse(
                 reservation.getId(),
                 reservationPopupInfo.popupId(),
                 reservationPopupInfo.popupName(),

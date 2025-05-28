@@ -392,14 +392,14 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             stubFindReservationInfo(request, 200, expectedResponse);
 
             // when
-            List<ReservationInfoResponse> reservations =
+            List<ReservationDetailResponse> reservations =
                     memberReservationService.findReservationInfo(memberId);
 
             // then
             assertThat(reservations).isNotEmpty();
             assertThat(reservations.size()).isEqualTo(1);
 
-            ReservationInfoResponse reservationInfo = reservations.get(0);
+            ReservationDetailResponse reservationInfo = reservations.get(0);
 
             Assertions.assertAll(
                     () -> assertThat(reservationInfo.popupId()).isEqualTo(1L),
@@ -420,7 +420,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             String memberId = "99";
 
             // when
-            List<ReservationInfoResponse> reservations =
+            List<ReservationDetailResponse> reservations =
                     memberReservationService.findReservationInfo(memberId);
 
             // then

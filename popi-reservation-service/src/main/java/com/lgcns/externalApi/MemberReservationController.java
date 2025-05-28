@@ -1,7 +1,7 @@
 package com.lgcns.externalApi;
 
 import com.lgcns.dto.response.AvailableDateResponse;
-import com.lgcns.dto.response.ReservationInfoResponse;
+import com.lgcns.dto.response.ReservationDetailResponse;
 import com.lgcns.dto.response.SurveyChoiceResponse;
 import com.lgcns.service.MemberReservationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +35,7 @@ public class MemberReservationController {
 
     @GetMapping("/")
     @Operation(summary = "내 예약 목록 조회", description = "사용자의 예약 목록을 조회합니다.")
-    public List<ReservationInfoResponse> reservationInfoFind(
+    public List<ReservationDetailResponse> reservationInfoFind(
             @RequestHeader("member-id") String memberId) {
         return memberReservationService.findReservationInfo(memberId);
     }
