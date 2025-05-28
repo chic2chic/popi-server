@@ -182,6 +182,9 @@ class MemberServiceTest extends IntegrationTest {
             // then
             Assertions.assertAll(
                     () -> assertThat(response.memberId()).isEqualTo(1L),
+                    () -> assertThat(response.nickname()).isEqualTo("testNickname"),
+                    () -> assertThat(response.age()).isEqualTo(MemberAge.TWENTIES),
+                    () -> assertThat(response.gender()).isEqualTo(MemberGender.MALE),
                     () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
                     () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
         }
