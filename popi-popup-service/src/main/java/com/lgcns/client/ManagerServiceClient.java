@@ -4,6 +4,7 @@ import com.lgcns.config.FeignConfig;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.response.SliceResponse;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -24,5 +25,5 @@ public interface ManagerServiceClient {
     PopupDetailsResponse findPopupDetailsById(@PathVariable(name = "popupId") Long popupId);
 
     @PostMapping("/internal/popups/popularity")
-    List<PopupInfoResponse> findHotPopupsByIds(@RequestBody List<Long> popupIds);
+    List<PopupInfoResponse> findHotPopupsByIds(@Valid @RequestBody PopupIdsRequest request);
 }

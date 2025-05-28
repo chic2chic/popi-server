@@ -20,16 +20,18 @@ public class MemberReservation extends BaseTimeEntity {
     private Long id;
 
     private Long reservationId;
-
     private Long memberId;
-
     private Long popupId;
 
-    private String qrImage;
+    @Lob private String qrImage;
 
     private LocalDate reservationDate;
-
     private LocalTime reservationTime;
+
+    @Enumerated(EnumType.STRING)
+    private MemberReservationStatus status;
+
+    private Boolean isEntered;
 
     @Builder
     private MemberReservation(
@@ -45,22 +47,28 @@ public class MemberReservation extends BaseTimeEntity {
         this.qrImage = qrImage;
         this.reservationDate = reservationDate;
         this.reservationTime = reservationTime;
+        this.status = MemberReservationStatus.PENDING;
+        this.isEntered = false;
     }
 
-    public static MemberReservation createMemberReservation(
-            Long reservationId,
-            Long memberId,
-            Long popupId,
-            String qrImage,
-            LocalDate reservationDate,
-            LocalTime reservationTime) {
-        return MemberReservation.builder()
-                .reservationId(reservationId)
-                .memberId(memberId)
-                .popupId(popupId)
-                .qrImage(qrImage)
-                .reservationDate(reservationDate)
-                .reservationTime(reservationTime)
-                .build();
+    public static MemberReservation createMemberReservation(Long reservationId, Long memberId) {
+        return MemberReservation.builder().reservationId(reservationId).memberId(memberId).build();
+    }
+
+    public void updateMemberReservation(
+            Long popupId, String qrImage, LocalDate reservationDate, LocalTime reservationTime) {
+        this.popupId = popupId;
+        this.qrImage = qrImage;
+        this.reservationDate = reservationDate;
+        this.reservationTime = reservationTime;
+        this.status = MemberReservationStatus.RESERVED;
+    }
+
+    public void updateIsEntered() {
+        this.isEntered = true;
+    }
+
+    public void updateMemberReservationStatus(MemberReservationStatus status) {
+        this.status = status;
     }
 }

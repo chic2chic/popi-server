@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface MemberReservationRepository
         extends JpaRepository<MemberReservation, Long>, MemberReservationRepositoryCustom {
     List<MemberReservation> findByMemberId(Long memberId);
+
+    Boolean existsMemberReservationByMemberIdAndReservationId(Long memberId, Long reservationId);
 }

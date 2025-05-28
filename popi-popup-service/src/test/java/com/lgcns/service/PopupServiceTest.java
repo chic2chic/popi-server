@@ -7,6 +7,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
+import com.lgcns.client.PopupIdsRequest;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.error.exception.CustomException;
@@ -389,6 +390,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         void 인기_팝업_아이디가_존재하면_해당_팝업들의_정보를_반환한다() throws JsonProcessingException {
             // given
             List<Long> hotPopupIds = List.of(1L, 3L, 5L, 7L);
+            PopupIdsRequest hotPopupIdsRequest = new PopupIdsRequest(hotPopupIds);
 
             String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
 
@@ -425,7 +427,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                             "address", "서울특별시 강남구 테헤란로 7, 4층")));
 
             stubFindHotPopupIds(200, expectedIdsResponse);
-            stubFindHotPopupsByIds(hotPopupIds, 200, expectedResponse);
+            stubFindHotPopupsByIds(hotPopupIdsRequest, 200, expectedResponse);
 
             // when
             List<PopupInfoResponse> result = popupService.findHotPopups();
@@ -469,6 +471,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         void 인기_팝업이_4개_미만이면_실제_개수만큼_반환한다() throws JsonProcessingException {
             // given
             List<Long> hotPopupIds = List.of(2L, 4L);
+            PopupIdsRequest hotPopupIdsRequest = new PopupIdsRequest(hotPopupIds);
 
             String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
 
@@ -491,7 +494,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                             "address", "부산광역시 해운대구 마린시티")));
 
             stubFindHotPopupIds(200, expectedIdsResponse);
-            stubFindHotPopupsByIds(hotPopupIds, 200, expectedResponse);
+            stubFindHotPopupsByIds(hotPopupIdsRequest, 200, expectedResponse);
 
             // when
             List<PopupInfoResponse> result = popupService.findHotPopups();
@@ -518,9 +521,10 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                         .withBody(body)));
     }
 
-    private void stubFindHotPopupsByIds(List<Long> popupIds, int status, String body) {
+    private void stubFindHotPopupsByIds(
+            PopupIdsRequest hotPopupIdsRequest, int status, String body) {
         try {
-            String requestBody = objectMapper.writeValueAsString(popupIds);
+            String requestBody = objectMapper.writeValueAsString(hotPopupIdsRequest);
 
             wireMockServer.stubFor(
                     post(urlPathEqualTo("/internal/popups/popularity"))

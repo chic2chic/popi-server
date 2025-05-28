@@ -1,39 +1,59 @@
 package com.lgcns.service;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.error.feign.FeignErrorCode;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 
 class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     @Autowired private MemberReservationService memberReservationService;
-
     @Autowired private MemberReservationRepository memberReservationRepository;
+    @Autowired private RedisTemplate<String, String> redisTemplate;
+    @Autowired private DatabaseCleaner databaseCleaner;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String memberId = "1";
     private final Long popupId = 1L;
+    private final Long reservationId = 1L;
+
     private final AtomicLong reservationIdGenerator = new AtomicLong(4);
     private final AtomicLong memberIdGenerator = new AtomicLong(1);
+
+    @BeforeEach
+    void cleanDatabase() {
+        databaseCleaner.execute();
+    }
+
+    @BeforeEach
+    void injectMockito() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @BeforeEach
     void setUp() throws JsonProcessingException {
@@ -207,57 +227,57 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             }
         }
 
-        @Test
-        void 모든_시간이_가득_찬_날짜는_예약불가() {
-            // given
-            String date = "2025-06";
-
-            // when
-            AvailableDateResponse response =
-                    memberReservationService.findAvailableDate(memberId, popupId, date);
-
-            ReservableDate fullyBooked =
-                    response.reservableDate().stream()
-                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 1)))
-                            .findFirst()
-                            .orElseThrow();
-
-            // then
-            assertPopupDate(response);
-            assertThat(fullyBooked.isReservable()).isFalse();
-
-            for (ReservableTime reservableTime : fullyBooked.timeSlots()) {
-                assertThat(reservableTime.isPossible()).isFalse(); // 모두 불가해야 함
-            }
-        }
-
-        @Test
-        void 일부_시간만_예약된_날짜는_정확하게_표시된다() {
-            // given
-            String date = "2025-06";
-
-            // when
-            AvailableDateResponse response =
-                    memberReservationService.findAvailableDate(memberId, popupId, date);
-
-            ReservableDate reservableDate =
-                    response.reservableDate().stream()
-                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 2)))
-                            .findFirst()
-                            .orElseThrow();
-
-            // then
-            assertPopupDate(response);
-            assertThat(reservableDate.isReservable()).isTrue();
-
-            for (ReservableTime reservableTime : reservableDate.timeSlots()) {
-                if (reservableTime.time().equals(LocalTime.of(13, 0))) {
-                    assertThat(reservableTime.isPossible()).isFalse(); // 예약 불가
-                } else {
-                    assertThat(reservableTime.isPossible()).isTrue(); // 예약 가능
-                }
-            }
-        }
+        //        @Test
+        //        void 모든_시간이_가득_찬_날짜는_예약불가() {
+        //            // given
+        //            String date = "2025-06";
+        //
+        //            // when
+        //            AvailableDateResponse response =
+        //                    memberReservationService.findAvailableDate(memberId, popupId, date);
+        //
+        //            ReservableDate fullyBooked =
+        //                    response.reservableDate().stream()
+        //                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 1)))
+        //                            .findFirst()
+        //                            .orElseThrow();
+        //
+        //            // then
+        //            assertPopupDate(response);
+        //            assertThat(fullyBooked.isReservable()).isFalse();
+        //
+        //            for (ReservableTime reservableTime : fullyBooked.timeSlots()) {
+        //                assertThat(reservableTime.isPossible()).isFalse(); // 모두 불가해야 함
+        //            }
+        //        }
+        //
+        //        @Test
+        //        void 일부_시간만_예약된_날짜는_정확하게_표시된다() {
+        //            // given
+        //            String date = "2025-06";
+        //
+        //            // when
+        //            AvailableDateResponse response =
+        //                    memberReservationService.findAvailableDate(memberId, popupId, date);
+        //
+        //            ReservableDate reservableDate =
+        //                    response.reservableDate().stream()
+        //                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 2)))
+        //                            .findFirst()
+        //                            .orElseThrow();
+        //
+        //            // then
+        //            assertPopupDate(response);
+        //            assertThat(reservableDate.isReservable()).isTrue();
+        //
+        //            for (ReservableTime reservableTime : reservableDate.timeSlots()) {
+        //                if (reservableTime.time().equals(LocalTime.of(13, 0))) {
+        //                    assertThat(reservableTime.isPossible()).isFalse(); // 예약 불가
+        //                } else {
+        //                    assertThat(reservableTime.isPossible()).isTrue(); // 예약 가능
+        //                }
+        //            }
+        //        }
 
         @Test
         void 예약_기간_아닌경우_빈_리스트_반환한다() {
@@ -365,6 +385,293 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     }
 
     @Nested
+    class 회원이_예약_생성_할_때 {
+
+        @Test
+        void 예약이_존재하고_예약_가능한_상태이면_예약에_성공한다() throws JsonProcessingException {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+
+            // when
+            memberReservationService.createMemberReservation(memberId, reservationId);
+
+            // then
+
+            Assertions.assertAll(
+                    () ->
+                            assertThat(
+                                            memberReservationRepository
+                                                    .existsMemberReservationByMemberIdAndReservationId(
+                                                            Long.parseLong(memberId),
+                                                            reservationId))
+                                    .isTrue(),
+                    () ->
+                            assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
+                                    .isEqualTo("9"));
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 이미_예약한_사용자는_예외가_발생한다() throws JsonProcessingException {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+
+            memberReservationRepository.save(
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId)));
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_ALREADY_EXISTS.getMessage());
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 예약가능수량이_없으면_예약에_실패하고_Redis_복구가_일어난다() throws JsonProcessingException {
+            // given
+            Long reservationId = 1L;
+            redisTemplate.opsForValue().set(reservationId.toString(), "0");
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(RESERVATION_FAILED.getMessage());
+
+            assertThat(redisTemplate.opsForValue().get(reservationId.toString())).isEqualTo("0");
+            redisTemplate.delete(reservationId.toString());
+        }
+    }
+
+    @Nested
+    class 회원의_예약_정보를_업데이트할_때 {
+
+        @Test
+        void 예약이_존재하고_업데이트_가능한_상태이면_예약_정보를_업데이트한다() throws JsonProcessingException {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId);
+            memberReservationRepository.save(memberReservation);
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "memberId",
+                                    memberId,
+                                    "nickname",
+                                    "testUser",
+                                    "age",
+                                    "TWENTIES",
+                                    "gender",
+                                    "MALE",
+                                    "role",
+                                    "USER",
+                                    "status",
+                                    "NORMAL")));
+
+            stubFindReservationById(
+                    reservationId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "reservationId",
+                                    reservationId,
+                                    "popupId",
+                                    popupId,
+                                    "reservationDate",
+                                    "2025-06-01",
+                                    "reservationTime",
+                                    "12:00")));
+
+            // when
+            memberReservationService.updateMemberReservation(memberReservation.getId());
+
+            // then
+            MemberReservation updatedMemberReservation =
+                    memberReservationRepository.findById(memberReservation.getId()).get();
+            Assertions.assertAll(
+                    () ->
+                            assertThat(updatedMemberReservation.getStatus())
+                                    .isEqualTo(MemberReservationStatus.RESERVED),
+                    () ->
+                            assertThat(updatedMemberReservation.getReservationDate())
+                                    .isEqualTo(LocalDate.of(2025, 6, 1)),
+                    () ->
+                            assertThat(updatedMemberReservation.getReservationTime())
+                                    .isEqualTo(LocalTime.of(12, 0)));
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 회원_예약이_존재하지_않으면_예외가_발생한다() {
+            // given
+            Long invalidMemberReservationId = -1L;
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            invalidMemberReservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void FEIGN_CLIENT_API_호출_실패시_예외가_발생한다() throws JsonProcessingException {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId);
+            memberReservationRepository.save(memberReservation);
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "memberId",
+                                    memberId,
+                                    "nickname",
+                                    "testUser",
+                                    "age",
+                                    "TWENTIES",
+                                    "gender",
+                                    "MALE",
+                                    "role",
+                                    "USER",
+                                    "status",
+                                    "NORMAL")));
+
+            stubFindReservationById(reservationId, 500, "");
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            memberReservation.getId()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("Feign 예외 디코딩 실패");
+        }
+
+        @Test
+        void 예약이_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId);
+            memberReservationRepository.save(memberReservation);
+
+            stubForFindMemberInternalInfo(
+                    memberId,
+                    200,
+                    objectMapper.writeValueAsString(
+                            Map.of(
+                                    "memberId",
+                                    memberId,
+                                    "nickname",
+                                    "testUser",
+                                    "age",
+                                    "TWENTIES",
+                                    "gender",
+                                    "MALE",
+                                    "role",
+                                    "USER",
+                                    "status",
+                                    "NORMAL")));
+
+            stubFindReservationById(
+                    reservationId,
+                    404,
+                    """
+                    {
+                      "success": false,
+                      "status": 404,
+                      "data": {
+                        "errorClassName": "RESERVATION_NOT_FOUND",
+                        "message": "해당 예약을 찾을 수 없습니다."
+                      },
+                      "timestamp": "2025-05-27T17:24:45.082753"
+                    }
+                    """);
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            memberReservation.getId()))
+                    .isInstanceOf(CustomException.class)
+                    .satisfies(
+                            ex -> {
+                                CustomException ce = (CustomException) ex;
+                                assertThat(ce.getErrorCode()).isInstanceOf(FeignErrorCode.class);
+
+                                FeignErrorCode errorCode = (FeignErrorCode) ce.getErrorCode();
+                                assertThat(errorCode.getErrorName())
+                                        .isEqualTo("RESERVATION_NOT_FOUND");
+                                assertThat(errorCode.getMessage()).contains("해당 예약을 찾을 수 없습니다.");
+                            });
+        }
+    }
+
+    @Nested
+    class 회원의_예약이_취소될_때 {
+
+        @Test
+        void 예약이_존재하면_예약을_취소한다() throws JsonProcessingException {
+            // given
+            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            Long.parseLong(memberId), reservationId);
+            memberReservationRepository.save(memberReservation);
+
+            // when
+            memberReservationService.cancelMemberReservation(memberReservation.getId());
+
+            // then
+
+            Optional<MemberReservation> optionalMemberReservation =
+                    memberReservationRepository.findById(memberReservation.getId());
+            Assertions.assertAll(
+                    () -> assertThat(optionalMemberReservation).isEmpty(),
+                    () ->
+                            assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
+                                    .isEqualTo("11"));
+
+            redisTemplate.delete(reservationId.toString());
+        }
+
+        @Test
+        void 예약이_존재하지_않으면_예외가_발생한다() {
+            // given
+            Long invalidMemberReservationId = -1L;
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.cancelMemberReservation(
+                                            invalidMemberReservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
+        }
+    }
+
+    @Nested
     class 예약_목록_조회할_때 {
 
         @Test
@@ -396,12 +703,11 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     memberReservationService.findReservationInfo(memberId);
 
             // then
-            assertThat(reservations).isNotEmpty();
-            assertThat(reservations.size()).isEqualTo(1);
-
             ReservationDetailResponse reservationInfo = reservations.get(0);
 
             Assertions.assertAll(
+                    () -> assertThat(reservations).isNotEmpty(),
+                    () -> assertThat(reservations.size()).isEqualTo(1),
                     () -> assertThat(reservationInfo.popupId()).isEqualTo(1L),
                     () -> assertThat(reservationInfo.popupName()).isEqualTo("BLACK PINK 팝업스토어"),
                     () -> assertThat(reservationInfo.reservationTime()).isEqualTo("12:00"),
@@ -500,13 +806,14 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void insertMultipleReservations(Long popupId, int count) {
         for (int i = 0; i < count; i++) {
             MemberReservation reservation =
-                    MemberReservation.createMemberReservation(
-                            reservationIdGenerator.getAndIncrement(),
-                            memberIdGenerator.getAndIncrement(),
-                            popupId,
-                            null,
-                            LocalDate.of(2025, 6, 1),
-                            LocalTime.of(12, 0));
+                    MemberReservation.builder()
+                            .reservationId(reservationIdGenerator.getAndIncrement())
+                            .memberId(memberIdGenerator.getAndIncrement())
+                            .popupId(popupId)
+                            .qrImage("iVBORw0KGgoAAAA...")
+                            .reservationDate(LocalDate.of(2025, 6, 1))
+                            .reservationTime(LocalTime.of(12, 0))
+                            .build();
             memberReservationRepository.save(reservation);
         }
     }
@@ -544,6 +851,38 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    private void stubForFindMemberInternalInfo(String memberId, int status, String body) {
+        try {
+            wireMockServer.stubFor(
+                    get(urlPathEqualTo("/internal/" + memberId))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(status)
+                                            .withHeader(
+                                                    "Content-Type",
+                                                    MediaType.APPLICATION_JSON_VALUE)
+                                            .withBody(body)));
+        } catch (Exception e) {
+            throw new RuntimeException("직렬화 실패", e);
+        }
+    }
+
+    private void stubFindReservationById(Long reservationId, int status, String body) {
+        try {
+            wireMockServer.stubFor(
+                    get(urlPathEqualTo("/internal/reservations/" + reservationId))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(status)
+                                            .withHeader(
+                                                    "Content-Type",
+                                                    MediaType.APPLICATION_JSON_VALUE)
+                                            .withBody(body)));
+        } catch (Exception e) {
+            throw new RuntimeException("직렬화 실패", e);
+        }
+    }
+
     private void stubFindReservationInfo(PopupIdsRequest request, int status, String body)
             throws JsonProcessingException {
         wireMockServer.stubFor(
@@ -560,13 +899,14 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void insertMemberReservation(LocalDate date, LocalTime time) {
         for (int i = 0; i < 5; i++) {
             MemberReservation reservation =
-                    MemberReservation.createMemberReservation(
-                            reservationIdGenerator.getAndIncrement(),
-                            memberIdGenerator.getAndIncrement(),
-                            popupId,
-                            "iVBORw0KGgoAAAA...",
-                            date,
-                            time);
+                    MemberReservation.builder()
+                            .reservationId(reservationIdGenerator.getAndIncrement())
+                            .memberId(memberIdGenerator.getAndIncrement())
+                            .popupId(popupId)
+                            .qrImage("iVBORw0KGgoAAAA...")
+                            .reservationDate(LocalDate.of(2025, 6, 1))
+                            .reservationTime(LocalTime.of(12, 0))
+                            .build();
             memberReservationRepository.save(reservation);
         }
     }

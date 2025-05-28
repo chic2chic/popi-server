@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,10 +35,26 @@ public class MemberReservationController {
         return memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
     }
 
+    @PostMapping("/{reservationId}")
+    @Operation(summary = "회원 예약 생성", description = "예약을 생성합니다. 예약 ID를 사용하여 예약을 생성합니다.")
+    public ResponseEntity<Void> createMemberReservation(
+            @RequestHeader("member-id") String memberId, @PathVariable Long reservationId) {
+        memberReservationService.createMemberReservation(memberId, reservationId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
     @GetMapping
     @Operation(summary = "내 예약 목록 조회", description = "사용자의 예약 목록을 조회합니다.")
     public List<ReservationDetailResponse> reservationInfoFind(
             @RequestHeader("member-id") String memberId) {
         return memberReservationService.findReservationInfo(memberId);
+    }
+
+    @DeleteMapping("/{memberReservationId}")
+    @Operation(summary = "회원 예약 취소", description = "예약 ID를 사용하여 회원의 예약을 취소합니다.")
+    public ResponseEntity<Void> cancelMemberReservation(
+            @PathVariable("memberReservationId") Long memberReservationId) {
+        memberReservationService.cancelMemberReservation(memberReservationId);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

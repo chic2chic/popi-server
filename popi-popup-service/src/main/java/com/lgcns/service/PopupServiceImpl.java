@@ -1,6 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.client.ManagerServiceClient;
+import com.lgcns.client.PopupIdsRequest;
 import com.lgcns.client.ReservationServiceClient;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
@@ -30,11 +31,9 @@ public class PopupServiceImpl implements PopupService {
     @Override
     public List<PopupInfoResponse> findHotPopups() {
         List<Long> popupIds = reservationServiceClient.findHotPopupIds();
+        if (popupIds.isEmpty()) return List.of();
 
-        if (popupIds.isEmpty()) {
-            return List.of();
-        }
-
-        return managerServiceClient.findHotPopupsByIds(popupIds);
+        PopupIdsRequest popupIdsRequest = new PopupIdsRequest(popupIds);
+        return managerServiceClient.findHotPopupsByIds(popupIdsRequest);
     }
 }
