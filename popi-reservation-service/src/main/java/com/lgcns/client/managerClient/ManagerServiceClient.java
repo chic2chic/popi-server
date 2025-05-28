@@ -28,6 +28,9 @@ public interface ManagerServiceClient {
     @PostMapping("/internal/reservations")
     List<ReservationPopupInfoResponse> findReservedPopupInfo(@RequestBody PopupIdsRequest request);
 
+    @GetMapping("/internal/popups/{popupId}")
+    ReservationPopupInfoResponse findReservedPopupInfo(@PathVariable Long popupId);
+
     @GetMapping("/internal/reservations/{reservationId}")
     ReservationInfoResponse findReservationById(@PathVariable("reservationId") Long reservationId);
 }

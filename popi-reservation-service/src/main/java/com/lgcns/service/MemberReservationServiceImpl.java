@@ -118,6 +118,22 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
+    public ReservationDetailResponse findUpcomingReservationInfo(String memberId) {
+
+        MemberReservation upcomingReservation =
+                memberReservationRepository.findUpcomingReservation(Long.parseLong(memberId));
+
+        if (upcomingReservation == null) {
+            return null;
+        }
+
+        ReservationPopupInfoResponse reservationPopupInfo =
+                managerServiceClient.findReservedPopupInfo(upcomingReservation.getPopupId());
+
+        return ReservationDetailResponse.of(upcomingReservation, reservationPopupInfo);
+    }
+
+    @Override
     public void createMemberReservation(String memberId, Long reservationId) {
         validateMemberReservationExists(Long.parseLong(memberId), reservationId);
 
