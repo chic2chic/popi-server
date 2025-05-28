@@ -26,10 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class MemberReservationServiceTest extends WireMockIntegrationTest {
 
