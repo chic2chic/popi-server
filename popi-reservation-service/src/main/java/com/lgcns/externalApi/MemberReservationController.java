@@ -46,7 +46,7 @@ public class MemberReservationController {
 
     @PostMapping("/{reservationId}")
     @Operation(summary = "회원 예약 생성", description = "예약을 생성합니다. 예약 ID를 사용하여 예약을 생성합니다.")
-    public ResponseEntity<Void> createMemberReservation(
+    public ResponseEntity<Void> memberReservationCreate(
             @RequestHeader("member-id") String memberId, @PathVariable Long reservationId) {
         memberReservationService.createMemberReservation(memberId, reservationId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -68,7 +68,7 @@ public class MemberReservationController {
 
     @DeleteMapping("/{memberReservationId}")
     @Operation(summary = "회원 예약 취소", description = "예약 ID를 사용하여 회원의 예약을 취소합니다.")
-    public ResponseEntity<Void> cancelMemberReservation(
+    public ResponseEntity<Void> memberReservationCancel(
             @PathVariable("memberReservationId") Long memberReservationId) {
         memberReservationService.cancelMemberReservation(memberReservationId);
         return ResponseEntity.status(HttpStatus.OK).build();
