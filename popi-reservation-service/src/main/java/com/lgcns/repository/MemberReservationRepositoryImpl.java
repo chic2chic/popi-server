@@ -42,7 +42,8 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
     }
 
     @Override
-    public MemberReservation findUpcomingReservation(Long memberId) {
+    public MemberReservation findUpcomingReservation(
+            Long memberId, MemberReservationStatus status) {
         LocalDateTime now = LocalDateTime.now();
         LocalDate nowDate = now.toLocalDate();
         LocalTime nowTime = now.toLocalTime();
@@ -50,21 +51,18 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
         return queryFactory
                 .selectFrom(memberReservation)
                 .where(
+                        memberReservation.memberId.eq(memberId),
+                        memberReservation.status.eq(MemberReservationStatus.RESERVED),
                         memberReservation
-                                .memberId
-                                .eq(memberId)
-                                .and(
+                                .reservationDate
+                                .gt(nowDate)
+                                .or(
                                         memberReservation
                                                 .reservationDate
-                                                .gt(nowDate)
-                                                .or(
-                                                        memberReservation
-                                                                .reservationDate
-                                                                .eq(nowDate)
-                                                                .and(
-                                                                        memberReservation
-                                                                                .reservationTime
-                                                                                .goe(nowTime)))))
+                                                .eq(nowDate)
+                                                .and(
+                                                        memberReservation.reservationTime.goe(
+                                                                nowTime))))
                 .orderBy(
                         memberReservation.reservationDate.asc(),
                         memberReservation.reservationTime.asc())
