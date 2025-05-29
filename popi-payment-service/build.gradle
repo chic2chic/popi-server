@@ -1,3 +1,8 @@
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
 dependencies {
     implementation project(':popi-domain')
     implementation project(':popi-common')
@@ -31,4 +36,7 @@ dependencies {
 
     // WireMock
     testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:4.2.1'
+
+    // Iamport
+    implementation 'com.github.iamport:iamport-rest-client-java:0.2.23'
 }
