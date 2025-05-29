@@ -1,7 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.client.managerClient.ManagerServiceClient;
-import com.lgcns.client.managerClient.PopupIdsRequest;
+import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.client.reservationClient.ReservationServiceClient;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
