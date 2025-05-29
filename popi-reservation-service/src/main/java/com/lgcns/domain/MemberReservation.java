@@ -67,8 +67,4 @@ public class MemberReservation extends BaseTimeEntity {
     public void updateIsEntered() {
         this.isEntered = true;
     }
-
-    public void updateMemberReservationStatus(MemberReservationStatus status) {
-        this.status = status;
-    }
 }
