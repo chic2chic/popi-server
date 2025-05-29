@@ -11,6 +11,8 @@ import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
+import com.lgcns.kafka.message.ItemPurchasedMessage;
+import com.lgcns.kafka.producer.ItemPurchasedProducer;
 import com.lgcns.repository.PaymentRepository;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
@@ -34,6 +36,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final MemberServiceClient memberServiceClient;
     private final ManagerServiceClient managerServiceClient;
     private final IamportClient iamportClient;
+    private final ItemPurchasedProducer itemPurchasedProducer;
 
     @Override
     public synchronized PaymentReadyResponse preparePayment(
@@ -118,6 +121,8 @@ public class PaymentServiceImpl implements PaymentService {
             }
 
             payment.updatePayment(impUid, pgProvider, amount, PaymentStatus.PAID);
+
+            itemPurchasedProducer.sendMessage(ItemPurchasedMessage.from(payment));
         } catch (IamportResponseException e) {
             log.error(
                     "Iamport API 오류: status={}, message={}", e.getHttpStatusCode(), e.getMessage());
