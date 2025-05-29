@@ -723,11 +723,11 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     class 예약_목록_조회할_때 {
 
         @Test
-        void 사용자의_예약이_존재하면_조회에_성공한다() throws JsonProcessingException {
+        void 완료된_예약이_존재하면_조회에_성공한다() throws JsonProcessingException {
             // given
             PopupIdsRequest request = PopupIdsRequest.of(List.of(popupId));
 
-            insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
+            insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
@@ -772,9 +772,35 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 사용자의_예약이_존재하지_않으면_빈_리스트를_반환한다() {
+        void 대기중인_예약만_존재하면_빈_리스트를_반환한다() {
+            // given
+            insertPendingMemberReservation(LocalDate.now().plusDays(1), LocalTime.of(12, 0));
+
+            // when
+            List<ReservationDetailResponse> reservations =
+                    memberReservationService.findReservationInfo(memberId);
+
+            // then
+            assertThat(reservations).isEmpty();
+        }
+
+        @Test
+        void 예약_내역이_존재하지_않으면_빈_리스트를_반환한다() {
             // given
             String memberId = "99";
+
+            // when
+            List<ReservationDetailResponse> reservations =
+                    memberReservationService.findReservationInfo(memberId);
+
+            // then
+            assertThat(reservations).isEmpty();
+        }
+
+        @Test
+        void 예약_날짜_및_시간이_오늘보다_이전인_경우_빈_리스트를_반환한다() {
+            // given
+            insertReservedMemberReservation(LocalDate.now().minusDays(1), LocalTime.of(12, 0));
 
             // when
             List<ReservationDetailResponse> reservations =
@@ -787,12 +813,12 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     private void createMemberReservation() {
         // 6월 1일은 모두 찬 상태
-        insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
-        insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(13, 0));
-        insertMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(14, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(13, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(14, 0));
 
         // 6월 2일은 일부만 찬 상태
-        insertMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(13, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(13, 0));
     }
 
     @Nested
@@ -871,7 +897,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         void 현재_시간_이후의_예약이_있으면_가장_가까운_예약을_반환한다() throws JsonProcessingException {
             // given
             LocalDate now = LocalDate.now();
-            insertMemberReservation(now.plusDays(1), LocalTime.of(12, 0));
+            insertReservedMemberReservation(now.plusDays(1), LocalTime.of(12, 0));
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
@@ -918,7 +944,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         void 예약_날짜가_현재_시간보다_이전이면_NULL을_반환한다() throws JsonProcessingException {
             // given
             LocalDate now = LocalDate.now();
-            insertMemberReservation(now.minusDays(1), LocalTime.of(12, 0));
+            insertReservedMemberReservation(now.minusDays(1), LocalTime.of(12, 0));
 
             String expectedResponse = objectMapper.writeValueAsString(null);
 
@@ -1070,7 +1096,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                         .withBody(body)));
     }
 
-    private void insertMemberReservation(LocalDate date, LocalTime time) {
+    private void insertPendingMemberReservation(LocalDate date, LocalTime time) {
         for (int i = 0; i < 5; i++) {
             MemberReservation reservation =
                     MemberReservation.builder()
@@ -1081,6 +1107,28 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             .reservationDate(date)
                             .reservationTime(time)
                             .build();
+            memberReservationRepository.save(reservation);
+        }
+    }
+
+    private void insertReservedMemberReservation(LocalDate date, LocalTime time) {
+        for (int i = 0; i < 5; i++) {
+            MemberReservation reservation =
+                    MemberReservation.builder()
+                            .reservationId(reservationIdGenerator.getAndIncrement())
+                            .memberId(memberIdGenerator.getAndIncrement())
+                            .popupId(popupId)
+                            .qrImage("iVBORw0KGgoAAAA...")
+                            .reservationDate(date)
+                            .reservationTime(time)
+                            .build();
+
+            reservation.updateMemberReservation(
+                    reservation.getPopupId(),
+                    reservation.getQrImage(),
+                    reservation.getReservationDate(),
+                    reservation.getReservationTime());
+
             memberReservationRepository.save(reservation);
         }
     }
