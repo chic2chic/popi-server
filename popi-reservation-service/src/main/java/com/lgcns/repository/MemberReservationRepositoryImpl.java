@@ -1,8 +1,10 @@
 package com.lgcns.repository;
 
+import static com.lgcns.domain.MemberReservationStatus.RESERVED;
 import static com.lgcns.domain.QMemberReservation.memberReservation;
 
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.DailyMemberReservationCountResponse;
 import com.lgcns.dto.response.DailyReservationCountResponse;
 import com.lgcns.dto.response.HourlyReservationCount;
@@ -49,21 +51,18 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
         return queryFactory
                 .selectFrom(memberReservation)
                 .where(
+                        memberReservation.memberId.eq(memberId),
+                        memberReservation.status.eq(RESERVED),
                         memberReservation
-                                .memberId
-                                .eq(memberId)
-                                .and(
+                                .reservationDate
+                                .gt(nowDate)
+                                .or(
                                         memberReservation
                                                 .reservationDate
-                                                .gt(nowDate)
-                                                .or(
-                                                        memberReservation
-                                                                .reservationDate
-                                                                .eq(nowDate)
-                                                                .and(
-                                                                        memberReservation
-                                                                                .reservationTime
-                                                                                .goe(nowTime)))))
+                                                .eq(nowDate)
+                                                .and(
+                                                        memberReservation.reservationTime.goe(
+                                                                nowTime))))
                 .orderBy(
                         memberReservation.reservationDate.asc(),
                         memberReservation.reservationTime.asc())
@@ -85,6 +84,34 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
                         .fetch();
 
         return extractPopupIds(results);
+    }
+
+    @Override
+    public List<MemberReservation> findByMemberIdAndStatus(
+            Long memberId, MemberReservationStatus status) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate nowDate = now.toLocalDate();
+        LocalTime nowTime = now.toLocalTime();
+
+        return queryFactory
+                .selectFrom(memberReservation)
+                .where(
+                        memberReservation.memberId.eq(memberId),
+                        memberReservation.status.eq(status),
+                        memberReservation
+                                .reservationDate
+                                .gt(nowDate)
+                                .or(
+                                        memberReservation
+                                                .reservationDate
+                                                .eq(nowDate)
+                                                .and(
+                                                        memberReservation.reservationTime.goe(
+                                                                nowTime))))
+                .orderBy(
+                        memberReservation.reservationDate.asc(),
+                        memberReservation.reservationTime.asc())
+                .fetch();
     }
 
     private List<Long> extractPopupIds(List<Tuple> tuples) {

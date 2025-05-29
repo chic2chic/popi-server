@@ -1,5 +1,7 @@
 package com.lgcns.service;
 
+import static com.lgcns.domain.MemberReservationStatus.RESERVED;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
@@ -81,7 +83,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public List<ReservationDetailResponse> findReservationInfo(String memberId) {
         List<MemberReservation> memberReservationList =
-                memberReservationRepository.findByMemberId(Long.parseLong(memberId));
+                memberReservationRepository.findByMemberIdAndStatus(
+                        Long.parseLong(memberId), RESERVED);
 
         if (memberReservationList.isEmpty()) {
             return List.of();

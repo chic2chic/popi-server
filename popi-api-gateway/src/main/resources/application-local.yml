@@ -110,7 +110,7 @@ spring:
             - Method=GET,POST,DELETE
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/popups/(?<segment>.*), $\{segment}
+            - RewritePath=/popups(?<segment>/?.*), /$\{segment}
 
         - id: notification-docs
           uri: lb://NOTIFICATIONS
@@ -222,3 +222,6 @@ jwt:
 logging:
   level:
     org.hibernate.SQL: debug
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
