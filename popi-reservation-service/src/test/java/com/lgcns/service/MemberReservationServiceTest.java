@@ -421,14 +421,12 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     memberReservationService.findSurveyChoicesByPopupId(popupId);
 
             // then
-            assertThat(choices).isNotEmpty();
-            assertThat(choices.size()).isEqualTo(4);
+            assertThat(choices).hasSize(4);
 
-            for (SurveyChoiceResponse choice : choices) {
-                assertThat(choice.surveyId()).isNotNull();
-                assertThat(choice.options()).isNotEmpty();
-                assertThat(choice.options().size()).isEqualTo(5);
-            }
+            assertSurveyChoice(choices.get(0), 1L, 1L);
+            assertSurveyChoice(choices.get(1), 2L, 6L);
+            assertSurveyChoice(choices.get(2), 3L, 11L);
+            assertSurveyChoice(choices.get(3), 4L, 16L);
         }
     }
 
@@ -1137,5 +1135,16 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         Assertions.assertAll(
                 () -> assertThat(response.popupOpenDate()).isEqualTo("2025-05-31"),
                 () -> assertThat(response.popupCloseDate()).isEqualTo("2025-06-02"));
+    }
+
+    private void assertSurveyChoice(
+            SurveyChoiceResponse response, Long expectedSurveyId, Long startingChoiceId) {
+        assertThat(response.surveyId()).isEqualTo(expectedSurveyId);
+        assertThat(response.options()).hasSize(5);
+
+        for (int i = 0; i < 5; i++) {
+            assertThat(response.options().get(i).choiceId()).isEqualTo(startingChoiceId + i);
+            assertThat(response.options().get(i).content()).isEqualTo("보기" + (i + 1));
+        }
     }
 }
