@@ -31,8 +31,6 @@ public class PopupServiceImpl implements PopupService {
     @Override
     public List<PopupInfoResponse> findHotPopups() {
         List<Long> popupIds = reservationServiceClient.findHotPopupIds();
-        if (popupIds.isEmpty()) return List.of();
-
         PopupIdsRequest popupIdsRequest = new PopupIdsRequest(popupIds);
         return managerServiceClient.findHotPopupsByIds(popupIdsRequest);
     }
