@@ -19,7 +19,11 @@ public enum MemberReservationErrorCode implements ErrorCode {
 
     INVALID_DATE_FORMAT(HttpStatus.BAD_REQUEST, "유효한 날짜 범위 또는 yyyy-MM 형식이 아닙니다."),
     INVALID_SURVEY_CHOICES_COUNT(HttpStatus.BAD_REQUEST, "선택하지 않은 문항이 있습니다."),
-    ;
+    INVALID_QR_CODE(HttpStatus.BAD_REQUEST, "유효하지 않은 QR 코드입니다."),
+    RESERVATION_ALREADY_ENTERED(HttpStatus.BAD_REQUEST, "이미 입장한 예약입니다."),
+    RESERVATION_POPUP_MISMATCH(HttpStatus.BAD_REQUEST, "예약과 입장 팝업이 일치하지 않습니다."),
+    RESERVATION_DATE_MISMATCH(HttpStatus.BAD_REQUEST, "예약 날짜가 일치하지 않습니다."),
+    RESERVATION_TIME_PASSED(HttpStatus.BAD_REQUEST, "입장 가능 시간이 지났습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

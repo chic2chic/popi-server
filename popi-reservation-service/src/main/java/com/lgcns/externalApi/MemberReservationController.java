@@ -1,6 +1,7 @@
 package com.lgcns.externalApi;
 
 import com.lgcns.dto.request.SurveyChoiceRequest;
+import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.ReservationDetailResponse;
 import com.lgcns.dto.response.SurveyChoiceResponse;
@@ -71,6 +72,15 @@ public class MemberReservationController {
     public ResponseEntity<Void> memberReservationCancel(
             @PathVariable("memberReservationId") Long memberReservationId) {
         memberReservationService.cancelMemberReservation(memberReservationId);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PostMapping("/entrance}")
+    @Operation(summary = "회원 예약 입장", description = "예약 ID를 사용하여 회원의 예약을 입장 처리합니다.")
+    public ResponseEntity<Void> memberReservationEntrance(
+            @Valid @RequestBody QrEntranceInfoRequest qrEntranceInfoRequest,
+            @RequestParam Long popupId) {
+        memberReservationService.isReservationPossible(qrEntranceInfoRequest, popupId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
