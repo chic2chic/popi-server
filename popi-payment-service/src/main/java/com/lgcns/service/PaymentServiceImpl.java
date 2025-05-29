@@ -5,6 +5,7 @@ import com.lgcns.client.managerClient.dto.request.ItemIdsForPaymentRequest;
 import com.lgcns.client.managerClient.dto.response.ItemForPaymentResponse;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
+import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.PaymentReadyResponse;
@@ -75,7 +76,14 @@ public class PaymentServiceImpl implements PaymentService {
         String merchantUid =
                 String.format("popup_%d_order_%s", request.popupId(), UUID.randomUUID());
 
-        paymentRepository.save(Payment.createPayment(Long.valueOf(memberId), merchantUid, amount));
+        Payment payment = Payment.createPayment(Long.valueOf(memberId), merchantUid, amount);
+
+        for (PaymentReadyRequest.Item selected : request.items()) {
+            payment.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment, selected.itemId(), selected.quantity()));
+        }
+
+        paymentRepository.save(payment);
 
         return PaymentReadyResponse.of(buyerName, name, amount, merchantUid);
     }

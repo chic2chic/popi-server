@@ -3,6 +3,7 @@ package com.lgcns.domain;
 import com.lgcns.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,4 +24,19 @@ public class PaymentItem extends BaseTimeEntity {
     private Long itemId;
 
     private int quantity;
+
+    @Builder
+    private PaymentItem(Payment payment, Long itemId, int quantity) {
+        this.payment = payment;
+        this.itemId = itemId;
+        this.quantity = quantity;
+    }
+
+    public static PaymentItem createPaymentItem(Payment payment, Long itemId, int quantity) {
+        return PaymentItem.builder().payment(payment).itemId(itemId).quantity(quantity).build();
+    }
+
+    public void updatePayment(Payment payment) {
+        this.payment = payment;
+    }
 }
