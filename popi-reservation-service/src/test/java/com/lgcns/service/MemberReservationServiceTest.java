@@ -976,7 +976,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         void 예약자가_있는_경우_조회에_성공한다() {
             // given
             LocalDate now = LocalDate.now();
-            insertMemberReservation(now, LocalTime.of(12, 0));
+            insertReservedMemberReservation(now, LocalTime.of(12, 0));
 
             // when
             DailyMemberReservationCountResponse response =
