@@ -1,6 +1,7 @@
 package com.lgcns.repository;
 
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.DailyMemberReservationCountResponse;
 import com.lgcns.dto.response.DailyReservationCountResponse;
 import java.time.LocalDate;
@@ -14,6 +15,8 @@ public interface MemberReservationRepositoryCustom {
     MemberReservation findUpcomingReservation(Long memberId);
 
     List<Long> findHotPopupIds();
+
+    List<MemberReservation> findByMemberIdAndStatus(Long memberId, MemberReservationStatus status);
 
     DailyMemberReservationCountResponse findDailyMemberReservationCount(
             Long popupId, LocalDate today);
