@@ -21,7 +21,7 @@ public class PopupController {
 
     private final PopupService popupService;
 
-    @GetMapping("/popups")
+    @GetMapping
     @Operation(summary = "팝업 목록 조회", description = "현재 운영중인 모든 팝업을 무한 스크롤을 위하여 페이징 처리한 뒤 반환합니다.")
     public SliceResponse<PopupInfoResponse> popupFindAll(
             @Parameter(description = "검색할 팝업 이름 (비워두면 모든 팝업을 반환합니다.)", example = "black")
@@ -36,13 +36,13 @@ public class PopupController {
         return popupService.findPopupsByName(keyword, lastPopupId, size);
     }
 
-    @GetMapping("/popups/{popupId}")
+    @GetMapping("/{popupId}")
     @Operation(summary = "팝업 상세 조회", description = "팝업에 대한 상세 정보를 반환합니다.")
     public PopupDetailsResponse popupDetailsFindById(@PathVariable(name = "popupId") Long popupId) {
         return popupService.findPopupDetailsById(popupId);
     }
 
-    @GetMapping("/popups/popularity")
+    @GetMapping("/popularity")
     @Operation(summary = "인기 팝업 목록 조회", description = "예약자 수가 많은 상위 4개의 팝업 리스트를 반환합니다.")
     public List<PopupInfoResponse> hotPopupsFind() {
         return popupService.findHotPopups();
