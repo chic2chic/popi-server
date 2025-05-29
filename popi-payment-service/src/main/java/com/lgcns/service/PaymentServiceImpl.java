@@ -104,7 +104,7 @@ public class PaymentServiceImpl implements PaymentService {
             String merchantUid = iamportPayment.getMerchantUid();
             String pgProvider = iamportPayment.getPgProvider();
             int amount = iamportPayment.getAmount().intValue();
-            PaymentStatus status = PaymentStatus.valueOf(iamportPayment.getStatus());
+            PaymentStatus status = PaymentStatus.valueOf(iamportPayment.getStatus().toUpperCase());
 
             Payment payment =
                     paymentRepository
