@@ -2,6 +2,8 @@ package com.lgcns.domain;
 
 import com.lgcns.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,6 +25,9 @@ public class Payment extends BaseTimeEntity {
 
     private String pgProvider;
     private int amount;
+
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PaymentItem> items = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
