@@ -1,4 +1,4 @@
-package com.lgcns.client;
+package com.lgcns.client.managerClient;
 
 import com.lgcns.config.FeignConfig;
 import com.lgcns.dto.response.PopupDetailsResponse;
