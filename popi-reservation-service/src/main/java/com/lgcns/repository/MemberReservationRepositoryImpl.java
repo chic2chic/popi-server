@@ -1,5 +1,6 @@
 package com.lgcns.repository;
 
+import static com.lgcns.domain.MemberReservationStatus.RESERVED;
 import static com.lgcns.domain.QMemberReservation.memberReservation;
 
 import com.lgcns.domain.MemberReservation;
@@ -42,8 +43,7 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
     }
 
     @Override
-    public MemberReservation findUpcomingReservation(
-            Long memberId, MemberReservationStatus status) {
+    public MemberReservation findUpcomingReservation(Long memberId) {
         LocalDateTime now = LocalDateTime.now();
         LocalDate nowDate = now.toLocalDate();
         LocalTime nowTime = now.toLocalTime();
@@ -52,7 +52,7 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
                 .selectFrom(memberReservation)
                 .where(
                         memberReservation.memberId.eq(memberId),
-                        memberReservation.status.eq(MemberReservationStatus.RESERVED),
+                        memberReservation.status.eq(RESERVED),
                         memberReservation
                                 .reservationDate
                                 .gt(nowDate)

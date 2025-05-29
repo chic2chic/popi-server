@@ -124,8 +124,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     public ReservationDetailResponse findUpcomingReservationInfo(String memberId) {
 
         MemberReservation upcomingReservation =
-                memberReservationRepository.findUpcomingReservation(
-                        Long.parseLong(memberId), RESERVED);
+                memberReservationRepository.findUpcomingReservation(Long.parseLong(memberId));
 
         if (upcomingReservation == null) {
             return null;
