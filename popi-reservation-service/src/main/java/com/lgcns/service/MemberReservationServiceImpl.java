@@ -210,6 +210,12 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public DailyMemberReservationCountResponse findDailyMemberReservationCount(Long popupId) {
+        LocalDate today = LocalDate.now();
+        return memberReservationRepository.findDailyMemberReservationCount(popupId, today);
+    }
+
     private void validateYearMonthFormat(String date) {
         try {
             YearMonth.parse(date);

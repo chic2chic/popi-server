@@ -943,6 +943,38 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 오늘_예약자_수를_조회할_때 {
+
+        @Test
+        void 예약자가_있는_경우_조회에_성공한다() {
+            // given
+            LocalDate now = LocalDate.now();
+            insertMemberReservation(now, LocalTime.of(12, 0));
+
+            // when
+            DailyMemberReservationCountResponse response =
+                    memberReservationService.findDailyMemberReservationCount(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response).isNotNull(),
+                    () -> assertThat(response.reservationCount()).isEqualTo(5));
+        }
+
+        @Test
+        void 예약자가_없는_경우_조회에_성공한다() {
+            // given & when
+            DailyMemberReservationCountResponse response =
+                    memberReservationService.findDailyMemberReservationCount(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response).isNotNull(),
+                    () -> assertThat(response.reservationCount()).isEqualTo(0));
+        }
+    }
+
     private void insertMultipleReservations(Long popupId, int count) {
         for (int i = 0; i < count; i++) {
             MemberReservation reservation =

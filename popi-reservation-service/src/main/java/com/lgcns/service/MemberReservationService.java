@@ -1,6 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.dto.response.AvailableDateResponse;
+import com.lgcns.dto.response.DailyMemberReservationCountResponse;
 import com.lgcns.dto.response.ReservationDetailResponse;
 import com.lgcns.dto.response.SurveyChoiceResponse;
 import java.util.List;
@@ -21,4 +22,6 @@ public interface MemberReservationService {
     void cancelMemberReservation(Long memberReservationId);
 
     List<Long> findHotPopupIds();
+
+    DailyMemberReservationCountResponse findDailyMemberReservationCount(Long popupId);
 }

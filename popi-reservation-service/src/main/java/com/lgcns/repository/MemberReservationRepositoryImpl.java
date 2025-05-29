@@ -3,9 +3,11 @@ package com.lgcns.repository;
 import static com.lgcns.domain.QMemberReservation.memberReservation;
 
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.dto.response.DailyMemberReservationCountResponse;
 import com.lgcns.dto.response.DailyReservationCountResponse;
 import com.lgcns.dto.response.HourlyReservationCount;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -89,6 +91,20 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
         return tuples.stream()
                 .map(tuple -> tuple.get(memberReservation.popupId))
                 .collect(Collectors.toList());
+    }
+
+    public DailyMemberReservationCountResponse findDailyMemberReservationCount(
+            Long popupId, LocalDate today) {
+        return queryFactory
+                .select(
+                        Projections.constructor(
+                                DailyMemberReservationCountResponse.class,
+                                memberReservation.count()))
+                .from(memberReservation)
+                .where(
+                        memberReservation.popupId.eq(popupId),
+                        memberReservation.reservationDate.eq(today))
+                .fetchOne();
     }
 
     private LocalDate getStartDate(YearMonth yearMonth, LocalDate openDate) {
