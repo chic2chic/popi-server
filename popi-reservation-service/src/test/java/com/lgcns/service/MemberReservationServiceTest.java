@@ -100,7 +100,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 예약이_없는_경우_모든_시간_예약_가능() throws JsonProcessingException {
+        void 예약이_없는_경우_모든_시간이_예약_가능하다() throws JsonProcessingException {
             // given
             String date = "2025-05";
 
@@ -135,7 +135,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 모든_시간이_가득_찬_날짜는_예약불가() throws JsonProcessingException {
+        void 모든_시간이_가득_찬_날짜는_예약_불가하다() throws JsonProcessingException {
             // given
             String date = "2025-06";
 
