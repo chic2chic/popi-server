@@ -106,11 +106,11 @@ spring:
         - id: popup-service
           uri: lb://POPUPS
           predicates:
-            - Path=/popups/**
+            - Path=/popups, /popups/**
             - Method=GET,POST,DELETE
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/popups/(?<segment>.*), /$\{segment}
+            - RewritePath=/popups/(?<segment>.*), $\{segment}
 
         - id: notification-docs
           uri: lb://NOTIFICATIONS

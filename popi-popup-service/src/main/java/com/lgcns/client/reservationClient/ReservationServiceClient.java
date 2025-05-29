@@ -1,4 +1,4 @@
-package com.lgcns.client;
+package com.lgcns.client.reservationClient;
 
 import com.lgcns.config.FeignConfig;
 import java.util.List;

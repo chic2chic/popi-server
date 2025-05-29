@@ -7,7 +7,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
-import com.lgcns.client.PopupIdsRequest;
+import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.error.exception.CustomException;
@@ -387,9 +387,9 @@ public class PopupServiceTest extends WireMockIntegrationTest {
     class 인기_팝업_목록을_조회할_때 {
 
         @Test
-        void 인기_팝업_아이디가_존재하면_해당_팝업들의_정보를_반환한다() throws JsonProcessingException {
+        void 인기_팝업_아이디가_4개인_경우_정확히_4개를_인기순으로_반환한다() throws JsonProcessingException {
             // given
-            List<Long> hotPopupIds = List.of(1L, 3L, 5L, 7L);
+            List<Long> hotPopupIds = List.of(7L, 3L, 1L, 5L); // 인기순
             PopupIdsRequest hotPopupIdsRequest = new PopupIdsRequest(hotPopupIds);
 
             String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
@@ -398,12 +398,12 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                     objectMapper.writeValueAsString(
                             List.of(
                                     Map.of(
-                                            "popupId", 1,
-                                            "popupName", "BTS 팝업스토어",
-                                            "imageUrl", "https://bucket/bts.jpg",
-                                            "popupOpenDate", "2025-05-01",
-                                            "popupCloseDate", "2025-06-01",
-                                            "address", "서울특별시 강남구 테헤란로 1, 1층"),
+                                            "popupId", 7,
+                                            "popupName", "에스파 팝업스토어",
+                                            "imageUrl", "https://bucket/aespa.jpg",
+                                            "popupOpenDate", "2025-05-20",
+                                            "popupCloseDate", "2025-06-20",
+                                            "address", "서울특별시 강남구 테헤란로 7, 4층"),
                                     Map.of(
                                             "popupId", 3,
                                             "popupName", "BLACKPINK 팝업스토어",
@@ -412,19 +412,19 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                             "popupCloseDate", "2025-06-10",
                                             "address", "서울특별시 강남구 테헤란로 3, 2층"),
                                     Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 1, 1층"),
+                                    Map.of(
                                             "popupId", 5,
                                             "popupName", "뉴진스 팝업스토어",
                                             "imageUrl", "https://bucket/newjeans.jpg",
                                             "popupOpenDate", "2025-05-15",
                                             "popupCloseDate", "2025-06-15",
-                                            "address", "서울특별시 강남구 테헤란로 5, 3층"),
-                                    Map.of(
-                                            "popupId", 7,
-                                            "popupName", "에스파 팝업스토어",
-                                            "imageUrl", "https://bucket/aespa.jpg",
-                                            "popupOpenDate", "2025-05-20",
-                                            "popupCloseDate", "2025-06-20",
-                                            "address", "서울특별시 강남구 테헤란로 7, 4층")));
+                                            "address", "서울특별시 강남구 테헤란로 5, 3층")));
 
             stubFindHotPopupIds(200, expectedIdsResponse);
             stubFindHotPopupsByIds(hotPopupIdsRequest, 200, expectedResponse);
@@ -436,41 +436,205 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             Assertions.assertAll(
                     () -> assertThat(result).isNotNull(),
                     () -> assertThat(result).hasSize(4),
-                    () -> assertThat(result.get(0).popupId()).isEqualTo(1L),
-                    () -> assertThat(result.get(0).popupName()).isEqualTo("BTS 팝업스토어"),
-                    () -> assertThat(result.get(0).imageUrl()).isEqualTo("https://bucket/bts.jpg"),
+                    () -> assertThat(result.get(0).popupId()).isEqualTo(7L),
+                    () -> assertThat(result.get(0).popupName()).isEqualTo("에스파 팝업스토어"),
                     () -> assertThat(result.get(1).popupId()).isEqualTo(3L),
                     () -> assertThat(result.get(1).popupName()).isEqualTo("BLACKPINK 팝업스토어"),
-                    () -> assertThat(result.get(2).popupId()).isEqualTo(5L),
-                    () -> assertThat(result.get(2).popupName()).isEqualTo("뉴진스 팝업스토어"),
-                    () -> assertThat(result.get(3).popupId()).isEqualTo(7L),
-                    () -> assertThat(result.get(3).popupName()).isEqualTo("에스파 팝업스토어"));
+                    () -> assertThat(result.get(2).popupId()).isEqualTo(1L),
+                    () -> assertThat(result.get(2).popupName()).isEqualTo("BTS 팝업스토어"),
+                    () -> assertThat(result.get(3).popupId()).isEqualTo(5L),
+                    () -> assertThat(result.get(3).popupName()).isEqualTo("뉴진스 팝업스토어"),
+                    () -> {
+                        List<Long> resultIds =
+                                result.stream().map(PopupInfoResponse::popupId).toList();
+                        assertThat(resultIds).containsExactly(7L, 3L, 1L, 5L); // 정확한 순서 검증
+                    });
         }
 
         @Test
-        void 인기_팝_아이디가_빈_리스트면_두_번째_호출_없이_빈_리스트를_반환한다() throws JsonProcessingException {
+        void 인기_팝업_아이디가_4개보다_많은_경우_인기순으로_4개만_반환한다() throws JsonProcessingException {
             // given
-            List<Long> emptyPopupIds = List.of();
-            String expectedIdsResponse = objectMapper.writeValueAsString(emptyPopupIds);
+            List<Long> hotPopupIds = List.of(9L, 2L, 6L, 1L, 8L, 4L); // 인기순
+            PopupIdsRequest hotPopupIdsRequest = new PopupIdsRequest(hotPopupIds);
+
+            String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 9,
+                                            "popupName", "뉴진스 팝업스토어",
+                                            "imageUrl", "https://bucket/newjeans.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 9, 1층"),
+                                    Map.of(
+                                            "popupId", 2,
+                                            "popupName", "IVE 팝업스토어",
+                                            "imageUrl", "https://bucket/ive.jpg",
+                                            "popupOpenDate", "2025-05-05",
+                                            "popupCloseDate", "2025-06-05",
+                                            "address", "서울특별시 홍대입구역 2번 출구"),
+                                    Map.of(
+                                            "popupId", 6,
+                                            "popupName", "레드벨벳 팝업스토어",
+                                            "imageUrl", "https://bucket/redvelvet.jpg",
+                                            "popupOpenDate", "2025-05-10",
+                                            "popupCloseDate", "2025-06-10",
+                                            "address", "서울특별시 강남구 테헤란로 6, 2층"),
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-25",
+                                            "popupCloseDate", "2025-06-25",
+                                            "address", "부산광역시 해운대구 마린시티")));
 
             stubFindHotPopupIds(200, expectedIdsResponse);
+            stubFindHotPopupsByIds(hotPopupIdsRequest, 200, expectedResponse);
 
             // when
             List<PopupInfoResponse> result = popupService.findHotPopups();
 
             // then
             Assertions.assertAll(
-                    () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
-
-            // verify
-            wireMockServer.verify(
-                    0, postRequestedFor(urlPathEqualTo("/internal/popups/popularity")));
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(4),
+                    () -> assertThat(result.get(0).popupId()).isEqualTo(9L),
+                    () -> assertThat(result.get(1).popupId()).isEqualTo(2L),
+                    () -> assertThat(result.get(2).popupId()).isEqualTo(6L),
+                    () -> assertThat(result.get(3).popupId()).isEqualTo(1L),
+                    () -> {
+                        List<Long> resultIds =
+                                result.stream().map(PopupInfoResponse::popupId).toList();
+                        assertThat(resultIds).containsExactly(9L, 2L, 6L, 1L);
+                    });
         }
 
         @Test
-        void 인기_팝업이_4개_미만이면_실제_개수만큼_반환한다() throws JsonProcessingException {
+        void 인기_팝업_아이디가_4개_미만인_경우_인기순_우선하여_랜덤으로_채워서_4개를_반환한다() throws JsonProcessingException {
             // given
-            List<Long> hotPopupIds = List.of(2L, 4L);
+            List<Long> hotPopupIds = List.of(5L, 2L); // 인기순 2개
+            PopupIdsRequest hotPopupIdsRequest = new PopupIdsRequest(hotPopupIds);
+
+            String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 5,
+                                            "popupName", "뉴진스 팝업스토어",
+                                            "imageUrl", "https://bucket/newjeans.jpg",
+                                            "popupOpenDate", "2025-05-15",
+                                            "popupCloseDate", "2025-06-15",
+                                            "address", "서울특별시 강남구 테헤란로 5, 3층"),
+                                    Map.of(
+                                            "popupId", 2,
+                                            "popupName", "IVE 팝업스토어",
+                                            "imageUrl", "https://bucket/ive.jpg",
+                                            "popupOpenDate", "2025-05-05",
+                                            "popupCloseDate", "2025-06-05",
+                                            "address", "서울특별시 홍대입구역 2번 출구"),
+                                    Map.of(
+                                            "popupId", 7,
+                                            "popupName", "에스파 팝업스토어",
+                                            "imageUrl", "https://bucket/aespa.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 1, 1층"),
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-20",
+                                            "popupCloseDate", "2025-06-20",
+                                            "address", "부산광역시 해운대구 마린시티")));
+
+            stubFindHotPopupIds(200, expectedIdsResponse);
+            stubFindHotPopupsByIds(hotPopupIdsRequest, 200, expectedResponse);
+
+            // when
+            List<PopupInfoResponse> result = popupService.findHotPopups();
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(4),
+                    () -> assertThat(result.get(0).popupId()).isEqualTo(5L),
+                    () -> assertThat(result.get(1).popupId()).isEqualTo(2L),
+                    // 랜덤 팝업
+                    () -> assertThat(result.get(2).popupId()).isEqualTo(7L),
+                    () -> assertThat(result.get(3).popupId()).isEqualTo(1L),
+                    () -> {
+                        List<Long> resultIds =
+                                result.stream().map(PopupInfoResponse::popupId).toList();
+                        assertThat(resultIds).contains(5L, 2L);
+                    });
+        }
+
+        @Test
+        void 인기_팝업_아이디가_빈_리스트면_랜덤으로_4개를_반환한다() throws JsonProcessingException {
+            // given
+            List<Long> emptyPopupIds = List.of();
+            PopupIdsRequest emptyPopupIdsRequest = new PopupIdsRequest(emptyPopupIds);
+
+            String expectedIdsResponse = objectMapper.writeValueAsString(emptyPopupIds);
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 3,
+                                            "popupName", "BLACKPINK 팝업스토어",
+                                            "imageUrl", "https://bucket/blackpink.jpg",
+                                            "popupOpenDate", "2025-05-10",
+                                            "popupCloseDate", "2025-06-10",
+                                            "address", "서울특별시 강남구 테헤란로 3, 2층"),
+                                    Map.of(
+                                            "popupId", 8,
+                                            "popupName", "레드벨벳 팝업스토어",
+                                            "imageUrl", "https://bucket/redvelvet.jpg",
+                                            "popupOpenDate", "2025-05-25",
+                                            "popupCloseDate", "2025-06-25",
+                                            "address", "부산광역시 해운대구 마린시티"),
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 1, 1층"),
+                                    Map.of(
+                                            "popupId", 6,
+                                            "popupName", "뉴진스 팝업스토어",
+                                            "imageUrl", "https://bucket/newjeans.jpg",
+                                            "popupOpenDate", "2025-05-15",
+                                            "popupCloseDate", "2025-06-15",
+                                            "address", "서울특별시 강남구 테헤란로 5, 3층")));
+
+            stubFindHotPopupIds(200, expectedIdsResponse);
+            stubFindHotPopupsByIds(emptyPopupIdsRequest, 200, expectedResponse);
+
+            // when
+            List<PopupInfoResponse> result = popupService.findHotPopups();
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(4),
+                    () -> {
+                        List<Long> resultIds =
+                                result.stream().map(PopupInfoResponse::popupId).toList();
+                        assertThat(resultIds).containsExactlyInAnyOrder(3L, 8L, 1L, 6L);
+                    });
+        }
+
+        @Test
+        void 전체_팝업이_4개_미만인_경우_존재하는_만큼만_반환한다() throws JsonProcessingException {
+            // given
+            List<Long> hotPopupIds = List.of(2L);
             PopupIdsRequest hotPopupIdsRequest = new PopupIdsRequest(hotPopupIds);
 
             String expectedIdsResponse = objectMapper.writeValueAsString(hotPopupIds);
@@ -486,12 +650,19 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                             "popupCloseDate", "2025-06-05",
                                             "address", "서울특별시 홍대입구역 2번 출구"),
                                     Map.of(
-                                            "popupId", 4,
-                                            "popupName", "레드벨벳 팝업스토어",
-                                            "imageUrl", "https://bucket/redvelvet.jpg",
-                                            "popupOpenDate", "2025-05-25",
-                                            "popupCloseDate", "2025-06-25",
-                                            "address", "부산광역시 해운대구 마린시티")));
+                                            "popupId", 5,
+                                            "popupName", "뉴진스 팝업스토어",
+                                            "imageUrl", "https://bucket/newjeans.jpg",
+                                            "popupOpenDate", "2025-05-15",
+                                            "popupCloseDate", "2025-06-15",
+                                            "address", "서울특별시 강남구 테헤란로 5, 3층"),
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 1, 1층")));
 
             stubFindHotPopupIds(200, expectedIdsResponse);
             stubFindHotPopupsByIds(hotPopupIdsRequest, 200, expectedResponse);
@@ -502,11 +673,16 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             // then
             Assertions.assertAll(
                     () -> assertThat(result).isNotNull(),
-                    () -> assertThat(result).hasSize(2),
+                    () -> assertThat(result).hasSize(3),
                     () -> assertThat(result.get(0).popupId()).isEqualTo(2L),
                     () -> assertThat(result.get(0).popupName()).isEqualTo("IVE 팝업스토어"),
-                    () -> assertThat(result.get(1).popupId()).isEqualTo(4L),
-                    () -> assertThat(result.get(1).popupName()).isEqualTo("레드벨벳 팝업스토어"));
+                    () -> assertThat(result.get(1).popupId()).isEqualTo(5L),
+                    () -> assertThat(result.get(2).popupId()).isEqualTo(1L),
+                    () -> {
+                        List<Long> resultIds =
+                                result.stream().map(PopupInfoResponse::popupId).toList();
+                        assertThat(resultIds).contains(2L);
+                    });
         }
     }
 

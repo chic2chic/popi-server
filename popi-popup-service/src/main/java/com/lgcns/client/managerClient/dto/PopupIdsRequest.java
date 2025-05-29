@@ -1,4 +1,4 @@
-package com.lgcns.client;
+package com.lgcns.client.managerClient.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
