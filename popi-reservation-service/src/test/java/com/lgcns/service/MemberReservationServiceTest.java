@@ -1157,11 +1157,18 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     private void assertSurveyChoice(
             SurveyChoiceResponse response, Long expectedSurveyId, Long startingChoiceId) {
         assertThat(response.surveyId()).isEqualTo(expectedSurveyId);
-        assertThat(response.options()).hasSize(5);
+        List<SurveyOption> options = response.options();
+        assertThat(options).hasSize(5);
 
-        for (int i = 0; i < 5; i++) {
-            assertThat(response.options().get(i).choiceId()).isEqualTo(startingChoiceId + i);
-            assertThat(response.options().get(i).content()).isEqualTo("보기" + (i + 1));
+        for (int i = 0; i < options.size(); i++) {
+            SurveyOption option = options.get(i);
+            Long expectedChoiceId = startingChoiceId + i;
+            String expectedContent = "보기" + (i + 1);
+
+            assertThat(option.choiceId()).isEqualTo(expectedChoiceId);
+            assertThat(option.content()).isEqualTo(expectedContent);
+            assertThat(option.choiceId()).isGreaterThan(0L);
+            assertThat(option.content()).isNotBlank();
         }
     }
 }
