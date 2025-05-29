@@ -2,11 +2,13 @@ package com.lgcns.repository;
 
 import static com.lgcns.domain.QMemberReservation.memberReservation;
 
+import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.response.DailyReservationCountResponse;
 import com.lgcns.dto.response.HourlyReservationCount;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -34,6 +36,36 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
         List<Tuple> tuples = getHourlyReservationCounts(popupId, start, end);
 
         return convertToResponseList(tuples);
+    }
+
+    @Override
+    public MemberReservation findUpcomingReservation(Long memberId) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate nowDate = now.toLocalDate();
+        LocalTime nowTime = now.toLocalTime();
+
+        return queryFactory
+                .selectFrom(memberReservation)
+                .where(
+                        memberReservation
+                                .memberId
+                                .eq(memberId)
+                                .and(
+                                        memberReservation
+                                                .reservationDate
+                                                .gt(nowDate)
+                                                .or(
+                                                        memberReservation
+                                                                .reservationDate
+                                                                .eq(nowDate)
+                                                                .and(
+                                                                        memberReservation
+                                                                                .reservationTime
+                                                                                .goe(nowTime)))))
+                .orderBy(
+                        memberReservation.reservationDate.asc(),
+                        memberReservation.reservationTime.asc())
+                .fetchFirst();
     }
 
     @Override

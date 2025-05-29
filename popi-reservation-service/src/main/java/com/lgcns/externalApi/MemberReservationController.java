@@ -22,17 +22,14 @@ public class MemberReservationController {
     @GetMapping("/popups/{popupId}")
     @Operation(summary = "가능한 예약 날짜 조회", description = "특정 연월에 대한 예약 가능 날짜를 조회합니다.")
     public AvailableDateResponse availableDateFind(
-            @RequestHeader("member-id") String memberId,
-            @PathVariable Long popupId,
-            @RequestParam String date) {
-        return memberReservationService.findAvailableDate(memberId, popupId, date);
+            @PathVariable Long popupId, @RequestParam String date) {
+        return memberReservationService.findAvailableDate(popupId, date);
     }
 
     @GetMapping("/popups/{popupId}/survey")
     @Operation(summary = "설문지 조회", description = "해당 팝업에 대한 설문지 선지들을 조회합니다.")
-    public List<SurveyChoiceResponse> choiceListByPopupIdFind(
-            @RequestHeader("member-id") String memberId, @PathVariable Long popupId) {
-        return memberReservationService.findSurveyChoicesByPopupId(memberId, popupId);
+    public List<SurveyChoiceResponse> choiceListByPopupIdFind(@PathVariable Long popupId) {
+        return memberReservationService.findSurveyChoicesByPopupId(popupId);
     }
 
     @PostMapping("/{reservationId}")
@@ -48,6 +45,13 @@ public class MemberReservationController {
     public List<ReservationDetailResponse> reservationInfoFind(
             @RequestHeader("member-id") String memberId) {
         return memberReservationService.findReservationInfo(memberId);
+    }
+
+    @GetMapping("/upcoming")
+    @Operation(summary = "가까운 팝업 조회", description = "사용자가 예약한 팝업 중, 가장 가까운 날짜의 팝업을 조회합니다.")
+    public ReservationDetailResponse upcomingReservationInfoFind(
+            @RequestHeader("member-id") String memberId) {
+        return memberReservationService.findUpcomingReservationInfo(memberId);
     }
 
     @DeleteMapping("/{memberReservationId}")

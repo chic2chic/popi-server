@@ -49,7 +49,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     private final RedisTemplate<String, Long> redisTemplate;
 
     @Override
-    public AvailableDateResponse findAvailableDate(String memberId, Long popupId, String date) {
+    public AvailableDateResponse findAvailableDate(Long popupId, String date) {
 
         validateYearMonthFormat(date);
 
@@ -74,7 +74,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public List<SurveyChoiceResponse> findSurveyChoicesByPopupId(String memberId, Long popupId) {
+    public List<SurveyChoiceResponse> findSurveyChoicesByPopupId(Long popupId) {
         return managerServiceClient.findSurveyChoicesByPopupId(popupId);
     }
 
@@ -94,7 +94,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                         .toList();
 
         List<ReservationPopupInfoResponse> reservationPopupInfoList =
-                managerServiceClient.findReservedPopupInfo(PopupIdsRequest.of(popupIds));
+                managerServiceClient.findReservedPopupInfoList(PopupIdsRequest.of(popupIds));
 
         Map<Long, ReservationPopupInfoResponse> reservationPopupInfoMap =
                 reservationPopupInfoList.stream()
@@ -115,6 +115,22 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public List<Long> findHotPopupIds() {
         return memberReservationRepository.findHotPopupIds();
+    }
+
+    @Override
+    public ReservationDetailResponse findUpcomingReservationInfo(String memberId) {
+
+        MemberReservation upcomingReservation =
+                memberReservationRepository.findUpcomingReservation(Long.parseLong(memberId));
+
+        if (upcomingReservation == null) {
+            return null;
+        }
+
+        ReservationPopupInfoResponse reservationPopupInfo =
+                managerServiceClient.findReservedPopupInfo(upcomingReservation.getPopupId());
+
+        return ReservationDetailResponse.of(upcomingReservation, reservationPopupInfo);
     }
 
     @Override

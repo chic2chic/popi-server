@@ -6,11 +6,13 @@ import com.lgcns.dto.response.SurveyChoiceResponse;
 import java.util.List;
 
 public interface MemberReservationService {
-    AvailableDateResponse findAvailableDate(String memberId, Long popupId, String date);
+    AvailableDateResponse findAvailableDate(Long popupId, String date);
 
-    List<SurveyChoiceResponse> findSurveyChoicesByPopupId(String memberId, Long popupId);
+    List<SurveyChoiceResponse> findSurveyChoicesByPopupId(Long popupId);
 
     List<ReservationDetailResponse> findReservationInfo(String memberId);
+
+    ReservationDetailResponse findUpcomingReservationInfo(String memberId);
 
     void createMemberReservation(String memberId, Long reservationId);
 
