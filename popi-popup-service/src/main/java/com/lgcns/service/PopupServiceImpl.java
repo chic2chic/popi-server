@@ -34,4 +34,10 @@ public class PopupServiceImpl implements PopupService {
         PopupIdsRequest popupIdsRequest = new PopupIdsRequest(popupIds);
         return managerServiceClient.findHotPopupsByIds(popupIdsRequest);
     }
+
+    @Override
+    public List<PopupInfoResponse> findPopupsByMapArea(
+            Double latMin, Double latMax, Double lngMin, Double lngMax) {
+        return managerServiceClient.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
+    }
 }

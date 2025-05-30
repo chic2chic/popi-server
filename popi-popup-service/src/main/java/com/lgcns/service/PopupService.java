@@ -11,4 +11,7 @@ public interface PopupService {
     PopupDetailsResponse findPopupDetailsById(Long popupId);
 
     List<PopupInfoResponse> findHotPopups();
+
+    List<PopupInfoResponse> findPopupsByMapArea(
+            Double latMin, Double latMax, Double lngMin, Double lngMax);
 }
