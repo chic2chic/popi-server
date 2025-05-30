@@ -51,6 +51,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Long> redisTemplate;
 
+    private static final int DEFAULT_CHOICE_COUNT = 4;
+
     @Override
     public AvailableDateResponse findAvailableDate(Long popupId, String date) {
 
@@ -84,10 +86,9 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public void createMemberAnswer(
             Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices) {
-        final int DEFAULT_CHOICE_COUNT = 4;
 
         if (surveyChoices.size() != DEFAULT_CHOICE_COUNT) {
-            throw new CustomException(MemberReservationErrorCode.SURVEY_CHOICES_EMPTY);
+            throw new CustomException(MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT);
         }
 
         // TODO manager 서비스에 회원 설문 응답 저장 메시지 발행
