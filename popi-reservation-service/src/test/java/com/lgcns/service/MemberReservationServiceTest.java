@@ -466,7 +466,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                             popupId, memberId, surveyChoices))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
-                            MemberReservationErrorCode.SURVEY_CHOICES_EMPTY.getMessage());
+                            MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT.getMessage());
         }
     }
 
