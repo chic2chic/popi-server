@@ -13,7 +13,10 @@ import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.request.SurveyChoiceRequest;
+import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.response.*;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.error.feign.FeignErrorCode;
 import com.lgcns.exception.MemberReservationErrorCode;
@@ -1046,6 +1049,197 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 회원이_팝업_입장할_때 {
+
+        @Test
+        void 회원이_팝업_입장에_성공한다() throws JsonProcessingException {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId, popupId, LocalDate.now(), LocalTime.now());
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now().toString(),
+                            LocalTime.now().toString());
+
+            // when
+            memberReservationService.isEnterancePossible(request, popupId);
+
+            // then
+            MemberReservation memberReservation =
+                    memberReservationRepository.findById(memberReservationId).get();
+            Assertions.assertAll(
+                    () -> assertThat(memberReservation.getIsEntered()).isEqualTo(true));
+        }
+
+        @Test
+        void 회원이_팝업_입장시_예약이_존재하지_않으면_예외가_발생한다() {
+            // given
+            Long invalidMemberReservationId = -1L;
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            invalidMemberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now().toString(),
+                            LocalTime.now().toString());
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void 회원이_팝업_입장시_예약이_이미_입장된_경우_예외가_발생한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId, popupId, LocalDate.now(), LocalTime.now());
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now().toString(),
+                            LocalTime.now().toString());
+
+            // when & then
+            memberReservationService.isEnterancePossible(request, popupId);
+            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_ALREADY_ENTERED.getMessage());
+        }
+
+        @Test
+        void 입장하는_팝업과_예약한_팝업이_다르면_예외가_발생한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId, popupId, LocalDate.now(), LocalTime.now());
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now().toString(),
+                            LocalTime.now().toString());
+            Long differentPopupId = -1L;
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.isEnterancePossible(
+                                            request, differentPopupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_POPUP_MISMATCH.getMessage());
+        }
+
+        @Test
+        void QR에_저장된_예약과_실제_예약이_다르면_예외가_발생한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId, popupId, LocalDate.now(), LocalTime.now());
+            QrEntranceInfoRequest request =
+                    new QrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId + 1L,
+                            popupId,
+                            MemberAge.TWENTIES,
+                            MemberGender.MALE,
+                            LocalDate.now().toString(),
+                            LocalTime.now().toString());
+
+            // when & then
+            assertThatThrownBy(
+                            () -> {
+                                memberReservationService.isEnterancePossible(request, popupId);
+                            })
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(MemberReservationErrorCode.INVALID_QR_CODE.getMessage());
+        }
+
+        @Test
+        void 예약한_날짜가_현재와_다르면_예외가_발생한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId, popupId, LocalDate.now().minusDays(1), LocalTime.now());
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            (LocalDate.now().minusDays(1)).toString(),
+                            LocalTime.now().toString());
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_DATE_MISMATCH.getMessage());
+        }
+
+        @Test
+        void 현재_시간이_예약시간_30분_이후면_예외가_발생한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId,
+                            popupId,
+                            LocalDate.now(),
+                            LocalTime.now().minusMinutes(31));
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now().toString(),
+                            (LocalTime.now().minusMinutes(31)).toString());
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_TIME_PASSED.getMessage());
+        }
+
+        @Test
+        void 현재_시간이_예약시간_30분_이내면_입장에_성공한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId,
+                            popupId,
+                            LocalDate.now(),
+                            LocalTime.now().plusMinutes(10));
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now().toString(),
+                            (LocalTime.now().plusMinutes(10)).toString());
+
+            // when
+            memberReservationService.isEnterancePossible(request, popupId);
+
+            // then
+            MemberReservation memberReservation =
+                    memberReservationRepository.findById(memberReservationId).get();
+            Assertions.assertAll(
+                    () -> assertThat(memberReservation.getIsEntered()).isEqualTo(true));
+        }
+    }
+
     private void insertMultipleReservations(Long popupId, int count) {
         for (int i = 0; i < count; i++) {
             MemberReservation reservation =
@@ -1195,20 +1389,54 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     }
 
     private void assertSurveyChoice(
-            SurveyChoiceResponse response, Long expectedSurveyId, Long startingChoiceId) {
-        assertThat(response.surveyId()).isEqualTo(expectedSurveyId);
-        List<SurveyOption> options = response.options();
-        assertThat(options).hasSize(5);
+            SurveyChoiceResponse response, Long expectedSurveyId, Long startingChoiceId){
+                assertThat(response.surveyId()).isEqualTo(expectedSurveyId);
+                List<SurveyOption> options = response.options();
+                assertThat(options).hasSize(5);
 
-        for (int i = 0; i < options.size(); i++) {
-            SurveyOption option = options.get(i);
-            Long expectedChoiceId = startingChoiceId + i;
-            String expectedContent = "보기" + (i + 1);
+                for (int i = 0; i < options.size(); i++) {
+                    SurveyOption option = options.get(i);
+                    Long expectedChoiceId = startingChoiceId + i;
+                    String expectedContent = "보기" + (i + 1);
 
-            assertThat(option.choiceId()).isEqualTo(expectedChoiceId);
-            assertThat(option.content()).isEqualTo(expectedContent);
-            assertThat(option.choiceId()).isGreaterThan(0L);
-            assertThat(option.content()).isNotBlank();
-        }
+                    assertThat(option.choiceId()).isEqualTo(expectedChoiceId);
+                    assertThat(option.content()).isEqualTo(expectedContent);
+                    assertThat(option.choiceId()).isGreaterThan(0L);
+                    assertThat(option.content()).isNotBlank();
+                }
+            }
+
+    private Long createMemberReservation(
+            Long reservationId,
+            Long popupId,
+            LocalDate reservationDate,
+            LocalTime reservationTime) {
+        MemberReservation memberReservation =
+                MemberReservation.builder()
+                        .reservationId(reservationId)
+                        .memberId(Long.parseLong(memberId))
+                        .popupId(popupId)
+                        .qrImage("iVBORw0KGgoAAAA...")
+                        .reservationDate(reservationDate)
+                        .reservationTime(reservationTime)
+                        .build();
+        memberReservationRepository.save(memberReservation);
+        return memberReservation.getId();
+    }
+
+    private QrEntranceInfoRequest createQrEntranceInfoRequest(
+            Long memberReservationId,
+            Long reservationId,
+            Long popupId,
+            String reservationDate,
+            String reservationTime) {
+        return new QrEntranceInfoRequest(
+                memberReservationId,
+                reservationId,
+                popupId,
+                MemberAge.TWENTIES,
+                MemberGender.MALE,
+                reservationDate,
+                reservationTime);
     }
 }
