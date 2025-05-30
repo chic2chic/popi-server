@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class MemberEnteredProducer {
 
     private static final String TOPIC = "member-entered-topic";
-    private final KafkaTemplate<String, MemberEnteredMessage> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void sendMessage(MemberEnteredMessage message) {
         kafkaTemplate.send(TOPIC, message);
