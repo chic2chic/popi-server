@@ -13,6 +13,7 @@ import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.client.managerClient.dto.response.*;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
@@ -50,6 +51,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Long> redisTemplate;
 
+    private static final int DEFAULT_SURVEY_COUNT = 4;
+
     @Override
     public AvailableDateResponse findAvailableDate(Long popupId, String date) {
 
@@ -78,6 +81,20 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public List<SurveyChoiceResponse> findSurveyChoicesByPopupId(Long popupId) {
         return managerServiceClient.findSurveyChoicesByPopupId(popupId);
+    }
+
+    @Override
+    public void createMemberAnswer(
+            Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices) {
+
+        if (surveyChoices.size() != DEFAULT_SURVEY_COUNT) {
+            throw new CustomException(MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT);
+        }
+
+        // TODO manager 서비스에 회원 설문 응답 저장 메시지 발행
+
+        // TODO 설문 응답 저장 후, 추천 서비스로 메시지 발행
+
     }
 
     @Override

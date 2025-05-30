@@ -1,11 +1,13 @@
 package com.lgcns.externalApi;
 
+import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.ReservationDetailResponse;
 import com.lgcns.dto.response.SurveyChoiceResponse;
 import com.lgcns.service.MemberReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,16 @@ public class MemberReservationController {
     @Operation(summary = "설문지 조회", description = "해당 팝업에 대한 설문지 선지들을 조회합니다.")
     public List<SurveyChoiceResponse> choiceListByPopupIdFind(@PathVariable Long popupId) {
         return memberReservationService.findSurveyChoicesByPopupId(popupId);
+    }
+
+    @PostMapping("/popups/{popupId}/survey")
+    @Operation(summary = "설문지 응답 저장", description = "해당 팝업에 대한 설문지 응답을 저장합니다.")
+    public ResponseEntity<Void> memberAnswerCreate(
+            @PathVariable Long popupId,
+            @RequestHeader("member-id") String memberId,
+            @Valid @RequestBody List<SurveyChoiceRequest> surveyChoices) {
+        memberReservationService.createMemberAnswer(popupId, memberId, surveyChoices);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/{reservationId}")

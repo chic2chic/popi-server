@@ -18,6 +18,7 @@ public enum MemberReservationErrorCode implements ErrorCode {
     QR_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "QR 코드 생성에 실패했습니다."),
 
     INVALID_DATE_FORMAT(HttpStatus.BAD_REQUEST, "유효한 날짜 범위 또는 yyyy-MM 형식이 아닙니다."),
+    INVALID_SURVEY_CHOICES_COUNT(HttpStatus.BAD_REQUEST, "선택하지 않은 문항이 있습니다."),
     ;
 
     private final HttpStatus httpStatus;

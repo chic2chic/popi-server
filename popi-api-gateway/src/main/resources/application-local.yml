@@ -222,6 +222,3 @@ jwt:
 logging:
   level:
     org.hibernate.SQL: debug
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty.http.client: DEBUG
-    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
