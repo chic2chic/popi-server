@@ -75,8 +75,8 @@ public class MemberReservationController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @PostMapping("/entrance}")
-    @Operation(summary = "회원 예약 입장", description = "예약 ID를 사용하여 회원의 예약을 입장 처리합니다.")
+    @PostMapping("/entrance")
+    @Operation(summary = "예약 회원 입장", description = "예약 ID를 사용하여 회원의 예약을 입장 처리합니다.")
     public ResponseEntity<Void> memberReservationEntrance(
             @Valid @RequestBody QrEntranceInfoRequest qrEntranceInfoRequest,
             @RequestParam Long popupId) {
