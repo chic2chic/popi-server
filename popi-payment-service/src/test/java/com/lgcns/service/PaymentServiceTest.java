@@ -158,7 +158,8 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
         @BeforeEach
         void setUp() {
             paymentRepository.deleteAll();
-            paymentRepository.save(Payment.createPayment(1L, "popup_1_order_test-uuid", 129000));
+            paymentRepository.save(
+                    Payment.createPayment(1L, "popup_1_order_test-uuid", 129000, 1L));
         }
 
         @Test
