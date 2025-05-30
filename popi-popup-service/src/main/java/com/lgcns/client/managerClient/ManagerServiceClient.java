@@ -27,4 +27,11 @@ public interface ManagerServiceClient {
 
     @PostMapping("/internal/popups/popularity")
     List<PopupInfoResponse> findHotPopupsByIds(@Valid @RequestBody PopupIdsRequest request);
+
+    @GetMapping("/internal/popups/map")
+    List<PopupInfoResponse> findPopupsByMapArea(
+            @RequestParam(name = "latMin") Double latMin,
+            @RequestParam(name = "latMax") Double latMax,
+            @RequestParam(name = "lngMin") Double lngMin,
+            @RequestParam(name = "lngMax") Double lngMax);
 }
