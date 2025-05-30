@@ -50,7 +50,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     private final ManagerServiceClient managerServiceClient;
     private final MemberServiceClient memberServiceClient;
-    ;
+
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Long> redisTemplate;
     private final MemberEnteredProducer memberEnteredProducer;
@@ -158,7 +158,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public void isReservationPossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
+    public void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
         LocalDate currentDate = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
 
