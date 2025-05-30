@@ -84,8 +84,13 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public void createMemberAnswer(
             Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices) {
+        final int DEFAULT_CHOICE_COUNT = 4;
+
+        if (surveyChoices.size() != DEFAULT_CHOICE_COUNT) {
+            throw new CustomException(MemberReservationErrorCode.SURVEY_CHOICES_EMPTY);
+        }
+
         // TODO manager 서비스에 회원 설문 응답 저장 메시지 발행
-        log.info("surveyChoices: {}", surveyChoices);
 
         // TODO 설문 응답 저장 후, 추천 서비스로 메시지 발행
 
