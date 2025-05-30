@@ -51,7 +51,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Long> redisTemplate;
 
-    private static final int DEFAULT_CHOICE_COUNT = 4;
+    private static final int DEFAULT_SURVEY_COUNT = 4;
 
     @Override
     public AvailableDateResponse findAvailableDate(Long popupId, String date) {
@@ -87,7 +87,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     public void createMemberAnswer(
             Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices) {
 
-        if (surveyChoices.size() != DEFAULT_CHOICE_COUNT) {
+        if (surveyChoices.size() != DEFAULT_SURVEY_COUNT) {
             throw new CustomException(MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT);
         }
 
