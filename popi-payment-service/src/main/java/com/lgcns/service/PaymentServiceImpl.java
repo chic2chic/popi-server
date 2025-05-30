@@ -81,7 +81,9 @@ public class PaymentServiceImpl implements PaymentService {
         String merchantUid =
                 String.format("popup_%d_order_%s", request.popupId(), UUID.randomUUID());
 
-        Payment payment = Payment.createPayment(Long.valueOf(memberId), merchantUid, amount);
+        Payment payment =
+                Payment.createPayment(
+                        Long.valueOf(memberId), merchantUid, amount, request.popupId());
 
         for (PaymentReadyRequest.Item selected : request.items()) {
             payment.addPaymentItem(
