@@ -20,7 +20,6 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.message.MemberEnteredMessage;
-import com.lgcns.kafka.producer.MemberEnteredProducer;
 import com.lgcns.repository.MemberReservationRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -53,7 +52,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Long> redisTemplate;
-    private final MemberEnteredProducer memberEnteredProducer;
 
     private static final int DEFAULT_SURVEY_COUNT = 4;
 
@@ -192,7 +190,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         }
 
         memberReservation.updateIsEntered();
-        memberEnteredProducer.sendMessage(MemberEnteredMessage.from(qrEntranceInfoRequest));
+        eventPublisher.publishEvent(MemberEnteredMessage.from(qrEntranceInfoRequest));
     }
 
     @Override
