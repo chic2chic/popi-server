@@ -47,4 +47,20 @@ public class PopupController {
     public List<PopupInfoResponse> hotPopupsFind() {
         return popupService.findHotPopups();
     }
+
+    @GetMapping("/maps")
+    @Operation(
+            summary = "지도 기반 팝업 조회",
+            description = "지도의 좌하단과 우상단 좌표를 기준으로 해당 범위 내의 팝업 목록을 조회합니다. 범위 내에 팝업이 없으면 빈 배열을 반환합니다.")
+    public List<PopupInfoResponse> popupFindByMapArea(
+            @Parameter(description = "최소 위도", example = "37.378638", required = true) @RequestParam
+                    Double latMin,
+            @Parameter(description = "최대 위도", example = "37.671877", required = true) @RequestParam
+                    Double latMax,
+            @Parameter(description = "최소 경도", example = "126.799543", required = true) @RequestParam
+                    Double lngMin,
+            @Parameter(description = "최대 경도", example = "127.184881", required = true) @RequestParam
+                    Double lngMax) {
+        return popupService.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
+    }
 }
