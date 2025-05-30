@@ -2,6 +2,8 @@ package com.lgcns.domain;
 
 import com.lgcns.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,22 +26,31 @@ public class Payment extends BaseTimeEntity {
     private String pgProvider;
     private int amount;
 
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PaymentItem> items = new ArrayList<>();
+
+    private Long popupId;
+
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Payment(Long memberId, String merchantUid, int amount, PaymentStatus status) {
+    private Payment(
+            Long memberId, String merchantUid, int amount, Long popupId, PaymentStatus status) {
         this.memberId = memberId;
         this.merchantUid = merchantUid;
         this.amount = amount;
+        this.popupId = popupId;
         this.status = status;
     }
 
-    public static Payment createPayment(Long memberId, String merchantUid, int amount) {
+    public static Payment createPayment(
+            Long memberId, String merchantUid, int amount, Long popupId) {
         return Payment.builder()
                 .memberId(memberId)
                 .merchantUid(merchantUid)
                 .amount(amount)
+                .popupId(popupId)
                 .status(PaymentStatus.READY)
                 .build();
     }
@@ -49,5 +60,10 @@ public class Payment extends BaseTimeEntity {
         this.pgProvider = pgProvider;
         this.amount = amount;
         this.status = status;
+    }
+
+    public void addPaymentItem(PaymentItem item) {
+        items.add(item);
+        item.updatePayment(this);
     }
 }

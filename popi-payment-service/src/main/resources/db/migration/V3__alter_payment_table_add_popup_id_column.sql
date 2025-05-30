@@ -1,0 +1,1 @@
+ALTER TABLE payment ADD COLUMN popup_id BIGINT NOT NULL;

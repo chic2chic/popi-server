@@ -5,11 +5,14 @@ import com.lgcns.client.managerClient.dto.request.ItemIdsForPaymentRequest;
 import com.lgcns.client.managerClient.dto.response.ItemForPaymentResponse;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
+import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
+import com.lgcns.kafka.message.ItemPurchasedMessage;
+import com.lgcns.kafka.producer.ItemPurchasedProducer;
 import com.lgcns.repository.PaymentRepository;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
@@ -19,9 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,6 +36,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final MemberServiceClient memberServiceClient;
     private final ManagerServiceClient managerServiceClient;
     private final IamportClient iamportClient;
+    private final ItemPurchasedProducer itemPurchasedProducer;
 
     @Override
     public synchronized PaymentReadyResponse preparePayment(
@@ -75,35 +81,54 @@ public class PaymentServiceImpl implements PaymentService {
         String merchantUid =
                 String.format("popup_%d_order_%s", request.popupId(), UUID.randomUUID());
 
-        paymentRepository.save(Payment.createPayment(Long.valueOf(memberId), merchantUid, amount));
+        Payment payment =
+                Payment.createPayment(
+                        Long.valueOf(memberId), merchantUid, amount, request.popupId());
+
+        for (PaymentReadyRequest.Item selected : request.items()) {
+            payment.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment, selected.itemId(), selected.quantity()));
+        }
+
+        paymentRepository.save(payment);
 
         return PaymentReadyResponse.of(buyerName, name, amount, merchantUid);
     }
 
     @Override
     public void findPaymentByImpUid(String impUid) throws IamportResponseException, IOException {
-        IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse =
-                iamportClient.paymentByImpUid(impUid);
-        com.siot.IamportRestClient.response.Payment iamportPayment = iamportResponse.getResponse();
+        try {
+            IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse =
+                    iamportClient.paymentByImpUid(impUid);
+            com.siot.IamportRestClient.response.Payment iamportPayment =
+                    iamportResponse.getResponse();
 
-        String merchantUid = iamportPayment.getMerchantUid();
-        String pgProvider = iamportPayment.getPgProvider();
-        int amount = iamportPayment.getAmount().intValue();
-        PaymentStatus status = PaymentStatus.valueOf(iamportPayment.getStatus());
+            String merchantUid = iamportPayment.getMerchantUid();
+            String pgProvider = iamportPayment.getPgProvider();
+            int amount = iamportPayment.getAmount().intValue();
+            PaymentStatus status = PaymentStatus.valueOf(iamportPayment.getStatus().toUpperCase());
 
-        Payment payment =
-                paymentRepository
-                        .findByMerchantUid(merchantUid)
-                        .orElseThrow(() -> new CustomException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+            Payment payment =
+                    paymentRepository
+                            .findByMerchantUid(merchantUid)
+                            .orElseThrow(
+                                    () -> new CustomException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 
-        if (amount != payment.getAmount()) {
-            throw new CustomException(PaymentErrorCode.INVALID_AMOUNT);
+            if (amount != payment.getAmount()) {
+                throw new CustomException(PaymentErrorCode.INVALID_AMOUNT);
+            }
+
+            if (status != PaymentStatus.PAID) {
+                throw new CustomException(PaymentErrorCode.NOT_PAID);
+            }
+
+            payment.updatePayment(impUid, pgProvider, amount, PaymentStatus.PAID);
+
+            itemPurchasedProducer.sendMessage(ItemPurchasedMessage.from(payment));
+        } catch (IamportResponseException e) {
+            log.error(
+                    "Iamport API 오류: status={}, message={}", e.getHttpStatusCode(), e.getMessage());
+            throw e;
         }
-
-        if (status != PaymentStatus.PAID) {
-            throw new CustomException(PaymentErrorCode.NOT_PAID);
-        }
-
-        payment.updatePayment(impUid, pgProvider, amount, PaymentStatus.PAID);
     }
 }
