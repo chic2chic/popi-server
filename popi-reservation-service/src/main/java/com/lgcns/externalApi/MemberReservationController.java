@@ -7,6 +7,7 @@ import com.lgcns.dto.response.SurveyChoiceResponse;
 import com.lgcns.service.MemberReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -38,7 +39,7 @@ public class MemberReservationController {
     public ResponseEntity<Void> memberAnswerCreate(
             @PathVariable Long popupId,
             @RequestHeader("member-id") String memberId,
-            @RequestBody List<SurveyChoiceRequest> surveyChoices) {
+            @Valid @RequestBody List<SurveyChoiceRequest> surveyChoices) {
         memberReservationService.createMemberAnswer(popupId, memberId, surveyChoices);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
