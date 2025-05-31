@@ -13,11 +13,13 @@ import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.client.managerClient.dto.response.*;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
+import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
+import com.lgcns.kafka.message.MemberEnteredMessage;
 import com.lgcns.repository.MemberReservationRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -154,6 +156,48 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
+    public void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
+        LocalDate currentDate = LocalDate.now();
+        LocalTime currentTime = LocalTime.now();
+
+        MemberReservation memberReservation =
+                memberReservationRepository
+                        .findById(qrEntranceInfoRequest.memberReservationId())
+                        .orElseThrow(
+                                () ->
+                                        new CustomException(
+                                                MemberReservationErrorCode
+                                                        .MEMBER_RESERVATION_NOT_FOUND));
+
+        if (memberReservation.getIsEntered()) {
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_ALREADY_ENTERED);
+        }
+
+        if (!memberReservation.getPopupId().equals(popupId)) {
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_POPUP_MISMATCH);
+        }
+
+        if (!memberReservation.getReservationId().equals(qrEntranceInfoRequest.reservationId())) {
+            throw new CustomException(MemberReservationErrorCode.INVALID_QR_CODE);
+        }
+
+        if (!memberReservation.getReservationDate().equals(currentDate)) {
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_DATE_MISMATCH);
+        }
+
+        if (currentTime.isBefore(memberReservation.getReservationTime())) {
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_TIME_MISMATCH);
+        }
+
+        if (currentTime.isAfter(memberReservation.getReservationTime().plusMinutes(31))) {
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_TIME_MISMATCH);
+        }
+
+        memberReservation.updateIsEntered();
+        eventPublisher.publishEvent(MemberEnteredMessage.from(qrEntranceInfoRequest));
+    }
+
+    @Override
     public void createMemberReservation(String memberId, Long reservationId) {
         validateMemberReservationExists(Long.parseLong(memberId), reservationId);
 
@@ -189,7 +233,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                 createMemberReservationImageString(
                         memberReservation.getId(),
                         memberReservation.getReservationId(),
-                        memberReservation.getMemberId(),
                         reservationInfoResponse.popupId(),
                         memberInfo.age().toString(),
                         memberInfo.gender().toString(),
@@ -257,7 +300,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     private String createMemberReservationImageString(
             Long memberReservationId,
-            Long memberId,
             Long reservationId,
             Long popupId,
             String age,

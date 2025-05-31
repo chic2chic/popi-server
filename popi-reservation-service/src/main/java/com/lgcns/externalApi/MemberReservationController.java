@@ -1,5 +1,6 @@
 package com.lgcns.externalApi;
 
+import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.ReservationDetailResponse;
@@ -46,7 +47,7 @@ public class MemberReservationController {
 
     @PostMapping("/{reservationId}")
     @Operation(summary = "회원 예약 생성", description = "예약을 생성합니다. 예약 ID를 사용하여 예약을 생성합니다.")
-    public ResponseEntity<Void> createMemberReservation(
+    public ResponseEntity<Void> memberReservationCreate(
             @RequestHeader("member-id") String memberId, @PathVariable Long reservationId) {
         memberReservationService.createMemberReservation(memberId, reservationId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -68,9 +69,18 @@ public class MemberReservationController {
 
     @DeleteMapping("/{memberReservationId}")
     @Operation(summary = "회원 예약 취소", description = "예약 ID를 사용하여 회원의 예약을 취소합니다.")
-    public ResponseEntity<Void> cancelMemberReservation(
+    public ResponseEntity<Void> memberReservationCancel(
             @PathVariable("memberReservationId") Long memberReservationId) {
         memberReservationService.cancelMemberReservation(memberReservationId);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PostMapping("/entrance")
+    @Operation(summary = "예약 회원 입장", description = "예약 ID를 사용하여 회원의 예약을 입장 처리합니다.")
+    public ResponseEntity<Void> memberReservationEntrance(
+            @Valid @RequestBody QrEntranceInfoRequest qrEntranceInfoRequest,
+            @RequestParam Long popupId) {
+        memberReservationService.isEnterancePossible(qrEntranceInfoRequest, popupId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

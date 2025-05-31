@@ -12,6 +12,8 @@ spring:
       database: 1
   flyway:
     enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
 
 manager:
   service:

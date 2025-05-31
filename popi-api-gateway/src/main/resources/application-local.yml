@@ -85,6 +85,14 @@ spring:
           filters:
               - RemoveRequestHeader=Cookie
               - RewritePath=/reservations/(?<segment>.*), /$\{segment}
+        - id: reservation-entrance
+          uri: lb://RESERVATIONS
+          predicates:
+            - Path=/reservations/entrance/**
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/reservations/(?<segment>.*), /$\{segment}
         - id: reservation-internal
           uri: lb://RESERVATIONS
           predicates:
