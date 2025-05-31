@@ -4,6 +4,7 @@ import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.config.FeignConfig;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupMapResponse;
 import com.lgcns.response.SliceResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -29,7 +30,7 @@ public interface ManagerServiceClient {
     List<PopupInfoResponse> findHotPopupsByIds(@Valid @RequestBody PopupIdsRequest request);
 
     @GetMapping("/internal/popups/map")
-    List<PopupInfoResponse> findPopupsByMapArea(
+    List<PopupMapResponse> findPopupsByMapArea(
             @RequestParam(name = "latMin") Double latMin,
             @RequestParam(name = "latMax") Double latMax,
             @RequestParam(name = "lngMin") Double lngMin,

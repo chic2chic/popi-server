@@ -2,6 +2,7 @@ package com.lgcns.externalApi;
 
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupMapResponse;
 import com.lgcns.response.SliceResponse;
 import com.lgcns.service.PopupService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,7 +53,7 @@ public class PopupController {
     @Operation(
             summary = "지도 기반 팝업 조회",
             description = "지도의 좌하단과 우상단 좌표를 기준으로 해당 범위 내의 팝업 목록을 조회합니다. 범위 내에 팝업이 없으면 빈 배열을 반환합니다.")
-    public List<PopupInfoResponse> popupFindByMapArea(
+    public List<PopupMapResponse> popupFindByMapArea(
             @Parameter(description = "최소 위도", example = "37.378638", required = true) @RequestParam
                     Double latMin,
             @Parameter(description = "최대 위도", example = "37.671877", required = true) @RequestParam
