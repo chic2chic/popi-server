@@ -27,7 +27,7 @@ public interface MemberReservationService {
 
     DailyMemberReservationCountResponse findDailyMemberReservationCount(Long popupId);
 
-    void createMemberAnswer(Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices);
+    void createMemberAnswer(Long popupId, List<SurveyChoiceRequest> surveyChoices);
 
     void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId);
 }
