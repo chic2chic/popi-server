@@ -68,7 +68,7 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(response.amount()).isEqualTo(129000),
                     () ->
                             assertThat(response.merchantUid())
-                                    .matches("^popup_1_order_[0-9a-fA-F\\-]{36}$"));
+                                    .matches("^popup_1_order_[0-9a-fA-F\\-]{16}$"));
         }
 
         @Test
