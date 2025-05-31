@@ -41,8 +41,8 @@ public class EmbeddedKafkaIntegrationTest {
                         1L,
                         MemberAge.TWENTIES,
                         MemberGender.MALE,
-                        LocalDate.now().toString(),
-                        LocalTime.now().toString());
+                        LocalDate.now(),
+                        LocalTime.now());
 
         MemberEnteredMessage memberEnteredMessage =
                 MemberEnteredMessage.from(qrEntranceInfoRequest);

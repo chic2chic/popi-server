@@ -12,8 +12,8 @@ import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
-import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
+import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
@@ -437,7 +437,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     @Nested
     class 설문지_등록_할_때 {
         @Test
-        void 설문지_응답이_정상적으로_저장된다() throws JsonProcessingException {
+        void 설문지_응답이_정상적으로_저장된다() {
             // given
             List<SurveyChoiceRequest> surveyChoices =
                     List.of(
@@ -477,7 +477,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     class 회원이_예약_생성_할_때 {
 
         @Test
-        void 예약이_존재하고_예약_가능한_상태이면_예약에_성공한다() throws JsonProcessingException {
+        void 예약이_존재하고_예약_가능한_상태이면_예약에_성공한다() {
             // given
             redisTemplate.opsForValue().set(reservationId.toString(), "10");
 
@@ -502,7 +502,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 이미_예약한_사용자는_예외가_발생한다() throws JsonProcessingException {
+        void 이미_예약한_사용자는_예외가_발생한다() {
             // given
             redisTemplate.opsForValue().set(reservationId.toString(), "10");
 
@@ -523,7 +523,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 예약가능수량이_없으면_예약에_실패하고_Redis_복구가_일어난다() throws JsonProcessingException {
+        void 예약가능수량이_없으면_예약에_실패하고_Redis_복구가_일어난다() {
             // given
             Long reservationId = 1L;
             redisTemplate.opsForValue().set(reservationId.toString(), "0");
@@ -589,7 +589,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             // then
             MemberReservation updatedMemberReservation =
-                    memberReservationRepository.findById(memberReservation.getId()).get();
+                    findMemberReservationById(memberReservation.getId());
+
             Assertions.assertAll(
                     () ->
                             assertThat(updatedMemberReservation.getStatus())
@@ -720,7 +721,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     class 회원의_예약이_취소될_때 {
 
         @Test
-        void 예약이_존재하면_예약을_취소한다() throws JsonProcessingException {
+        void 예약이_존재하면_예약을_취소한다() {
             // given
             redisTemplate.opsForValue().set(reservationId.toString(), "10");
             MemberReservation memberReservation =
@@ -1053,7 +1054,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     class 회원이_팝업_입장할_때 {
 
         @Test
-        void 회원이_팝업_입장에_성공한다() throws JsonProcessingException {
+        void 회원이_팝업_입장에_성공한다() {
             // given
             Long memberReservationId =
                     createMemberReservation(
@@ -1063,15 +1064,15 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             memberReservationId,
                             reservationId,
                             popupId,
-                            LocalDate.now().toString(),
-                            LocalTime.now().toString());
+                            LocalDate.now(),
+                            LocalTime.now());
 
             // when
             memberReservationService.isEnterancePossible(request, popupId);
 
             // then
-            MemberReservation memberReservation =
-                    memberReservationRepository.findById(memberReservationId).get();
+            MemberReservation memberReservation = findMemberReservationById(memberReservationId);
+
             Assertions.assertAll(
                     () -> assertThat(memberReservation.getIsEntered()).isEqualTo(true));
         }
@@ -1085,8 +1086,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             invalidMemberReservationId,
                             reservationId,
                             popupId,
-                            LocalDate.now().toString(),
-                            LocalTime.now().toString());
+                            LocalDate.now(),
+                            LocalTime.now());
 
             // when & then
             assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
@@ -1106,8 +1107,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             memberReservationId,
                             reservationId,
                             popupId,
-                            LocalDate.now().toString(),
-                            LocalTime.now().toString());
+                            LocalDate.now(),
+                            LocalTime.now());
 
             // when & then
             memberReservationService.isEnterancePossible(request, popupId);
@@ -1128,8 +1129,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             memberReservationId,
                             reservationId,
                             popupId,
-                            LocalDate.now().toString(),
-                            LocalTime.now().toString());
+                            LocalDate.now(),
+                            LocalTime.now());
             Long differentPopupId = -1L;
 
             // when & then
@@ -1155,8 +1156,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             popupId,
                             MemberAge.TWENTIES,
                             MemberGender.MALE,
-                            LocalDate.now().toString(),
-                            LocalTime.now().toString());
+                            LocalDate.now(),
+                            LocalTime.now());
 
             // when & then
             assertThatThrownBy(
@@ -1178,8 +1179,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             memberReservationId,
                             reservationId,
                             popupId,
-                            (LocalDate.now().minusDays(1)).toString(),
-                            LocalTime.now().toString());
+                            (LocalDate.now().minusDays(1)),
+                            LocalTime.now());
 
             // when & then
             assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
@@ -1202,8 +1203,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             memberReservationId,
                             reservationId,
                             popupId,
-                            LocalDate.now().toString(),
-                            (LocalTime.now().minusMinutes(31)).toString());
+                            LocalDate.now(),
+                            (LocalTime.now().minusMinutes(31)));
 
             // when & then
             assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
@@ -1226,15 +1227,14 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             memberReservationId,
                             reservationId,
                             popupId,
-                            LocalDate.now().toString(),
-                            (LocalTime.now().plusMinutes(10)).toString());
+                            LocalDate.now(),
+                            (LocalTime.now().plusMinutes(10)));
 
             // when
             memberReservationService.isEnterancePossible(request, popupId);
 
             // then
-            MemberReservation memberReservation =
-                    memberReservationRepository.findById(memberReservationId).get();
+            MemberReservation memberReservation = findMemberReservationById(memberReservationId);
             Assertions.assertAll(
                     () -> assertThat(memberReservation.getIsEntered()).isEqualTo(true));
         }
@@ -1389,22 +1389,22 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
     }
 
     private void assertSurveyChoice(
-            SurveyChoiceResponse response, Long expectedSurveyId, Long startingChoiceId){
-                assertThat(response.surveyId()).isEqualTo(expectedSurveyId);
-                List<SurveyOption> options = response.options();
-                assertThat(options).hasSize(5);
+            SurveyChoiceResponse response, Long expectedSurveyId, Long startingChoiceId) {
+        assertThat(response.surveyId()).isEqualTo(expectedSurveyId);
+        List<SurveyOption> options = response.options();
+        assertThat(options).hasSize(5);
 
-                for (int i = 0; i < options.size(); i++) {
-                    SurveyOption option = options.get(i);
-                    Long expectedChoiceId = startingChoiceId + i;
-                    String expectedContent = "보기" + (i + 1);
+        for (int i = 0; i < options.size(); i++) {
+            SurveyOption option = options.get(i);
+            Long expectedChoiceId = startingChoiceId + i;
+            String expectedContent = "보기" + (i + 1);
 
-                    assertThat(option.choiceId()).isEqualTo(expectedChoiceId);
-                    assertThat(option.content()).isEqualTo(expectedContent);
-                    assertThat(option.choiceId()).isGreaterThan(0L);
-                    assertThat(option.content()).isNotBlank();
-                }
-            }
+            assertThat(option.choiceId()).isEqualTo(expectedChoiceId);
+            assertThat(option.content()).isEqualTo(expectedContent);
+            assertThat(option.choiceId()).isGreaterThan(0L);
+            assertThat(option.content()).isNotBlank();
+        }
+    }
 
     private Long createMemberReservation(
             Long reservationId,
@@ -1424,12 +1424,21 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         return memberReservation.getId();
     }
 
+    private MemberReservation findMemberReservationById(Long memberReservationId) {
+        return memberReservationRepository
+                .findById(memberReservationId)
+                .orElseThrow(
+                        () ->
+                                new CustomException(
+                                        MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND));
+    }
+
     private QrEntranceInfoRequest createQrEntranceInfoRequest(
             Long memberReservationId,
             Long reservationId,
             Long popupId,
-            String reservationDate,
-            String reservationTime) {
+            LocalDate reservationDate,
+            LocalTime reservationTime) {
         return new QrEntranceInfoRequest(
                 memberReservationId,
                 reservationId,
