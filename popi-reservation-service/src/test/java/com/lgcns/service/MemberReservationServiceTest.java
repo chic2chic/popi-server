@@ -1210,7 +1210,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
-                            MemberReservationErrorCode.RESERVATION_TIME_PASSED.getMessage());
+                            MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
         }
 
         @Test

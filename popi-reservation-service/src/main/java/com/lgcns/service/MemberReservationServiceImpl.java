@@ -13,8 +13,8 @@ import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.client.managerClient.dto.response.*;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
-import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
+import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
@@ -185,8 +185,12 @@ public class MemberReservationServiceImpl implements MemberReservationService {
             throw new CustomException(MemberReservationErrorCode.RESERVATION_DATE_MISMATCH);
         }
 
+        if (currentTime.isBefore(memberReservation.getReservationTime())) {
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_TIME_MISMATCH);
+        }
+
         if (currentTime.isAfter(memberReservation.getReservationTime().plusMinutes(31))) {
-            throw new CustomException(MemberReservationErrorCode.RESERVATION_TIME_PASSED);
+            throw new CustomException(MemberReservationErrorCode.RESERVATION_TIME_MISMATCH);
         }
 
         memberReservation.updateIsEntered();

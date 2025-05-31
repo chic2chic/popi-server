@@ -23,7 +23,7 @@ public enum MemberReservationErrorCode implements ErrorCode {
     RESERVATION_ALREADY_ENTERED(HttpStatus.BAD_REQUEST, "이미 입장한 예약입니다."),
     RESERVATION_POPUP_MISMATCH(HttpStatus.BAD_REQUEST, "예약과 입장 팝업이 일치하지 않습니다."),
     RESERVATION_DATE_MISMATCH(HttpStatus.BAD_REQUEST, "예약 날짜가 일치하지 않습니다."),
-    RESERVATION_TIME_PASSED(HttpStatus.BAD_REQUEST, "입장 가능 시간이 지났습니다.");
+    RESERVATION_TIME_MISMATCH(HttpStatus.BAD_REQUEST, "입장 가능 시간이 아닙니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
