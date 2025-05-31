@@ -686,6 +686,72 @@ public class PopupServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 지도_기반_팝업_목록을_조회할_때 {
+
+        @Test
+        void 지정된_영역_내에_팝업이_존재하면_해당_팝업들을_반환한다() throws JsonProcessingException {
+            // given
+            // 서울
+            Double latMin = 37.378638;
+            Double latMax = 37.671877;
+            Double lngMin = 126.799543;
+            Double lngMax = 127.184881;
+
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "popupId", 1,
+                                            "popupName", "강남 BLACKPINK 팝업스토어",
+                                            "imageUrl", "https://bucket/blackpink.jpg",
+                                            "popupOpenDate", "2025-05-01",
+                                            "popupCloseDate", "2025-06-01",
+                                            "address", "서울특별시 강남구 테헤란로 123, 3층"),
+                                    Map.of(
+                                            "popupId", 2,
+                                            "popupName", "홍대 BTS 팝업스토어",
+                                            "imageUrl", "https://bucket/bts.jpg",
+                                            "popupOpenDate", "2025-05-15",
+                                            "popupCloseDate", "2025-06-15",
+                                            "address", "서울특별시 마포구 홍익로 123, 2층")));
+
+            stubFindPopupsByArea(latMin, latMax, lngMin, lngMax, 200, expectedResponse);
+
+            // when
+            List<PopupInfoResponse> result =
+                    popupService.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(2),
+                    () -> assertThat(result.get(0).popupId()).isEqualTo(1L),
+                    () -> assertThat(result.get(1).popupId()).isEqualTo(2L));
+        }
+
+        @Test
+        void 지정된_영역_내에_팝업이_없으면_빈_리스트를_반환한다() throws JsonProcessingException {
+            // given
+            Double latMin = 37.378638;
+            Double latMax = 37.671877;
+            Double lngMin = 126.799543;
+            Double lngMax = 127.184881;
+
+            String expectedResponse = objectMapper.writeValueAsString(List.of());
+
+            stubFindPopupsByArea(latMin, latMax, lngMin, lngMax, 200, expectedResponse);
+
+            // when
+            List<PopupInfoResponse> result =
+                    popupService.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
+        }
+    }
+
     private void stubFindHotPopupIds(int status, String body) {
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/internal/popups/popularity"))
@@ -758,6 +824,22 @@ public class PopupServiceTest extends WireMockIntegrationTest {
     private void stubFindPopupDetailsById(Long popupId, int status, String body) {
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/internal/popups/" + popupId))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(status)
+                                        .withHeader(
+                                                "Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                        .withBody(body)));
+    }
+
+    private void stubFindPopupsByArea(
+            Double latMin, Double latMax, Double lngMin, Double lngMax, int status, String body) {
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/internal/popups/map"))
+                        .withQueryParam("latMin", equalTo(String.valueOf(latMin)))
+                        .withQueryParam("latMax", equalTo(String.valueOf(latMax)))
+                        .withQueryParam("lngMin", equalTo(String.valueOf(lngMin)))
+                        .withQueryParam("lngMax", equalTo(String.valueOf(lngMax)))
                         .willReturn(
                                 aResponse()
                                         .withStatus(status)
