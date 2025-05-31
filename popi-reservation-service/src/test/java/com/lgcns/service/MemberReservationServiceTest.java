@@ -447,7 +447,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             new SurveyChoiceRequest(4L, 13L));
 
             // when
-            memberReservationService.createMemberAnswer(popupId, memberId, surveyChoices);
+            memberReservationService.createMemberAnswer(popupId, surveyChoices);
 
             // then
             // TODO kafka를 통해 응답이 잘 저장되었는지 검증하는 테스트 코드 필요
@@ -466,7 +466,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             assertThatThrownBy(
                             () ->
                                     memberReservationService.createMemberAnswer(
-                                            popupId, memberId, surveyChoices))
+                                            popupId, surveyChoices))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT.getMessage());
