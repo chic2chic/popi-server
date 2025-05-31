@@ -7,6 +7,7 @@ import com.lgcns.kafka.message.MemberEnteredMessage;
 import com.lgcns.kafka.producer.MemberEnteredProducer;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -42,7 +43,7 @@ public class EmbeddedKafkaIntegrationTest {
                         MemberAge.TWENTIES,
                         MemberGender.MALE,
                         LocalDate.now(),
-                        LocalTime.now());
+                        LocalTime.now().truncatedTo(ChronoUnit.SECONDS));
 
         MemberEnteredMessage memberEnteredMessage =
                 MemberEnteredMessage.from(qrEntranceInfoRequest);
