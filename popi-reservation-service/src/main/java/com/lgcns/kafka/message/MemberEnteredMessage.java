@@ -17,6 +17,7 @@ public record MemberEnteredMessage(
         @NotNull(message = "방문자 나이대는 필수입니다.") @Schema(description = "방문자 나이대", example = "20")
                 MemberAge age,
         @NotNull(message = "예약 날짜는 필수입니다.")
+                @Schema(description = "예약 날짜", example = "2023-10-01")
                 @JsonFormat(
                         shape = JsonFormat.Shape.STRING,
                         pattern = "yyyy-MM-dd",
