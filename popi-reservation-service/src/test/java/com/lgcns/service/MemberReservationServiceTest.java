@@ -1190,6 +1190,30 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         }
 
         @Test
+        void 예약한_시간이_현재_시각_이후면_예외가_발생한다() {
+            // given
+            Long memberReservationId =
+                    createMemberReservation(
+                            reservationId,
+                            popupId,
+                            LocalDate.now(),
+                            LocalTime.now().plusMinutes(10));
+            QrEntranceInfoRequest request =
+                    createQrEntranceInfoRequest(
+                            memberReservationId,
+                            reservationId,
+                            popupId,
+                            LocalDate.now(),
+                            (LocalTime.now().plusMinutes(10)));
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
+        }
+
+        @Test
         void 현재_시간이_예약시간_30분_이후면_예외가_발생한다() {
             // given
             Long memberReservationId =
@@ -1221,14 +1245,14 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             reservationId,
                             popupId,
                             LocalDate.now(),
-                            LocalTime.now().plusMinutes(10));
+                            LocalTime.now().minusMinutes(30));
             QrEntranceInfoRequest request =
                     createQrEntranceInfoRequest(
                             memberReservationId,
                             reservationId,
                             popupId,
                             LocalDate.now(),
-                            (LocalTime.now().plusMinutes(10)));
+                            LocalTime.now().minusMinutes((30)));
 
             // when
             memberReservationService.isEnterancePossible(request, popupId);
