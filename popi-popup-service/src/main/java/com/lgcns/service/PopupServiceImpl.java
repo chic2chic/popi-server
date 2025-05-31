@@ -5,6 +5,7 @@ import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.client.reservationClient.ReservationServiceClient;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupMapResponse;
 import com.lgcns.response.SliceResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class PopupServiceImpl implements PopupService {
     }
 
     @Override
-    public List<PopupInfoResponse> findPopupsByMapArea(
+    public List<PopupMapResponse> findPopupsByMapArea(
             Double latMin, Double latMax, Double lngMin, Double lngMax) {
         return managerServiceClient.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
     }

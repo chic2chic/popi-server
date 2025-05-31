@@ -10,6 +10,7 @@ import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupMapResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.response.SliceResponse;
 import java.util.HashMap;
@@ -707,19 +708,23 @@ public class PopupServiceTest extends WireMockIntegrationTest {
                                             "imageUrl", "https://bucket/blackpink.jpg",
                                             "popupOpenDate", "2025-05-01",
                                             "popupCloseDate", "2025-06-01",
-                                            "address", "서울특별시 강남구 테헤란로 123, 3층"),
+                                            "address", "서울특별시 강남구 테헤란로 123, 3층",
+                                            "latitude", "37.411222",
+                                            "longitude", "126.999999"),
                                     Map.of(
                                             "popupId", 2,
                                             "popupName", "홍대 BTS 팝업스토어",
                                             "imageUrl", "https://bucket/bts.jpg",
                                             "popupOpenDate", "2025-05-15",
                                             "popupCloseDate", "2025-06-15",
-                                            "address", "서울특별시 마포구 홍익로 123, 2층")));
+                                            "address", "서울특별시 마포구 홍익로 123, 2층",
+                                            "latitude", "37.511222",
+                                            "longitude", "127.110011")));
 
             stubFindPopupsByArea(latMin, latMax, lngMin, lngMax, 200, expectedResponse);
 
             // when
-            List<PopupInfoResponse> result =
+            List<PopupMapResponse> result =
                     popupService.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
 
             // then
@@ -743,7 +748,7 @@ public class PopupServiceTest extends WireMockIntegrationTest {
             stubFindPopupsByArea(latMin, latMax, lngMin, lngMax, 200, expectedResponse);
 
             // when
-            List<PopupInfoResponse> result =
+            List<PopupMapResponse> result =
                     popupService.findPopupsByMapArea(latMin, latMax, lngMin, lngMax);
 
             // then

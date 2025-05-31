@@ -2,6 +2,7 @@ package com.lgcns.service;
 
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
+import com.lgcns.dto.response.PopupMapResponse;
 import com.lgcns.response.SliceResponse;
 import java.util.List;
 
@@ -12,6 +13,6 @@ public interface PopupService {
 
     List<PopupInfoResponse> findHotPopups();
 
-    List<PopupInfoResponse> findPopupsByMapArea(
+    List<PopupMapResponse> findPopupsByMapArea(
             Double latMin, Double latMax, Double lngMin, Double lngMax);
 }
