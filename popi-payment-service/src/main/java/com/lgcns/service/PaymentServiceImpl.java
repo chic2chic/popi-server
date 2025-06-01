@@ -8,6 +8,7 @@ import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
@@ -132,5 +133,11 @@ public class PaymentServiceImpl implements PaymentService {
                     "Iamport API 오류: status={}, message={}", e.getHttpStatusCode(), e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ItemBuyerCountResponse> countItemBuyerByPopupId(Long popupId) {
+        return paymentRepository.countItemBuyerByPopupId(popupId);
     }
 }
