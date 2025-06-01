@@ -144,7 +144,15 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/payments/(?<segment>.*), /$\{segment}
-        - id: payment-service
+        - id: payment-internal
+          uri: lb://PAYMENTS
+          predicates:
+            - Path=/payments/internal/**
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/payments/(?<segment>.*), /$\{segment}
+        - id: payment-external
           uri: lb://PAYMENTS
           predicates:
             - Path=/payments/**
