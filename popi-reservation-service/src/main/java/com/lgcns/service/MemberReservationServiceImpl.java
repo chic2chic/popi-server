@@ -97,6 +97,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         }
 
         memberAnswerProducer.sendMessage(MemberAnswerMessage.of(popupId, surveyChoices));
+
+        // TODO 상품 서비스로 메시지 발행 후 취향 저격 상품 생성 로직 추가
     }
 
     @Override
