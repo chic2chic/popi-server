@@ -106,15 +106,15 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Test
         void 예약이_없는_경우_모든_시간이_예약_가능하다() throws JsonProcessingException {
             // given
-            String date = "2025-05";
+            String date = "2025-06";
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "popupOpenDate",
-                                    "2025-05-31",
+                                    "2025-06-30",
                                     "popupCloseDate",
-                                    "2025-06-02",
+                                    "2025-07-02",
                                     "timeCapacity",
                                     5,
                                     "dailyReservations",
@@ -141,7 +141,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Test
         void 모든_시간이_가득_찬_날짜는_예약_불가하다() throws JsonProcessingException {
             // given
-            String date = "2025-06";
+            String date = "2025-07";
 
             createMemberReservation();
 
@@ -149,16 +149,16 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "popupOpenDate",
-                                    "2025-05-31",
+                                    "2025-06-30",
                                     "popupCloseDate",
-                                    "2025-06-02",
+                                    "2025-07-02",
                                     "timeCapacity",
                                     5,
                                     "dailyReservations",
                                     List.of(
                                             Map.of(
                                                     "reservationDate",
-                                                    "2025-06-01",
+                                                    "2025-07-01",
                                                     "timeSlots",
                                                     List.of(
                                                             Map.of(
@@ -178,7 +178,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                                                     "14:00"))),
                                             Map.of(
                                                     "reservationDate",
-                                                    "2025-06-02",
+                                                    "2025-07-02",
                                                     "timeSlots",
                                                     List.of(
                                                             Map.of(
@@ -205,7 +205,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             ReservableDate reservableDate =
                     response.reservableDate().stream()
-                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 1)))
+                            .filter(d -> d.date().equals(LocalDate.of(2025, 7, 1)))
                             .findFirst()
                             .orElseThrow();
 
@@ -221,7 +221,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Test
         void 일부_시간만_예약된_날짜는_정확하게_표시된다() throws JsonProcessingException {
             // given
-            String date = "2025-06";
+            String date = "2025-07";
 
             createMemberReservation();
 
@@ -229,16 +229,16 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "popupOpenDate",
-                                    "2025-05-31",
+                                    "2025-06-30",
                                     "popupCloseDate",
-                                    "2025-06-02",
+                                    "2025-07-02",
                                     "timeCapacity",
                                     5,
                                     "dailyReservations",
                                     List.of(
                                             Map.of(
                                                     "reservationDate",
-                                                    "2025-06-01",
+                                                    "2025-07-01",
                                                     "timeSlots",
                                                     List.of(
                                                             Map.of(
@@ -258,7 +258,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                                                     "14:00"))),
                                             Map.of(
                                                     "reservationDate",
-                                                    "2025-06-02",
+                                                    "2025-07-02",
                                                     "timeSlots",
                                                     List.of(
                                                             Map.of(
@@ -285,7 +285,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
             ReservableDate reservableDate =
                     response.reservableDate().stream()
-                            .filter(d -> d.date().equals(LocalDate.of(2025, 6, 2)))
+                            .filter(d -> d.date().equals(LocalDate.of(2025, 7, 2)))
                             .findFirst()
                             .orElseThrow();
 
@@ -305,15 +305,15 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Test
         void 예약_기간_아닌경우_빈_리스트_반환한다() throws JsonProcessingException {
             // given
-            String date = "2025-07";
+            String date = "2025-08";
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
                             Map.of(
                                     "popupOpenDate",
-                                    "2025-05-31",
+                                    "2025-06-30",
                                     "popupCloseDate",
-                                    "2025-06-02",
+                                    "2025-07-02",
                                     "timeCapacity",
                                     5,
                                     "dailyReservations",
@@ -334,7 +334,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         void 존재하지_않는_팝업ID는_예외처리_된다() throws JsonProcessingException {
             // given
             Long invalidPopupId = 999L;
-            String date = "2025-06";
+            String date = "2025-07";
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
@@ -769,7 +769,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // given
             PopupIdsRequest request = PopupIdsRequest.of(List.of(popupId));
 
-            insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
+            insertReservedMemberReservation(LocalDate.of(2025, 7, 1), LocalTime.of(12, 0));
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
@@ -804,7 +804,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(reservationInfo.popupId()).isEqualTo(1L),
                     () -> assertThat(reservationInfo.popupName()).isEqualTo("BLACK PINK 팝업스토어"),
                     () -> assertThat(reservationInfo.reservationTime()).isEqualTo("12:00"),
-                    () -> assertThat(reservationInfo.reservationDay()).isEqualTo("SUN"),
+                    () -> assertThat(reservationInfo.reservationDay()).isEqualTo("TUE"),
                     () ->
                             assertThat(reservationInfo.address())
                                     .isEqualTo("서울특별시 영등포구 여의대로 108, 5층"),
@@ -1361,12 +1361,12 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     private void createMemberReservation() {
         // 6월 1일은 모두 찬 상태
-        insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(12, 0));
-        insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(13, 0));
-        insertReservedMemberReservation(LocalDate.of(2025, 6, 1), LocalTime.of(14, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 7, 1), LocalTime.of(12, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 7, 1), LocalTime.of(13, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 7, 1), LocalTime.of(14, 0));
 
         // 6월 2일은 일부만 찬 상태
-        insertReservedMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(13, 0));
+        insertReservedMemberReservation(LocalDate.of(2025, 7, 2), LocalTime.of(13, 0));
     }
 
     private void insertPendingMemberReservation(LocalDate date, LocalTime time) {
@@ -1408,8 +1408,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     private void assertPopupDate(AvailableDateResponse response) {
         Assertions.assertAll(
-                () -> assertThat(response.popupOpenDate()).isEqualTo("2025-05-31"),
-                () -> assertThat(response.popupCloseDate()).isEqualTo("2025-06-02"));
+                () -> assertThat(response.popupOpenDate()).isEqualTo("2025-06-30"),
+                () -> assertThat(response.popupCloseDate()).isEqualTo("2025-07-02"));
     }
 
     private void assertSurveyChoice(
