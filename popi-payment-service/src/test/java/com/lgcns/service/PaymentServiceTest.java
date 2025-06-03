@@ -15,10 +15,12 @@ import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
+import com.lgcns.dto.response.PaymentHistoryResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.repository.PaymentRepository;
+import com.lgcns.response.SliceResponse;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -276,6 +278,61 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(result.get(1).buyerCount()).isEqualTo(1),
                     () -> assertThat(result.get(2).itemId()).isEqualTo(3L),
                     () -> assertThat(result.get(2).buyerCount()).isEqualTo(1));
+        }
+    }
+
+    @Nested
+    class 결제_내역을_조회할_때 {
+
+        @BeforeEach
+        void setUp() {
+            Payment payment1 = Payment.createPayment(1L, "merchantUid1", 45000, 1L);
+            payment1.updatePayment(
+                    "impUid1",
+                    "kakaopay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2024, 5, 31, 14, 0));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, "응원봉", 1, 25000));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, "포스터", 3, 9000));
+
+            Payment payment2 = Payment.createPayment(1L, "merchantUid2", 12000, 2L);
+            payment2.updatePayment(
+                    "impUid2",
+                    "tosspay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2024, 5, 30, 15, 30));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 3L, "크레용 파란색", 1, 12000));
+
+            paymentRepository.saveAll(List.of(payment1, payment2));
+        }
+
+        @Test
+        void 결제별로_상품_목록이_포함된_내역이_정상적으로_조회된다() {
+            // when
+            SliceResponse<PaymentHistoryResponse> response =
+                    paymentService.findAllPaymentHistory(String.valueOf(1L), null, 10);
+
+            // then
+            List<PaymentHistoryResponse> content = response.content();
+
+            PaymentHistoryResponse first = content.get(0);
+
+            Assertions.assertAll(
+                    () -> assertThat(first.paymentId()).isEqualTo(1L),
+                    () -> assertThat(first.popupId()).isEqualTo(1L),
+                    () -> assertThat(first.items().get(0).itemName()).isEqualTo("응원봉"),
+                    () -> assertThat(first.items().get(1).itemName()).isEqualTo("포스터"),
+                    () -> assertThat(first.items().get(0).price()).isEqualTo(25000),
+                    () -> assertThat(first.items().get(1).price()).isEqualTo(27000));
+
+            PaymentHistoryResponse second = content.get(1);
+
+            Assertions.assertAll(
+                    () -> assertThat(second.paymentId()).isEqualTo(2L),
+                    () -> assertThat(second.popupId()).isEqualTo(2L),
+                    () -> assertThat(second.items().get(0).itemName()).isEqualTo("크레용 파란색"),
+                    () -> assertThat(second.items().get(0).price()).isEqualTo(12000));
         }
     }
 
