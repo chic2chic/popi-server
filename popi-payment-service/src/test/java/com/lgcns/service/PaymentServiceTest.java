@@ -240,8 +240,10 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     "kakaopay",
                     PaymentStatus.PAID,
                     LocalDateTime.of(2025, 5, 31, 14, 14, 0));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 1L, "DAZED 지수", 2, 15000));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 2L, "DAZED 로제", 1, 15000));
 
             Payment payment2 = Payment.createPayment(2L, "merchantUid2", 20000, 1L);
             payment2.updatePayment(
@@ -249,8 +251,10 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     "tosspay",
                     PaymentStatus.PAID,
                     LocalDateTime.of(2025, 6, 1, 18, 0, 0));
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 1L, "DAZED 지수", 2, 15000));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 3L, "DAZED 제니", 2, 9500));
 
             paymentRepository.saveAll(List.of(payment1, payment2));
         }
@@ -286,17 +290,22 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     "kakaopay",
                     PaymentStatus.PAID,
                     LocalDateTime.of(2025, 6, 1, 14, 14, 0));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 1L, "DAZED 지수", 2, 15000));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 2L, "DAZED 로제", 1, 15000));
 
             Payment payment2 = Payment.createPayment(2L, "merchantUid2", 34000, 1L);
             payment2.updatePayment("impUid2", "tosspay", PaymentStatus.PAID, LocalDateTime.now());
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 1L, "DAZED 지수", 2, 15000));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 3L, "DAZED 제니", 2, 9500));
 
             Payment payment3 = Payment.createPayment(3L, "merchantUid3", 15000, 1L);
             payment3.updatePayment("impUid3", "kakaopay", PaymentStatus.PAID, LocalDateTime.now());
-            payment3.addPaymentItem(PaymentItem.createPaymentItem(payment3, 13L, 1));
+            payment3.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment3, 13L, "포스터 세트", 1, 15000));
 
             paymentRepository.saveAll(List.of(payment1, payment2, payment3));
         }
