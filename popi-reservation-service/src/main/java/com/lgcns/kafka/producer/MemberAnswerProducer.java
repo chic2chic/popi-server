@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class MemberAnswerProducer {
 
     private static final String TOPIC = "member-answer-topic";
-    ;
+
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void sendMessage(MemberAnswerMessage message) {

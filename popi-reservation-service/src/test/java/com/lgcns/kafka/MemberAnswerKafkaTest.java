@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.lgcns.AbstractKafkaIntegrationTest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
-import com.lgcns.kafka.dto.SurveyChoiceDto;
 import com.lgcns.kafka.message.MemberAnswerMessage;
+import com.lgcns.kafka.message.dto.SurveyChoiceDto;
 import com.lgcns.kafka.producer.MemberAnswerProducer;
 import java.util.Collections;
 import java.util.List;

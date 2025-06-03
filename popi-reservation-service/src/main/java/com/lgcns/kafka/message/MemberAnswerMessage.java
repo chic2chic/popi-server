@@ -1,7 +1,7 @@
 package com.lgcns.kafka.message;
 
 import com.lgcns.dto.request.SurveyChoiceRequest;
-import com.lgcns.kafka.dto.SurveyChoiceDto;
+import com.lgcns.kafka.message.dto.SurveyChoiceDto;
 import java.util.List;
 
 public record MemberAnswerMessage(Long memberId, List<SurveyChoiceDto> surveyChoices) {
