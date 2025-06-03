@@ -8,6 +8,7 @@ import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
@@ -139,5 +140,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public List<ItemBuyerCountResponse> countItemBuyerByPopupId(Long popupId) {
         return paymentRepository.countItemBuyerByPopupId(popupId);
+    }
+
+    @Override
+    public AverageAmountResponse findAverageAmount(Long popupId) {
+        return paymentRepository.findAverageAmountByPopupId(popupId);
     }
 }
