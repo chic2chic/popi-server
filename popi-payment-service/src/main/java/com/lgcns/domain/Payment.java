@@ -55,10 +55,9 @@ public class Payment extends BaseTimeEntity {
                 .build();
     }
 
-    public void updatePayment(String impUid, String pgProvider, int amount, PaymentStatus status) {
+    public void updatePayment(String impUid, String pgProvider, PaymentStatus status) {
         this.impUid = impUid;
         this.pgProvider = pgProvider;
-        this.amount = amount;
         this.status = status;
     }
 

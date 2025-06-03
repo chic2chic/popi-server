@@ -229,12 +229,12 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
         @BeforeEach
         void setUp() {
             Payment payment1 = Payment.createPayment(1L, "merchantUid1", 10000, 1L);
-            payment1.updatePayment("impUid1", "kakaopay", 10000, PaymentStatus.PAID);
+            payment1.updatePayment("impUid1", "kakaopay", PaymentStatus.PAID);
             payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
             payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
 
             Payment payment2 = Payment.createPayment(2L, "merchantUid2", 20000, 1L);
-            payment2.updatePayment("impUid2", "tosspay", 20000, PaymentStatus.PAID);
+            payment2.updatePayment("impUid2", "tosspay", PaymentStatus.PAID);
             payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
             payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
 

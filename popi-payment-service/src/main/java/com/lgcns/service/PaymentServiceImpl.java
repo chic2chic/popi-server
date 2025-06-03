@@ -126,7 +126,7 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new CustomException(PaymentErrorCode.NOT_PAID);
             }
 
-            payment.updatePayment(impUid, pgProvider, amount, PaymentStatus.PAID);
+            payment.updatePayment(impUid, pgProvider, PaymentStatus.PAID);
 
             itemPurchasedProducer.sendMessage(ItemPurchasedMessage.from(payment));
         } catch (IamportResponseException e) {
