@@ -90,13 +90,15 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public void createMemberAnswer(Long popupId, List<SurveyChoiceRequest> surveyChoices) {
+    public void createMemberAnswer(
+            Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices) {
 
         if (surveyChoices.size() != DEFAULT_SURVEY_COUNT) {
             throw new CustomException(MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT);
         }
 
-        memberAnswerProducer.sendMessage(MemberAnswerMessage.of(popupId, surveyChoices));
+        memberAnswerProducer.sendMessage(
+                MemberAnswerMessage.of(Long.parseLong(memberId), surveyChoices));
 
         // TODO 상품 서비스로 메시지 발행 후 취향 저격 상품 생성 로직 추가
     }

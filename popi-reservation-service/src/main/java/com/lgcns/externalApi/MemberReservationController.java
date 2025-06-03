@@ -39,8 +39,9 @@ public class MemberReservationController {
     @Operation(summary = "설문지 응답 저장", description = "해당 팝업에 대한 설문지 응답을 저장합니다.")
     public ResponseEntity<Void> memberAnswerCreate(
             @PathVariable Long popupId,
+            @RequestHeader("member-id") String memberId,
             @Valid @RequestBody List<SurveyChoiceRequest> surveyChoices) {
-        memberReservationService.createMemberAnswer(popupId, surveyChoices);
+        memberReservationService.createMemberAnswer(popupId, memberId, surveyChoices);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
