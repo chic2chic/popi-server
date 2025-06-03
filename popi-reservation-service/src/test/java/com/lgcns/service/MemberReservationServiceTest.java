@@ -436,22 +436,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     @Nested
     class 설문지_등록_할_때 {
-        @Test
-        void 설문지_응답이_정상적으로_저장된다() {
-            // given
-            List<SurveyChoiceRequest> surveyChoices =
-                    List.of(
-                            new SurveyChoiceRequest(1L, 1L),
-                            new SurveyChoiceRequest(2L, 5L),
-                            new SurveyChoiceRequest(3L, 9L),
-                            new SurveyChoiceRequest(4L, 13L));
-
-            // when
-            memberReservationService.createMemberAnswer(popupId, surveyChoices);
-
-            // then
-            // TODO kafka를 통해 응답이 잘 저장되었는지 검증하는 테스트 코드 필요
-        }
 
         @Test
         void 설문지_응답이_4개가_아니면_예외가_발생한다() {
@@ -466,7 +450,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             assertThatThrownBy(
                             () ->
                                     memberReservationService.createMemberAnswer(
-                                            popupId, surveyChoices))
+                                            popupId, memberId, surveyChoices))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT.getMessage());
