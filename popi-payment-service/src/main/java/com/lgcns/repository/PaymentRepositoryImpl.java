@@ -57,7 +57,7 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
                         .where(
                                 payment.popupId.eq(popupId),
                                 payment.status.eq(PaymentStatus.PAID),
-                                payment.updatedAt.goe(LocalDate.now().atStartOfDay()))
+                                payment.paidAt.goe(LocalDate.now().atStartOfDay()))
                         .fetchOne();
 
         Long todayBuyers =
@@ -67,7 +67,7 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
                         .where(
                                 payment.popupId.eq(popupId),
                                 payment.status.eq(PaymentStatus.PAID),
-                                payment.updatedAt.goe(LocalDate.now().atStartOfDay()))
+                                payment.paidAt.goe(LocalDate.now().atStartOfDay()))
                         .fetchOne();
 
         int totalAverageAmount =
