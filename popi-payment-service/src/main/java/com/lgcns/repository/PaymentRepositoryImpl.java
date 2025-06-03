@@ -89,7 +89,7 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
                                 payment.status.eq(PaymentStatus.PAID),
                                 lastPaymentCondition(lastPaymentId))
                         .orderBy(payment.paidAt.desc(), payment.id.desc())
-                        .limit(size + 1)
+                        .limit(size + 1L)
                         .fetch();
 
         boolean hasNext = false;
