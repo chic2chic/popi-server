@@ -10,8 +10,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.Payment;
+import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
@@ -21,6 +23,7 @@ import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -217,6 +220,44 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.NOT_PAID.getMessage());
+        }
+    }
+
+    @Nested
+    class 관리자_서비스의_상품별_구매자_수_조회_요청을_처리할_때 {
+
+        @BeforeEach
+        void setUp() {
+            Payment payment1 = Payment.createPayment(1L, "merchantUid1", 10000, 1L);
+            payment1.updatePayment("impUid1", "kakaopay", 10000, PaymentStatus.PAID);
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
+
+            Payment payment2 = Payment.createPayment(2L, "merchantUid2", 20000, 1L);
+            payment2.updatePayment("impUid2", "tosspay", 20000, PaymentStatus.PAID);
+            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
+            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
+
+            paymentRepository.saveAll(List.of(payment1, payment2));
+        }
+
+        @Test
+        void 상품별_구매자_수를_정상적으로_조회한다() {
+            // given
+            Long popupId = 1L;
+
+            // when
+            List<ItemBuyerCountResponse> result = paymentService.countItemBuyerByPopupId(popupId);
+            result.sort(Comparator.comparing(ItemBuyerCountResponse::itemId));
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result.get(0).itemId()).isEqualTo(1L),
+                    () -> assertThat(result.get(0).buyerCount()).isEqualTo(2),
+                    () -> assertThat(result.get(1).itemId()).isEqualTo(2L),
+                    () -> assertThat(result.get(1).buyerCount()).isEqualTo(1),
+                    () -> assertThat(result.get(2).itemId()).isEqualTo(3L),
+                    () -> assertThat(result.get(2).buyerCount()).isEqualTo(1));
         }
     }
 }
