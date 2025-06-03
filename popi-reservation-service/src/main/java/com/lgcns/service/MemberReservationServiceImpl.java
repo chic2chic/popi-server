@@ -19,7 +19,9 @@ import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
+import com.lgcns.kafka.message.MemberAnswerMessage;
 import com.lgcns.kafka.message.MemberEnteredMessage;
+import com.lgcns.kafka.producer.MemberAnswerProducer;
 import com.lgcns.repository.MemberReservationRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -52,6 +54,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Long> redisTemplate;
+
+    private final MemberAnswerProducer memberAnswerProducer;
 
     private static final int DEFAULT_SURVEY_COUNT = 4;
 
@@ -93,10 +97,10 @@ public class MemberReservationServiceImpl implements MemberReservationService {
             throw new CustomException(MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT);
         }
 
-        // TODO manager 서비스에 회원 설문 응답 저장 메시지 발행
+        memberAnswerProducer.sendMessage(
+                MemberAnswerMessage.of(Long.parseLong(memberId), surveyChoices));
 
-        // TODO 설문 응답 저장 후, 추천 서비스로 메시지 발행
-
+        // TODO 상품 서비스로 메시지 발행 후 취향 저격 상품 생성 로직 추가
     }
 
     @Override

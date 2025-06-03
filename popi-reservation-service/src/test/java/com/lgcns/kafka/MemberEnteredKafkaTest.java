@@ -1,5 +1,6 @@
 package com.lgcns.kafka;
 
+import com.lgcns.AbstractKafkaIntegrationTest;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
@@ -12,25 +13,23 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@EmbeddedKafka(partitions = 1, topics = "member-entered-topic")
-public class EmbeddedKafkaIntegrationTest {
-
-    @Autowired private EmbeddedKafkaBroker embeddedKafkaBroker;
+@EmbeddedKafka(partitions = 1, topics = MemberEnteredKafkaTest.TOPIC)
+public class MemberEnteredKafkaTest extends AbstractKafkaIntegrationTest {
 
     @Autowired private MemberEnteredProducer memberEnteredProducer;
+
+    static final String TOPIC = "member-entered-topic";
 
     @Test
     void 방문자_입장_메세지를_카프카에_전송한다() {
@@ -57,10 +56,7 @@ public class EmbeddedKafkaIntegrationTest {
         consumerProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.lgcns.kafka.message");
 
         try (KafkaConsumer<String, MemberEnteredMessage> consumer =
-                new KafkaConsumer<>(
-                        consumerProps,
-                        new StringDeserializer(),
-                        new JsonDeserializer<>(MemberEnteredMessage.class))) {
+                createConsumer(MemberEnteredMessage.class)) {
             consumer.subscribe(Collections.singletonList("member-entered-topic"));
 
             ConsumerRecord<String, MemberEnteredMessage> record =
