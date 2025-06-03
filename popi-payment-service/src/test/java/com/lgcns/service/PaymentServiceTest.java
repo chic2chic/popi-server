@@ -13,6 +13,7 @@ import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
@@ -267,6 +268,46 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     () -> assertThat(result.get(1).buyerCount()).isEqualTo(1),
                     () -> assertThat(result.get(2).itemId()).isEqualTo(3L),
                     () -> assertThat(result.get(2).buyerCount()).isEqualTo(1));
+        }
+    }
+
+    @Nested
+    class 관리자_서비스의_1인_평균_구매액_조회_요청을_처리할_때 {
+
+        @BeforeEach
+        void setUp() {
+            Payment payment1 = Payment.createPayment(1L, "merchantUid1", 45000, 1L);
+            payment1.updatePayment(
+                    "impUid1",
+                    "kakaopay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2025, 6, 1, 14, 14, 0));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
+
+            Payment payment2 = Payment.createPayment(2L, "merchantUid2", 34000, 1L);
+            payment2.updatePayment("impUid2", "tosspay", PaymentStatus.PAID, LocalDateTime.now());
+            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
+            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
+
+            Payment payment3 = Payment.createPayment(3L, "merchantUid3", 15000, 1L);
+            payment3.updatePayment("impUid3", "kakaopay", PaymentStatus.PAID, LocalDateTime.now());
+            payment3.addPaymentItem(PaymentItem.createPaymentItem(payment3, 13L, 1));
+
+            paymentRepository.saveAll(List.of(payment1, payment2, payment3));
+        }
+
+        @Test
+        void 평균_구매액을_정상적으로_조회한다() {
+            // given
+            Long popupId = 1L;
+
+            // when
+            AverageAmountResponse response = paymentService.findAverageAmount(popupId);
+
+            // then
+            assertThat(response.totalAverageAmount()).isEqualTo(31333);
+            assertThat(response.todayAverageAmount()).isEqualTo(24500);
         }
     }
 }
