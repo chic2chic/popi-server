@@ -23,6 +23,7 @@ import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -229,12 +230,20 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
         @BeforeEach
         void setUp() {
             Payment payment1 = Payment.createPayment(1L, "merchantUid1", 10000, 1L);
-            payment1.updatePayment("impUid1", "kakaopay", PaymentStatus.PAID);
+            payment1.updatePayment(
+                    "impUid1",
+                    "kakaopay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2025, 5, 31, 14, 14, 0));
             payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
             payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
 
             Payment payment2 = Payment.createPayment(2L, "merchantUid2", 20000, 1L);
-            payment2.updatePayment("impUid2", "tosspay", PaymentStatus.PAID);
+            payment2.updatePayment(
+                    "impUid2",
+                    "tosspay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2025, 6, 1, 18, 0, 0));
             payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
             payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
 
