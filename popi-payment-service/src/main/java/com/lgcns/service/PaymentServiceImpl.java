@@ -24,7 +24,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,16 +57,21 @@ public class PaymentServiceImpl implements PaymentService {
                 managerServiceClient.findItemsForPayment(
                         request.popupId(), new ItemIdsForPaymentRequest(itemIds));
 
+        Map<Long, ItemForPaymentResponse> itemDetailMap =
+                itemDetails.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ItemForPaymentResponse::itemId, Function.identity()));
+
         List<String> itemNames = new ArrayList<>();
         int amount = 0;
 
         for (PaymentReadyRequest.Item selected : request.items()) {
-            var item =
-                    itemDetails.stream()
-                            .filter(i -> i.itemId().equals(selected.itemId()))
-                            .findFirst()
-                            .orElseThrow(
-                                    () -> new CustomException(PaymentErrorCode.ITEM_NOT_FOUND));
+            ItemForPaymentResponse item = itemDetailMap.get(selected.itemId());
+
+            if (item == null) {
+                throw new CustomException(PaymentErrorCode.ITEM_NOT_FOUND);
+            }
 
             if (selected.quantity() > item.stock()) {
                 throw new CustomException(PaymentErrorCode.OUT_OF_STOCK);
@@ -73,14 +81,10 @@ public class PaymentServiceImpl implements PaymentService {
             itemNames.add(item.name());
         }
 
-        String name;
-        int size = itemNames.size();
-
-        if (size == 1) {
-            name = itemNames.get(0);
-        } else {
-            name = String.format("%s 외 %d건", itemNames.get(0), size - 1);
-        }
+        String name =
+                itemNames.size() == 1
+                        ? itemNames.get(0)
+                        : String.format("%s 외 %d건", itemNames.get(0), itemNames.size() - 1);
 
         String merchantUid =
                 String.format(
@@ -92,8 +96,15 @@ public class PaymentServiceImpl implements PaymentService {
                         Long.valueOf(memberId), merchantUid, amount, request.popupId());
 
         for (PaymentReadyRequest.Item selected : request.items()) {
+            ItemForPaymentResponse item = itemDetailMap.get(selected.itemId());
+
             payment.addPaymentItem(
-                    PaymentItem.createPaymentItem(payment, selected.itemId(), selected.quantity()));
+                    PaymentItem.createPaymentItem(
+                            payment,
+                            selected.itemId(),
+                            item.name(),
+                            selected.quantity(),
+                            item.price()));
         }
 
         paymentRepository.save(payment);
