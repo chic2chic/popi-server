@@ -155,11 +155,11 @@ spring:
         - id: payment-external
           uri: lb://PAYMENTS
           predicates:
-            - Path=/payments/**
-            - Method=POST
+            - Path=/payments, /payments/**
+            - Method=GET,POST
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/payments/(?<segment>.*), /$\{segment}
+            - RewritePath=/payments(?<segment>/?.*), /$\{segment}
             - JwtAuthenticationFilter
 
         - id: item-docs
