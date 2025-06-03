@@ -1,6 +1,7 @@
 package com.lgcns.service;
 
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.siot.IamportRestClient.exception.IamportResponseException;
@@ -13,4 +14,6 @@ public interface PaymentService {
     void findPaymentByImpUid(String impUid) throws IamportResponseException, IOException;
 
     List<ItemBuyerCountResponse> countItemBuyerByPopupId(Long popupId);
+
+    AverageAmountResponse findAverageAmount(Long popupId);
 }

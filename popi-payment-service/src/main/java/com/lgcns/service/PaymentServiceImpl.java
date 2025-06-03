@@ -8,6 +8,7 @@ import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
@@ -19,6 +20,8 @@ import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -110,6 +113,12 @@ public class PaymentServiceImpl implements PaymentService {
             String pgProvider = iamportPayment.getPgProvider();
             int amount = iamportPayment.getAmount().intValue();
             PaymentStatus status = PaymentStatus.valueOf(iamportPayment.getStatus().toUpperCase());
+            LocalDateTime paidAt =
+                    iamportPayment
+                            .getPaidAt()
+                            .toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDateTime();
 
             Payment payment =
                     paymentRepository
@@ -125,7 +134,7 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new CustomException(PaymentErrorCode.NOT_PAID);
             }
 
-            payment.updatePayment(impUid, pgProvider, amount, PaymentStatus.PAID);
+            payment.updatePayment(impUid, pgProvider, PaymentStatus.PAID, paidAt);
 
             itemPurchasedProducer.sendMessage(ItemPurchasedMessage.from(payment));
         } catch (IamportResponseException e) {
@@ -139,5 +148,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional(readOnly = true)
     public List<ItemBuyerCountResponse> countItemBuyerByPopupId(Long popupId) {
         return paymentRepository.countItemBuyerByPopupId(popupId);
+    }
+
+    @Override
+    public AverageAmountResponse findAverageAmount(Long popupId) {
+        return paymentRepository.findAverageAmountByPopupId(popupId);
     }
 }
