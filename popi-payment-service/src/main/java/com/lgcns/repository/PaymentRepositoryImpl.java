@@ -6,6 +6,7 @@ import static com.lgcns.domain.QPaymentItem.paymentItem;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
@@ -36,23 +37,19 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
 
     @Override
     public AverageAmountResponse findAverageAmountByPopupId(Long popupId) {
-        Integer totalAmount =
+        Tuple totalTuple =
                 queryFactory
-                        .select(payment.amount.sum())
+                        .select(payment.amount.sum(), payment.memberId.countDistinct())
                         .from(payment)
                         .where(payment.popupId.eq(popupId), payment.status.eq(PaymentStatus.PAID))
                         .fetchOne();
 
-        Long totalBuyers =
-                queryFactory
-                        .select(payment.memberId.countDistinct())
-                        .from(payment)
-                        .where(payment.popupId.eq(popupId), payment.status.eq(PaymentStatus.PAID))
-                        .fetchOne();
+        Integer totalAmount = totalTuple != null ? totalTuple.get(0, Integer.class) : 0;
+        Long totalBuyers = totalTuple != null ? totalTuple.get(1, Long.class) : 0L;
 
-        Integer todayAmount =
+        Tuple todayTuple =
                 queryFactory
-                        .select(payment.amount.sum())
+                        .select(payment.amount.sum(), payment.memberId.countDistinct())
                         .from(payment)
                         .where(
                                 payment.popupId.eq(popupId),
@@ -60,15 +57,8 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
                                 payment.paidAt.goe(LocalDate.now().atStartOfDay()))
                         .fetchOne();
 
-        Long todayBuyers =
-                queryFactory
-                        .select(payment.memberId.countDistinct())
-                        .from(payment)
-                        .where(
-                                payment.popupId.eq(popupId),
-                                payment.status.eq(PaymentStatus.PAID),
-                                payment.paidAt.goe(LocalDate.now().atStartOfDay()))
-                        .fetchOne();
+        Integer todayAmount = todayTuple != null ? todayTuple.get(0, Integer.class) : 0;
+        Long todayBuyers = todayTuple != null ? todayTuple.get(1, Long.class) : 0L;
 
         int totalAverageAmount =
                 (totalBuyers == null || totalBuyers == 0)
