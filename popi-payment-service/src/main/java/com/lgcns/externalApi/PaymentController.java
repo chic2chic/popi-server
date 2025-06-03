@@ -1,10 +1,13 @@
 package com.lgcns.externalApi;
 
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.PaymentHistoryResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
+import com.lgcns.response.SliceResponse;
 import com.lgcns.service.PaymentService;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +36,16 @@ public class PaymentController {
     public void paymentByImpUidFind(@PathVariable("impUid") String impUid)
             throws IamportResponseException, IOException {
         paymentService.findPaymentByImpUid(impUid);
+    }
+
+    @GetMapping
+    @Operation(summary = "결제 내역 조회", description = "회원의 결제 내역을 조회합니다.")
+    public SliceResponse<PaymentHistoryResponse> paymentHistoryFindAll(
+            @RequestHeader("member-id") String memberId,
+            @Parameter(description = "기준이 되는 결제 ID입니다. 첫 요청 시에는 비워두세요.")
+                    @RequestParam(required = false)
+                    Long lastPaymentId,
+            @Parameter(description = "페이지당 결제 내역 수", example = "1") @RequestParam int size) {
+        return paymentService.findAllPaymentHistory(memberId, lastPaymentId, size);
     }
 }
