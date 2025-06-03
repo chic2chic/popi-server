@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -177,6 +178,7 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
             when(iamportPayment.getPgProvider()).thenReturn("tosspay");
             when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(129000));
             when(iamportPayment.getStatus()).thenReturn("PAID");
+            when(iamportPayment.getPaidAt()).thenReturn(new Date());
 
             // when
             paymentService.findPaymentByImpUid("testImpUid");
@@ -200,6 +202,7 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
             when(iamportPayment.getPgProvider()).thenReturn("tosspay");
             when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(1000));
             when(iamportPayment.getStatus()).thenReturn("PAID");
+            when(iamportPayment.getPaidAt()).thenReturn(new Date());
 
             // when & then
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
@@ -217,6 +220,7 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
             when(iamportPayment.getPgProvider()).thenReturn("tosspay");
             when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(129000));
             when(iamportPayment.getStatus()).thenReturn("READY");
+            when(iamportPayment.getPaidAt()).thenReturn(new Date());
 
             // when & then
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
