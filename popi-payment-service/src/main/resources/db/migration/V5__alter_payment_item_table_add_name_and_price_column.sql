@@ -1,0 +1,2 @@
+ALTER TABLE payment_item ADD COLUMN name VARCHAR(255) NOT NULL;
+ALTER TABLE payment_item ADD COLUMN price INT NOT NULL;
