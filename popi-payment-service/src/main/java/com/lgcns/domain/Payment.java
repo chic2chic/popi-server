@@ -2,6 +2,7 @@ package com.lgcns.domain;
 
 import com.lgcns.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -34,6 +35,8 @@ public class Payment extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
+    private LocalDateTime paidAt;
+
     @Builder(access = AccessLevel.PRIVATE)
     private Payment(
             Long memberId, String merchantUid, int amount, Long popupId, PaymentStatus status) {
@@ -55,10 +58,12 @@ public class Payment extends BaseTimeEntity {
                 .build();
     }
 
-    public void updatePayment(String impUid, String pgProvider, PaymentStatus status) {
+    public void updatePayment(
+            String impUid, String pgProvider, PaymentStatus status, LocalDateTime paidAt) {
         this.impUid = impUid;
         this.pgProvider = pgProvider;
         this.status = status;
+        this.paidAt = paidAt;
     }
 
     public void addPaymentItem(PaymentItem item) {
