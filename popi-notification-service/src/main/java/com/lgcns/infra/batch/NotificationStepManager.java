@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.*;
+import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,7 +22,15 @@ public class NotificationStepManager {
     @Bean(name = SEND_NOTIFICATION_ITEM_READER)
     @StepScope
     public ItemReader<Long> sendNotificationItemReader() {
-        return null;
+        ListItemReader<Long> delegate =
+                new ListItemReader<>(notificationService.findTargetMemberIds());
+
+        return new ItemReader<>() {
+            @Override
+            public synchronized Long read() {
+                return delegate.read();
+            }
+        };
     }
 
     @Bean(name = SEND_NOTIFICATION_ITEM_WRITER)
