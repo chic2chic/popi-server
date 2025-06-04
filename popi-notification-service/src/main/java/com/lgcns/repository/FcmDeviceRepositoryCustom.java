@@ -1,3 +1,7 @@
 package com.lgcns.repository;
 
-public interface FcmDeviceRepositoryCustom {}
+import java.util.List;
+
+public interface FcmDeviceRepositoryCustom {
+    List<String> findFcmTokensByMemberIds(List<Long> memberIds);
+}

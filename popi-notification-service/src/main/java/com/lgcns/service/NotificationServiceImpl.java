@@ -19,7 +19,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final RedisTemplate<String, Long> redisTemplate;
 
     @Override
-    public void sendNotification(List<FcmRequest> fcmRequestList) {
-        fcmRequestList.forEach(fcmSender::sendFcm);
+    public void sendNotification(List<Long> memberIds) {
+        List<String> fcmTokens = fcmDeviceRepository.findFcmTokensByMemberIds(memberIds);
+
+        fcmTokens.forEach(
+                fcmToken -> {
+                    FcmRequest fcmRequest = FcmRequest.of("title", "body", fcmToken);
+                    fcmSender.sendFcm(fcmRequest);
+                });
     }
 }
