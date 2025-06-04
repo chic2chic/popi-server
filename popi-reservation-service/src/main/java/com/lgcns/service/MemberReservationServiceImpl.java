@@ -269,11 +269,9 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         memberReservationRepository.delete(memberReservation);
         safeIncrement(reservationId.toString());
 
-        String reservationNotificationKey = getReservationNotificationKey(memberReservation);
+        String member = getMember(memberReservation);
 
-        notificationRedisTemplate
-                .opsForZSet()
-                .remove("reservation:notifications", reservationNotificationKey);
+        notificationRedisTemplate.opsForZSet().remove("reservation:notifications", member);
     }
 
     private MemberReservation findMemberReservationById(Long memberReservationId) {
@@ -424,18 +422,18 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                             .atZone(ZoneId.of("Asia/Seoul"))
                             .toEpochSecond();
 
-            String reservationNotificationKey = getReservationNotificationKey(memberReservation);
+            String member = getMember(memberReservation);
 
             notificationRedisTemplate
                     .opsForZSet()
-                    .add("reservation:notifications", reservationNotificationKey, epochTime);
+                    .add("reservation:notifications", member, epochTime);
 
         } catch (Exception e) {
             log.error("예약 알림 등록 오류: {}", e.getMessage(), e);
         }
     }
 
-    private String getReservationNotificationKey(MemberReservation memberReservation) {
+    private String getMember(MemberReservation memberReservation) {
         return memberReservation.getId() + "|" + memberReservation.getMemberId();
     }
 }
