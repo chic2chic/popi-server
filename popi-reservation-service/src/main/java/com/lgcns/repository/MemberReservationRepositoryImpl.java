@@ -6,7 +6,6 @@ import static com.lgcns.domain.QMemberReservation.memberReservation;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.response.DailyMemberReservationCountResponse;
-import com.lgcns.client.managerClient.dto.response.UpcomingReservationResponse;
 import com.lgcns.dto.response.DailyReservationCountResponse;
 import com.lgcns.dto.response.HourlyReservationCount;
 import com.querydsl.core.Tuple;
@@ -133,18 +132,6 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
                         memberReservation.popupId.eq(popupId),
                         memberReservation.reservationDate.eq(today))
                 .fetchOne();
-    }
-
-    public List<UpcomingReservationResponse> findUpcomingReservations(LocalDate today) {
-        return queryFactory
-                .select(
-                        Projections.constructor(
-                                UpcomingReservationResponse.class,
-                                memberReservation.memberId,
-                                memberReservation.reservationDate))
-                .from(memberReservation)
-                .where(memberReservation.reservationDate.eq(today.plusDays(1)))
-                .fetch();
     }
 
     private LocalDate getStartDate(YearMonth yearMonth, LocalDate openDate) {

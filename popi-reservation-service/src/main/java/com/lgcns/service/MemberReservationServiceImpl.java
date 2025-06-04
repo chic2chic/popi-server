@@ -15,7 +15,6 @@ import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
-import com.lgcns.client.managerClient.dto.response.UpcomingReservationResponse;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
@@ -165,7 +164,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
+    public void isEntrancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
         LocalDate currentDate = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
 
@@ -295,11 +294,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     public DailyMemberReservationCountResponse findDailyMemberReservationCount(Long popupId) {
         LocalDate today = LocalDate.now();
         return memberReservationRepository.findDailyMemberReservationCount(popupId, today);
-    }
-
-    public List<UpcomingReservationResponse> findUpcomingReservations() {
-        LocalDate today = LocalDate.now();
-        return memberReservationRepository.findUpcomingReservations(today);
     }
 
     private void validateYearMonthFormat(String date) {

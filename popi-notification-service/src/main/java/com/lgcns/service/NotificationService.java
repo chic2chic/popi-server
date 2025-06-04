@@ -1,5 +1,3 @@
 package com.lgcns.service;
 
-public interface NotificationService {
-    void sendReservationNotification();
-}
+public interface NotificationService {}

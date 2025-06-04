@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
-import com.lgcns.client.managerClient.dto.response.UpcomingReservationResponse;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
@@ -39,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
 
 class MemberReservationServiceTest extends WireMockIntegrationTest {
 
@@ -1097,7 +1095,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when
-            memberReservationService.isEnterancePossible(request, popupId);
+            memberReservationService.isEntrancePossible(request, popupId);
 
             // then
             MemberReservation memberReservation = findMemberReservationById(memberReservationId);
@@ -1119,7 +1117,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
@@ -1140,8 +1138,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when & then
-            memberReservationService.isEnterancePossible(request, popupId);
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            memberReservationService.isEntrancePossible(request, popupId);
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_ALREADY_ENTERED.getMessage());
@@ -1165,7 +1163,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // when & then
             assertThatThrownBy(
                             () ->
-                                    memberReservationService.isEnterancePossible(
+                                    memberReservationService.isEntrancePossible(
                                             request, differentPopupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
@@ -1191,7 +1189,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // when & then
             assertThatThrownBy(
                             () -> {
-                                memberReservationService.isEnterancePossible(request, popupId);
+                                memberReservationService.isEntrancePossible(request, popupId);
                             })
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(MemberReservationErrorCode.INVALID_QR_CODE.getMessage());
@@ -1212,7 +1210,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_DATE_MISMATCH.getMessage());
@@ -1236,7 +1234,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             (LocalTime.now().plusMinutes(10)));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
@@ -1260,7 +1258,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             (LocalTime.now().minusMinutes(31)));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
@@ -1284,7 +1282,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now().minusMinutes((30)));
 
             // when
-            memberReservationService.isEnterancePossible(request, popupId);
+            memberReservationService.isEntrancePossible(request, popupId);
 
             // then
             MemberReservation memberReservation = findMemberReservationById(memberReservationId);
@@ -1306,46 +1304,6 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             .build();
             memberReservationRepository.save(reservation);
         }
-    }
-
-    @Nested
-    class 임박한_예약_내역_리스트를_조회할_때 {
-
-        @Test
-        @Transactional
-        void 예약_날짜가_현재_날짜_기준_하루_남은_예약_내역이_존재하면_조회에_성공한다() {
-            // given
-            LocalDate today = LocalDate.now();
-            insertMemberReservation(today, LocalTime.of(13, 0));
-
-            // when
-            List<UpcomingReservationResponse> result =
-                    memberReservationService.findUpcomingReservations();
-
-            // then
-            Assertions.assertAll(
-                    () -> assertThat(result).isNotNull(),
-                    () ->
-                            assertThat(result)
-                                    .allSatisfy(
-                                            response ->
-                                                    assertThat(response.reservationDate())
-                                                            .isEqualTo(today.plusDays(1))));
-        }
-
-        /*        @Test
-        @Transactional
-        void 임박한_예약_내역이_존재하지_않으면_빈_리스트를_반환한다() {
-            // given
-
-            // when
-            List<UpcomingReservationResponse> result =
-                    memberReservationService.findUpcomingReservations();
-
-            // then
-            Assertions.assertAll(
-                    () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
-        }*/
     }
 
     private void stubFindAvailableDate(Long popupId, String date, int status, String body) {
