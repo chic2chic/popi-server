@@ -39,7 +39,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         fcmTokens.forEach(
                 fcmToken -> {
-                    FcmRequest fcmRequest = FcmRequest.of("title", "body", fcmToken);
+                    FcmRequest fcmRequest = FcmRequest.of(fcmToken);
                     fcmSender.sendFcm(fcmRequest);
                 });
     }
