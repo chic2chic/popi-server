@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
@@ -15,10 +16,12 @@ import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
+import com.lgcns.dto.response.PaymentHistoryResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.repository.PaymentRepository;
+import com.lgcns.response.SliceResponse;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -39,6 +42,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class PaymentServiceTest extends WireMockIntegrationTest {
 
+    @Autowired protected DatabaseCleaner databaseCleaner;
+
     @Autowired PaymentService paymentService;
     @Autowired PaymentRepository paymentRepository;
 
@@ -47,6 +52,11 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
     @Mock com.siot.IamportRestClient.response.Payment iamportPayment;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void setUp() {
+        databaseCleaner.execute();
+    }
 
     @Nested
     class 결제_준비할_때 {
@@ -240,8 +250,10 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     "kakaopay",
                     PaymentStatus.PAID,
                     LocalDateTime.of(2025, 5, 31, 14, 14, 0));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 1L, "DAZED 지수", 2, 15000));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 2L, "DAZED 로제", 1, 15000));
 
             Payment payment2 = Payment.createPayment(2L, "merchantUid2", 20000, 1L);
             payment2.updatePayment(
@@ -249,8 +261,10 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     "tosspay",
                     PaymentStatus.PAID,
                     LocalDateTime.of(2025, 6, 1, 18, 0, 0));
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 1L, "DAZED 지수", 2, 15000));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 3L, "DAZED 제니", 2, 9500));
 
             paymentRepository.saveAll(List.of(payment1, payment2));
         }
@@ -276,6 +290,61 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
     }
 
     @Nested
+    class 결제_내역을_조회할_때 {
+
+        @BeforeEach
+        void setUp() {
+            Payment payment1 = Payment.createPayment(1L, "merchantUid1", 45000, 1L);
+            payment1.updatePayment(
+                    "impUid1",
+                    "kakaopay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2024, 5, 31, 14, 0));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, "응원봉", 1, 25000));
+            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, "포스터", 3, 9000));
+
+            Payment payment2 = Payment.createPayment(1L, "merchantUid2", 12000, 2L);
+            payment2.updatePayment(
+                    "impUid2",
+                    "tosspay",
+                    PaymentStatus.PAID,
+                    LocalDateTime.of(2024, 5, 30, 15, 30));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 3L, "크레용 파란색", 1, 12000));
+
+            paymentRepository.saveAll(List.of(payment1, payment2));
+        }
+
+        @Test
+        void 결제별로_상품_목록이_포함된_내역이_정상적으로_조회된다() {
+            // when
+            SliceResponse<PaymentHistoryResponse> response =
+                    paymentService.findAllPaymentHistory(String.valueOf(1L), null, 10);
+
+            // then
+            List<PaymentHistoryResponse> content = response.content();
+
+            PaymentHistoryResponse first = content.get(0);
+
+            Assertions.assertAll(
+                    () -> assertThat(first.paymentId()).isEqualTo(1L),
+                    () -> assertThat(first.popupId()).isEqualTo(1L),
+                    () -> assertThat(first.items().get(0).itemName()).isEqualTo("응원봉"),
+                    () -> assertThat(first.items().get(1).itemName()).isEqualTo("포스터"),
+                    () -> assertThat(first.items().get(0).price()).isEqualTo(25000),
+                    () -> assertThat(first.items().get(1).price()).isEqualTo(27000));
+
+            PaymentHistoryResponse second = content.get(1);
+
+            Assertions.assertAll(
+                    () -> assertThat(second.paymentId()).isEqualTo(2L),
+                    () -> assertThat(second.popupId()).isEqualTo(2L),
+                    () -> assertThat(second.items().get(0).itemName()).isEqualTo("크레용 파란색"),
+                    () -> assertThat(second.items().get(0).price()).isEqualTo(12000));
+        }
+    }
+
+    @Nested
     class 관리자_서비스의_1인_평균_구매액_조회_요청을_처리할_때 {
 
         @BeforeEach
@@ -286,17 +355,22 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
                     "kakaopay",
                     PaymentStatus.PAID,
                     LocalDateTime.of(2025, 6, 1, 14, 14, 0));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 1L, 2));
-            payment1.addPaymentItem(PaymentItem.createPaymentItem(payment1, 2L, 1));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 1L, "DAZED 지수", 2, 15000));
+            payment1.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment1, 2L, "DAZED 로제", 1, 15000));
 
             Payment payment2 = Payment.createPayment(2L, "merchantUid2", 34000, 1L);
             payment2.updatePayment("impUid2", "tosspay", PaymentStatus.PAID, LocalDateTime.now());
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 1L, 1));
-            payment2.addPaymentItem(PaymentItem.createPaymentItem(payment2, 3L, 2));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 1L, "DAZED 지수", 2, 15000));
+            payment2.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment2, 3L, "DAZED 제니", 2, 9500));
 
             Payment payment3 = Payment.createPayment(3L, "merchantUid3", 15000, 1L);
             payment3.updatePayment("impUid3", "kakaopay", PaymentStatus.PAID, LocalDateTime.now());
-            payment3.addPaymentItem(PaymentItem.createPaymentItem(payment3, 13L, 1));
+            payment3.addPaymentItem(
+                    PaymentItem.createPaymentItem(payment3, 13L, "포스터 세트", 1, 15000));
 
             paymentRepository.saveAll(List.of(payment1, payment2, payment3));
         }

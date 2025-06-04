@@ -4,14 +4,19 @@ import static com.lgcns.domain.QPayment.payment;
 import static com.lgcns.domain.QPaymentItem.paymentItem;
 
 import com.lgcns.domain.PaymentStatus;
+import com.lgcns.dto.FlatPaymentItem;
 import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -70,5 +75,51 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
                         : (todayAmount != null ? todayAmount : 0) / todayBuyers.intValue();
 
         return AverageAmountResponse.of(totalAverageAmount, todayAverageAmount);
+    }
+
+    @Override
+    public Slice<FlatPaymentItem> findAllPaymentHistoryByMemberId(
+            Long memberId, Long lastPaymentId, int size) {
+        List<Long> paymentIds =
+                queryFactory
+                        .select(payment.id)
+                        .from(payment)
+                        .where(
+                                payment.memberId.eq(memberId),
+                                payment.status.eq(PaymentStatus.PAID),
+                                lastPaymentCondition(lastPaymentId))
+                        .orderBy(payment.paidAt.desc(), payment.id.desc())
+                        .limit(size + 1L)
+                        .fetch();
+
+        boolean hasNext = false;
+        if (paymentIds.size() > size) {
+            hasNext = true;
+            paymentIds.remove(size);
+        }
+
+        List<FlatPaymentItem> results =
+                queryFactory
+                        .select(
+                                Projections.constructor(
+                                        FlatPaymentItem.class,
+                                        payment.id,
+                                        payment.popupId,
+                                        payment.paidAt,
+                                        paymentItem.name,
+                                        paymentItem.quantity,
+                                        paymentItem.price))
+                        .from(payment)
+                        .join(paymentItem)
+                        .on(payment.id.eq(paymentItem.payment.id))
+                        .where(payment.id.in(paymentIds))
+                        .orderBy(payment.paidAt.desc(), payment.id.desc())
+                        .fetch();
+
+        return new SliceImpl<>(results, PageRequest.of(0, size), hasNext);
+    }
+
+    private BooleanExpression lastPaymentCondition(Long paymentId) {
+        return (paymentId != null) ? payment.id.lt(paymentId) : null;
     }
 }

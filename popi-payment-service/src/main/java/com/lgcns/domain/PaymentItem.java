@@ -23,17 +23,30 @@ public class PaymentItem extends BaseTimeEntity {
 
     private Long itemId;
 
+    private String name;
+
     private int quantity;
 
+    private int price;
+
     @Builder
-    private PaymentItem(Payment payment, Long itemId, int quantity) {
+    private PaymentItem(Payment payment, Long itemId, String name, int quantity, int price) {
         this.payment = payment;
         this.itemId = itemId;
+        this.name = name;
         this.quantity = quantity;
+        this.price = price;
     }
 
-    public static PaymentItem createPaymentItem(Payment payment, Long itemId, int quantity) {
-        return PaymentItem.builder().payment(payment).itemId(itemId).quantity(quantity).build();
+    public static PaymentItem createPaymentItem(
+            Payment payment, Long itemId, String name, int quantity, int price) {
+        return PaymentItem.builder()
+                .payment(payment)
+                .itemId(itemId)
+                .name(name)
+                .quantity(quantity)
+                .price(price)
+                .build();
     }
 
     public void updatePayment(Payment payment) {

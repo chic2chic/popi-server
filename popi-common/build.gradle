@@ -16,4 +16,7 @@ dependencies {
 
     // Open Feign
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // Slice & Pageable
+    implementation 'org.springframework.data:spring-data-commons'
 }

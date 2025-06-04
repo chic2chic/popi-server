@@ -7,26 +7,31 @@ import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
+import com.lgcns.dto.FlatPaymentItem;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.AverageAmountResponse;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
+import com.lgcns.dto.response.PaymentHistoryResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.kafka.message.ItemPurchasedMessage;
 import com.lgcns.kafka.producer.ItemPurchasedProducer;
 import com.lgcns.repository.PaymentRepository;
+import com.lgcns.response.SliceResponse;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,16 +59,21 @@ public class PaymentServiceImpl implements PaymentService {
                 managerServiceClient.findItemsForPayment(
                         request.popupId(), new ItemIdsForPaymentRequest(itemIds));
 
+        Map<Long, ItemForPaymentResponse> itemDetailMap =
+                itemDetails.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ItemForPaymentResponse::itemId, Function.identity()));
+
         List<String> itemNames = new ArrayList<>();
         int amount = 0;
 
         for (PaymentReadyRequest.Item selected : request.items()) {
-            var item =
-                    itemDetails.stream()
-                            .filter(i -> i.itemId().equals(selected.itemId()))
-                            .findFirst()
-                            .orElseThrow(
-                                    () -> new CustomException(PaymentErrorCode.ITEM_NOT_FOUND));
+            ItemForPaymentResponse item = itemDetailMap.get(selected.itemId());
+
+            if (item == null) {
+                throw new CustomException(PaymentErrorCode.ITEM_NOT_FOUND);
+            }
 
             if (selected.quantity() > item.stock()) {
                 throw new CustomException(PaymentErrorCode.OUT_OF_STOCK);
@@ -73,14 +83,10 @@ public class PaymentServiceImpl implements PaymentService {
             itemNames.add(item.name());
         }
 
-        String name;
-        int size = itemNames.size();
-
-        if (size == 1) {
-            name = itemNames.get(0);
-        } else {
-            name = String.format("%s 외 %d건", itemNames.get(0), size - 1);
-        }
+        String name =
+                itemNames.size() == 1
+                        ? itemNames.get(0)
+                        : String.format("%s 외 %d건", itemNames.get(0), itemNames.size() - 1);
 
         String merchantUid =
                 String.format(
@@ -92,8 +98,15 @@ public class PaymentServiceImpl implements PaymentService {
                         Long.valueOf(memberId), merchantUid, amount, request.popupId());
 
         for (PaymentReadyRequest.Item selected : request.items()) {
+            ItemForPaymentResponse item = itemDetailMap.get(selected.itemId());
+
             payment.addPaymentItem(
-                    PaymentItem.createPaymentItem(payment, selected.itemId(), selected.quantity()));
+                    PaymentItem.createPaymentItem(
+                            payment,
+                            selected.itemId(),
+                            item.name(),
+                            selected.quantity(),
+                            item.price()));
         }
 
         paymentRepository.save(payment);
@@ -151,7 +164,52 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AverageAmountResponse findAverageAmount(Long popupId) {
         return paymentRepository.findAverageAmountByPopupId(popupId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SliceResponse<PaymentHistoryResponse> findAllPaymentHistory(
+            String memberId, Long lastPaymentId, int size) {
+        Slice<FlatPaymentItem> flatPaymentItems =
+                paymentRepository.findAllPaymentHistoryByMemberId(
+                        Long.valueOf(memberId), lastPaymentId, size);
+
+        List<PaymentHistoryResponse> results = groupByPayment(flatPaymentItems.getContent());
+
+        return SliceResponse.from(
+                new SliceImpl<>(
+                        results, flatPaymentItems.getPageable(), flatPaymentItems.hasNext()));
+    }
+
+    private List<PaymentHistoryResponse> groupByPayment(List<FlatPaymentItem> flatPaymentItems) {
+        Map<Long, List<FlatPaymentItem>> paymentGroups =
+                flatPaymentItems.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        FlatPaymentItem::paymentId,
+                                        LinkedHashMap::new,
+                                        Collectors.toList()));
+
+        return paymentGroups.values().stream().map(this::toPaymentResponse).toList();
+    }
+
+    private PaymentHistoryResponse toPaymentResponse(List<FlatPaymentItem> flatPaymentItems) {
+        FlatPaymentItem base = flatPaymentItems.get(0);
+
+        List<PaymentHistoryResponse.Item> itemDetails =
+                flatPaymentItems.stream()
+                        .map(
+                                item ->
+                                        new PaymentHistoryResponse.Item(
+                                                item.itemName(),
+                                                item.quantity(),
+                                                item.price() * item.quantity()))
+                        .toList();
+
+        return new PaymentHistoryResponse(
+                base.paymentId(), base.popupId(), base.paidAt(), itemDetails);
     }
 }
