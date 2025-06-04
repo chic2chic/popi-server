@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 
@@ -42,7 +43,15 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
 
     @Autowired private MemberReservationService memberReservationService;
     @Autowired private MemberReservationRepository memberReservationRepository;
-    @Autowired private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    @Qualifier("reservationRedisTemplate")
+    private RedisTemplate<String, Long> reservationRedisTemplate;
+
+    @Autowired
+    @Qualifier("notificationRedisTemplate")
+    private RedisTemplate<String, String> notificationRedisTemplate;
+
     @Autowired private DatabaseCleaner databaseCleaner;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -463,7 +472,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Test
         void 예약이_존재하고_예약_가능한_상태이면_예약에_성공한다() {
             // given
-            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+            reservationRedisTemplate.opsForValue().set(reservationId.toString(), 10L);
 
             // when
             memberReservationService.createMemberReservation(memberId, reservationId);
@@ -479,16 +488,19 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                                             reservationId))
                                     .isTrue(),
                     () ->
-                            assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
-                                    .isEqualTo("9"));
+                            assertThat(
+                                            reservationRedisTemplate
+                                                    .opsForValue()
+                                                    .get(reservationId.toString()))
+                                    .isEqualTo(9L));
 
-            redisTemplate.delete(reservationId.toString());
+            reservationRedisTemplate.delete(reservationId.toString());
         }
 
         @Test
         void 이미_예약한_사용자는_예외가_발생한다() {
             // given
-            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+            reservationRedisTemplate.opsForValue().set(reservationId.toString(), 10L);
 
             memberReservationRepository.save(
                     MemberReservation.createMemberReservation(
@@ -503,14 +515,14 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_ALREADY_EXISTS.getMessage());
 
-            redisTemplate.delete(reservationId.toString());
+            reservationRedisTemplate.delete(reservationId.toString());
         }
 
         @Test
         void 예약가능수량이_없으면_예약에_실패하고_Redis_복구가_일어난다() {
             // given
             Long reservationId = 1L;
-            redisTemplate.opsForValue().set(reservationId.toString(), "0");
+            reservationRedisTemplate.opsForValue().set(reservationId.toString(), 0L);
 
             // when & then
             assertThatThrownBy(
@@ -520,8 +532,9 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(RESERVATION_FAILED.getMessage());
 
-            assertThat(redisTemplate.opsForValue().get(reservationId.toString())).isEqualTo("0");
-            redisTemplate.delete(reservationId.toString());
+            assertThat(reservationRedisTemplate.opsForValue().get(reservationId.toString()))
+                    .isEqualTo(0L);
+            reservationRedisTemplate.delete(reservationId.toString());
         }
     }
 
@@ -586,7 +599,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             assertThat(updatedMemberReservation.getReservationTime())
                                     .isEqualTo(LocalTime.of(12, 0)));
 
-            redisTemplate.delete(reservationId.toString());
+            reservationRedisTemplate.delete(reservationId.toString());
         }
 
         @Test
@@ -707,7 +720,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
         @Test
         void 예약이_존재하면_예약을_취소한다() {
             // given
-            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+            reservationRedisTemplate.opsForValue().set(reservationId.toString(), 10L);
             MemberReservation memberReservation =
                     MemberReservation.createMemberReservation(
                             Long.parseLong(memberId), reservationId);
@@ -723,10 +736,13 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             Assertions.assertAll(
                     () -> assertThat(optionalMemberReservation).isEmpty(),
                     () ->
-                            assertThat(redisTemplate.opsForValue().get(reservationId.toString()))
-                                    .isEqualTo("11"));
+                            assertThat(
+                                            reservationRedisTemplate
+                                                    .opsForValue()
+                                                    .get(reservationId.toString()))
+                                    .isEqualTo(11L));
 
-            redisTemplate.delete(reservationId.toString());
+            reservationRedisTemplate.delete(reservationId.toString());
         }
 
         @Test
