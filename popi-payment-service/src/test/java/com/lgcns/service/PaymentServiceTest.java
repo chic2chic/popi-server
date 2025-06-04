@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgcns.DatabaseCleaner;
 import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
@@ -41,6 +42,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class PaymentServiceTest extends WireMockIntegrationTest {
 
+    @Autowired protected DatabaseCleaner databaseCleaner;
+
     @Autowired PaymentService paymentService;
     @Autowired PaymentRepository paymentRepository;
 
@@ -49,6 +52,11 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
     @Mock com.siot.IamportRestClient.response.Payment iamportPayment;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void setUp() {
+        databaseCleaner.execute();
+    }
 
     @Nested
     class 결제_준비할_때 {
