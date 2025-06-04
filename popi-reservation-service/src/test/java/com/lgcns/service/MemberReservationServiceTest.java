@@ -581,6 +581,9 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                     "reservationTime",
                                     "12:00")));
 
+            String zSetKey = "reservation:notifications";
+            String member = memberReservation.getId() + "|" + memberReservation.getMemberId();
+
             // when
             memberReservationService.updateMemberReservation(memberReservation.getId());
 
@@ -597,9 +600,25 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                     .isEqualTo(LocalDate.of(2025, 6, 1)),
                     () ->
                             assertThat(updatedMemberReservation.getReservationTime())
-                                    .isEqualTo(LocalTime.of(12, 0)));
+                                    .isEqualTo(LocalTime.of(12, 0)),
+                    () ->
+                            assertThat(
+                                            notificationRedisTemplate
+                                                    .opsForZSet()
+                                                    .score(zSetKey, member))
+                                    .isNotNull(),
+                    () ->
+                            assertThat(
+                                            notificationRedisTemplate
+                                                    .opsForZSet()
+                                                    .rangeByScore(zSetKey, 0, Long.MAX_VALUE))
+                                    .contains(member),
+                    () ->
+                            assertThat(notificationRedisTemplate.opsForZSet().size(zSetKey))
+                                    .isEqualTo(1));
 
             reservationRedisTemplate.delete(reservationId.toString());
+            notificationRedisTemplate.opsForZSet().remove(zSetKey, member);
         }
 
         @Test
@@ -726,13 +745,19 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             Long.parseLong(memberId), reservationId);
             memberReservationRepository.save(memberReservation);
 
+            String zSetKey = "reservation:notifications";
+            String member = memberReservation.getId() + "|" + memberReservation.getMemberId();
+            notificationRedisTemplate.opsForZSet().add(zSetKey, member, 1749513600);
+
             // when
             memberReservationService.cancelMemberReservation(memberReservation.getId());
 
             // then
-
             Optional<MemberReservation> optionalMemberReservation =
                     memberReservationRepository.findById(memberReservation.getId());
+
+            Double score = notificationRedisTemplate.opsForZSet().score(zSetKey, member);
+
             Assertions.assertAll(
                     () -> assertThat(optionalMemberReservation).isEmpty(),
                     () ->
@@ -740,9 +765,11 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                                             reservationRedisTemplate
                                                     .opsForValue()
                                                     .get(reservationId.toString()))
-                                    .isEqualTo(11L));
+                                    .isEqualTo(11L),
+                    () -> assertThat(score).isNull());
 
             reservationRedisTemplate.delete(reservationId.toString());
+            notificationRedisTemplate.opsForZSet().remove(zSetKey, member);
         }
 
         @Test
