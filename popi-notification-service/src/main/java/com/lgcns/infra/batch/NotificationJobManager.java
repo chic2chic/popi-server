@@ -25,7 +25,7 @@ public class NotificationJobManager {
     public static final Integer CHUNK_SIZE = 100;
     public static final Integer TASK_POOL_SIZE = 2;
     public static final String NOTIFICATION_JOB = "notificationJob";
-    public static final String NOTIFICATION_STEP = "notificationStep";
+    public static final String SEND_NOTIFICATION_STEP = "sendNotificationStep";
     public static final String NOTIFICATION_TASK_EXECUTOR = "notificationTaskExecutor";
 
     @Bean(name = NOTIFICATION_JOB)
@@ -36,20 +36,20 @@ public class NotificationJobManager {
                 .build();
     }
 
-    @Bean(name = NOTIFICATION_STEP)
+    @Bean(name = SEND_NOTIFICATION_STEP)
     @JobScope
     public Step notificationStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            ItemReader notificationReader,
-            ItemProcessor notificationProcessor,
-            ItemWriter notificationWriter,
+            ItemReader sendNotificationReader,
+            ItemProcessor sendNotificationProcessor,
+            ItemWriter sendNotificationWriter,
             @Qualifier(NOTIFICATION_TASK_EXECUTOR) TaskExecutor taskExecutor) {
-        return new StepBuilder(NOTIFICATION_STEP, jobRepository)
+        return new StepBuilder(SEND_NOTIFICATION_STEP, jobRepository)
                 .chunk(CHUNK_SIZE, transactionManager)
-                .reader(notificationReader)
-                .processor(notificationProcessor)
-                .writer(notificationWriter)
+                .reader(sendNotificationReader)
+                .processor(sendNotificationProcessor)
+                .writer(sendNotificationWriter)
                 .taskExecutor(taskExecutor)
                 .build();
     }

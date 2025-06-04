@@ -12,19 +12,25 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class NotificationStepManager {
 
-    private static final String NOTIFICATION_ITEM_READER = "notificationItemReader";
-    private static final String NOTIFICATION_ITEM_PROCESSOR = "notificationItemProcessor";
-    private static final String NOTIFICATION_ITEM_WRITER = "notificationItemWriter";
+    private static final String SEND_NOTIFICATION_ITEM_READER = "sendNotificationItemReader";
+    private static final String SEND_NOTIFICATION_ITEM_PROCESSOR = "sendNotificationItemProcessor";
+    private static final String SEND_NOTIFICATION_ITEM_WRITER = "sendNotificationItemWriter";
 
-    @Bean(name = NOTIFICATION_ITEM_READER)
+    @Bean(name = SEND_NOTIFICATION_ITEM_READER)
     @StepScope
-    public ItemReader notificationItemReader() {}
+    public ItemReader sendNotificationItemReader() {
+        return null;
+    }
 
-    @Bean(name = NOTIFICATION_ITEM_PROCESSOR)
+    @Bean(name = SEND_NOTIFICATION_ITEM_PROCESSOR)
     @StepScope
-    public ItemProcessor notificationItemProcessor() {}
+    public ItemProcessor sendNotificationItemProcessor() {
+        return null;
+    }
 
-    @Bean(name = NOTIFICATION_ITEM_WRITER)
+    @Bean(name = SEND_NOTIFICATION_ITEM_WRITER)
     @StepScope
-    public ItemWriter notificationItemWriter() {}
+    public ItemWriter sendNotificationItemWriter() {
+        return null;
+    }
 }
