@@ -1,5 +1,6 @@
 package com.lgcns.infra.batch;
 
+import com.lgcns.dto.request.FcmRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -27,6 +28,9 @@ public class NotificationJobManager {
     public static final String NOTIFICATION_JOB = "notificationJob";
     public static final String SEND_NOTIFICATION_STEP = "sendNotificationStep";
     public static final String NOTIFICATION_TASK_EXECUTOR = "notificationTaskExecutor";
+    private static final String SEND_NOTIFICATION_ITEM_READER = "sendNotificationItemReader";
+    private static final String SEND_NOTIFICATION_ITEM_PROCESSOR = "sendNotificationItemProcessor";
+    private static final String SEND_NOTIFICATION_ITEM_WRITER = "sendNotificationItemWriter";
 
     @Bean(name = NOTIFICATION_JOB)
     public Job notificationJob(JobRepository jobRepository, Step notificationStep) {
@@ -41,9 +45,9 @@ public class NotificationJobManager {
     public Step notificationStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            ItemReader sendNotificationReader,
-            ItemProcessor sendNotificationProcessor,
-            ItemWriter sendNotificationWriter,
+            @Qualifier(SEND_NOTIFICATION_ITEM_READER) ItemReader sendNotificationReader,
+            @Qualifier(SEND_NOTIFICATION_ITEM_PROCESSOR) ItemProcessor sendNotificationProcessor,
+            @Qualifier(SEND_NOTIFICATION_ITEM_WRITER) ItemWriter<FcmRequest> sendNotificationWriter,
             @Qualifier(NOTIFICATION_TASK_EXECUTOR) TaskExecutor taskExecutor) {
         return new StepBuilder(SEND_NOTIFICATION_STEP, jobRepository)
                 .chunk(CHUNK_SIZE, transactionManager)

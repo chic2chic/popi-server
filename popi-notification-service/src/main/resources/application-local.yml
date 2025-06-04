@@ -26,7 +26,7 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
-      database: 1
+      database: 2
   flyway:
     enabled: true
     baseline-on-migrate: true

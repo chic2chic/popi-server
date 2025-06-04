@@ -1,3 +1,9 @@
 package com.lgcns.service;
 
-public interface NotificationService {}
+import com.lgcns.dto.request.FcmRequest;
+import java.util.List;
+
+public interface NotificationService {
+
+    void sendNotification(List<FcmRequest> fcmRequestList);
+}
