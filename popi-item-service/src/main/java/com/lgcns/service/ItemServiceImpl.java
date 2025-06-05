@@ -23,4 +23,9 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemInfoResponse> findItemsDefault(Long popupId) {
         return managerServiceClient.findItemsDefault(popupId);
     }
+
+    @Override
+    public List<ItemInfoResponse> findItemsPopularity(Long popupId) {
+        return managerServiceClient.findItemsPopularity(popupId);
+    }
 }

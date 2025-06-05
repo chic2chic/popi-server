@@ -9,4 +9,6 @@ public interface ItemService {
             Long popupId, String keyword, Long lastItemId, int size);
 
     List<ItemInfoResponse> findItemsDefault(Long popupId);
+
+    List<ItemInfoResponse> findItemsPopularity(Long popupId);
 }
