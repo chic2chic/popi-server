@@ -4,14 +4,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.messaging.FirebaseMessaging;
 import com.lgcns.NotificationIntegrationTest;
 import com.lgcns.dto.request.FcmRequest;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.FirebaseErrorCode;
-import com.lgcns.infra.firebase.FcmSender;
-import com.lgcns.repository.FcmDeviceRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -20,14 +16,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class NotificationServiceTest extends NotificationIntegrationTest {
-
-    @MockitoBean private FcmSender fcmSender;
-    @MockitoBean private FirebaseMessaging firebaseMessaging;
-    @MockitoBean private FirebaseApp firebaseApp;
-    @MockitoBean private FcmDeviceRepository fcmDeviceRepository;
 
     @Autowired private NotificationService notificationService;
     @Autowired private RedisTemplate<String, String> redisTemplate;
@@ -50,7 +40,6 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
 
             LocalDateTime now = LocalDateTime.now();
             long epochTime = now.atZone(ZoneId.of("Asia/Seoul")).toEpochSecond();
-            System.out.println(epochTime);
 
             redisTemplate.opsForZSet().add(ZSET_KEY, member1, epochTime);
             redisTemplate.opsForZSet().add(ZSET_KEY, member2, epochTime);
@@ -131,11 +120,11 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
         void 알림_전송_과정에서_오류가_발생하면_예외를_반환한다() {
             // given
             List<Long> memberIds = List.of(1L);
-            List<String> tokens = List.of("token1");
+            List<String> tokens = List.of("token");
 
             when(fcmDeviceRepository.findFcmTokensByMemberIds(memberIds)).thenReturn(tokens);
 
-            FcmRequest fcmRequest = FcmRequest.of("token1");
+            FcmRequest fcmRequest = FcmRequest.of("token");
 
             doThrow(new CustomException(FirebaseErrorCode.FCM_SEND_FAILED))
                     .when(fcmSender)

@@ -1,5 +1,6 @@
 package com.lgcns.infra.batch;
 
+import com.lgcns.error.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -49,6 +50,11 @@ public class NotificationJobManager {
                 .<Long, Long>chunk(CHUNK_SIZE, transactionManager)
                 .reader(sendNotificationReader)
                 .writer(sendNotificationWriter)
+                .faultTolerant()
+                .retryLimit(3)
+                .retry(CustomException.class)
+                .skipLimit(3)
+                .skip(CustomException.class)
                 .taskExecutor(taskExecutor)
                 .build();
     }
