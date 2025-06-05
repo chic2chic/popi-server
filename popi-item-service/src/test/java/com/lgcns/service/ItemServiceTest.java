@@ -13,6 +13,7 @@ import com.lgcns.response.SliceResponse;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -364,6 +365,137 @@ public class ItemServiceTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 인기_상품_목록을_조회할_때 {
+        @Test
+        void 집계된_데이터가_3개_이상인_경우_인기_상품_전체_조회에_성공한다() throws JsonProcessingException {
+            // given
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "itemId",
+                                            18,
+                                            "name",
+                                            "크룽크 라운드백",
+                                            "imageUrl",
+                                            "https://ygselect.com/web/product/big/shop1_cdf3bd187203a3987f4c262e73061334.png",
+                                            "price",
+                                            20000),
+                                    Map.of(
+                                            "itemId",
+                                            4,
+                                            "name",
+                                            "DAZED 리사",
+                                            "imageUrl",
+                                            "https://image.aladin.co.kr/product/17920/59/cover500/k142534034_1.jpg",
+                                            "price",
+                                            8000),
+                                    Map.of(
+                                            "itemId",
+                                            9,
+                                            "name",
+                                            "피규어 지수",
+                                            "imageUrl",
+                                            "https://m.ygselect.com/web/product/big/202110/51086d5fd28f00991986031b2ed3f742.jpg",
+                                            "price",
+                                            84000)));
+
+            stubFindItemsPopularity(popupId, 200, expectedResponse);
+
+            // when
+            List<ItemInfoResponse> result = itemService.findItemsPopularity(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(3),
+                    () ->
+                            assertThat(new HashSet<>(Objects.requireNonNull(result)))
+                                    .hasSize(result.size()));
+        }
+
+        @Test
+        void 집계된_데이터가_2개_경우_인기_상품_2개_조회에_성공한다() throws JsonProcessingException {
+            // given
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "itemId",
+                                            18,
+                                            "name",
+                                            "크룽크 라운드백",
+                                            "imageUrl",
+                                            "https://ygselect.com/web/product/big/shop1_cdf3bd187203a3987f4c262e73061334.png",
+                                            "price",
+                                            20000),
+                                    Map.of(
+                                            "itemId",
+                                            4,
+                                            "name",
+                                            "DAZED 리사",
+                                            "imageUrl",
+                                            "https://image.aladin.co.kr/product/17920/59/cover500/k142534034_1.jpg",
+                                            "price",
+                                            8000)));
+
+            stubFindItemsPopularity(popupId, 200, expectedResponse);
+
+            // when
+            List<ItemInfoResponse> result = itemService.findItemsPopularity(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).hasSize(2),
+                    () ->
+                            assertThat(new HashSet<>(Objects.requireNonNull(result)))
+                                    .hasSize(result.size()));
+        }
+
+        @Test
+        void 집계된_데이터가_1개인_경우_인기_상품_1개_조회에_성공한다() throws JsonProcessingException {
+            // given
+            String expectedResponse =
+                    objectMapper.writeValueAsString(
+                            List.of(
+                                    Map.of(
+                                            "itemId",
+                                            18,
+                                            "name",
+                                            "크룽크 라운드백",
+                                            "imageUrl",
+                                            "https://ygselect.com/web/product/big/shop1_cdf3bd187203a3987f4c262e73061334.png",
+                                            "price",
+                                            20000)));
+
+            stubFindItemsPopularity(popupId, 200, expectedResponse);
+
+            // when
+            List<ItemInfoResponse> result = itemService.findItemsPopularity(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(), () -> assertThat(result).hasSize(1));
+        }
+
+        @Test
+        void 집계된_데이터가_없는_경우_빈_리스트를_반환한다() throws JsonProcessingException {
+            // given
+            String expectedResponse = objectMapper.writeValueAsString(List.of());
+
+            stubFindItemsPopularity(popupId, 200, expectedResponse);
+
+            // when
+            List<ItemInfoResponse> result = itemService.findItemsPopularity(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result).isNotNull(), () -> assertThat(result).isEmpty());
+        }
+    }
+
     private void stubFindItemsByName(
             Long popupId, String keyword, Long lastItemId, int size, int status, String body) {
         MappingBuilder mappingBuilder =
@@ -384,6 +516,18 @@ public class ItemServiceTest extends WireMockIntegrationTest {
     private void stubFindItemsDefault(Long popupId, int status, String body) {
         MappingBuilder mappingBuilder =
                 get(urlPathEqualTo("/internal/popups/" + popupId + "/items/default"));
+
+        wireMockServer.stubFor(
+                mappingBuilder.willReturn(
+                        aResponse()
+                                .withStatus(status)
+                                .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                .withBody(body)));
+    }
+
+    private void stubFindItemsPopularity(Long popupId, int status, String body) {
+        MappingBuilder mappingBuilder =
+                get(urlPathEqualTo("/internal/popups/" + popupId + "/items/popularity"));
 
         wireMockServer.stubFor(
                 mappingBuilder.willReturn(
