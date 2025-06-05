@@ -28,15 +28,14 @@ import io.github.resilience4j.retry.annotation.Retry;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.YearMonth;
+import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -53,7 +52,12 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     private final MemberServiceClient memberServiceClient;
 
     private final ApplicationEventPublisher eventPublisher;
-    private final RedisTemplate<String, Long> redisTemplate;
+
+    @Qualifier("reservationRedisTemplate")
+    private final RedisTemplate<String, Long> reservationRedisTemplate;
+
+    @Qualifier("notificationRedisTemplate")
+    private final RedisTemplate<String, String> notificationRedisTemplate;
 
     private final MemberAnswerProducer memberAnswerProducer;
 
@@ -205,7 +209,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     public void createMemberReservation(String memberId, Long reservationId) {
         validateMemberReservationExists(Long.parseLong(memberId), reservationId);
 
-        Long possibleCount = redisTemplate.opsForValue().decrement(reservationId.toString());
+        Long possibleCount =
+                reservationRedisTemplate.opsForValue().decrement(reservationId.toString());
         if (possibleCount == null || possibleCount < 0) {
             safeIncrement(reservationId.toString());
             throw new CustomException(MemberReservationErrorCode.RESERVATION_FAILED);
@@ -233,6 +238,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
         ReservationInfoResponse reservationInfoResponse =
                 managerServiceClient.findReservationById(memberReservation.getReservationId());
+
         String imageByte =
                 createMemberReservationImageString(
                         memberReservation.getId(),
@@ -248,17 +254,24 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                 imageByte,
                 reservationInfoResponse.reservationDate(),
                 reservationInfoResponse.reservationTime());
+
+        createReservationNotification(memberReservation);
     }
 
     @Override
     public void cancelMemberReservation(Long memberReservationId) {
         MemberReservation memberReservation = findMemberReservationById(memberReservationId);
         Long reservationId = memberReservation.getReservationId();
-        memberReservationRepository.delete(memberReservation);
+
         if (reservationId == null)
             throw new CustomException(MemberReservationErrorCode.RESERVATION_NOT_FOUND);
 
+        memberReservationRepository.delete(memberReservation);
         safeIncrement(reservationId.toString());
+
+        String member = getMember(memberReservation);
+
+        notificationRedisTemplate.opsForZSet().remove("reservation:notifications", member);
     }
 
     private MemberReservation findMemberReservationById(Long memberReservationId) {
@@ -294,7 +307,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @CircuitBreaker(name = "redisCircuitBreaker", fallbackMethod = "handleRedisFailure")
     @Retry(name = "redisRetry")
     private void safeIncrement(String key) {
-        redisTemplate.opsForValue().increment(key);
+        reservationRedisTemplate.opsForValue().increment(key);
     }
 
     private void handleRedisFailure(String key, Throwable t) {
@@ -395,5 +408,32 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         }
 
         return reservableDateList;
+    }
+
+    private void createReservationNotification(MemberReservation memberReservation) {
+        try {
+            LocalDate reservationDate = memberReservation.getReservationDate();
+            LocalTime reservationTime = memberReservation.getReservationTime();
+            LocalDateTime reservationDateTime = LocalDateTime.of(reservationDate, reservationTime);
+
+            long epochTime =
+                    reservationDateTime
+                            .minusHours(1)
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toEpochSecond();
+
+            String member = getMember(memberReservation);
+
+            notificationRedisTemplate
+                    .opsForZSet()
+                    .add("reservation:notifications", member, epochTime);
+
+        } catch (Exception e) {
+            log.error("예약 알림 등록 오류: {}", e.getMessage(), e);
+        }
+    }
+
+    private String getMember(MemberReservation memberReservation) {
+        return memberReservation.getId() + "|" + memberReservation.getMemberId();
     }
 }

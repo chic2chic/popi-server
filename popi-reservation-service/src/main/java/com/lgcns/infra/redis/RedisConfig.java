@@ -2,6 +2,7 @@ package com.lgcns.infra.redis;
 
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -39,11 +40,24 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, Long> redisTemplate(RedisConnectionFactory connectionFactory) {
+    @Qualifier("reservationRedisTemplate")
+    public RedisTemplate<String, Long> reservationRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Long> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new GenericToStringSerializer<>(Long.class));
+        return template;
+    }
+
+    @Bean
+    @Qualifier("notificationRedisTemplate")
+    public RedisTemplate<String, String> notificationRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new StringRedisSerializer());
         return template;
     }
 }

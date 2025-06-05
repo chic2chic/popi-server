@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,7 +27,15 @@ public class MemberReservationMockTest extends WireMockIntegrationTest {
 
     @MockitoBean private MemberReservationRepository memberReservationRepository;
     @Autowired private MemberReservationService memberReservationService;
-    @Autowired private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    @Qualifier("reservationRedisTemplate")
+    private RedisTemplate<String, Long> reservationRedisTemplate;
+
+    @Autowired
+    @Qualifier("notificationRedisTemplate")
+    private RedisTemplate<String, String> notificationRedisTemplate;
+
     @Autowired private DatabaseCleaner databaseCleaner;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -44,7 +53,7 @@ public class MemberReservationMockTest extends WireMockIntegrationTest {
         @Test
         void 예약_저장_중_예외_발생시_복구_및_예외_반환() throws JsonProcessingException {
             // given
-            redisTemplate.opsForValue().set(reservationId.toString(), "10");
+            reservationRedisTemplate.opsForValue().set(reservationId.toString(), 10L);
             stubForFindMemberInternalInfo(
                     memberId,
                     200,
@@ -62,8 +71,9 @@ public class MemberReservationMockTest extends WireMockIntegrationTest {
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining(RESERVATION_FAILED.getMessage());
 
-            assertThat(redisTemplate.opsForValue().get(reservationId.toString())).isEqualTo("10");
-            redisTemplate.delete(reservationId.toString());
+            assertThat(reservationRedisTemplate.opsForValue().get(reservationId.toString()))
+                    .isEqualTo(10L);
+            reservationRedisTemplate.delete(reservationId.toString());
         }
     }
 
