@@ -26,7 +26,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public List<Long> findTargetMemberIds() {
         LocalDateTime now = LocalDateTime.now();
-        long epochTime = now.atZone(ZoneId.of("ASIA/SEOUL")).toEpochSecond();
+        long epochTime = now.atZone(ZoneId.of("Asia/Seoul")).toEpochSecond();
 
         Set<String> zSetMembers =
                 Optional.ofNullable(
@@ -35,12 +35,19 @@ public class NotificationServiceImpl implements NotificationService {
                                         .rangeByScore(ZSET_KEY, epochTime, epochTime))
                         .orElse(Collections.emptySet());
 
-        return zSetMembers.stream()
-                .map(member -> member.split("\\|"))
-                .filter(parts -> parts.length == 2)
-                .map(parts -> parts[1])
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
+        List<Long> memberIds =
+                zSetMembers.stream()
+                        .map(member -> member.split("\\|"))
+                        .filter(parts -> parts.length == 2)
+                        .map(parts -> parts[1])
+                        .map(Long::parseLong)
+                        .collect(Collectors.toList());
+
+        if (!zSetMembers.isEmpty()) {
+            redisTemplate.opsForZSet().remove(ZSET_KEY, zSetMembers.toArray());
+        }
+
+        return memberIds;
     }
 
     @Override
