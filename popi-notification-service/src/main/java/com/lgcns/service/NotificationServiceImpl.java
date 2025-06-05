@@ -32,7 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
                 Optional.ofNullable(
                                 redisTemplate
                                         .opsForZSet()
-                                        .rangeByScore(ZSET_KEY, epochTime, epochTime))
+                                        .rangeByScore(ZSET_KEY, epochTime - 10, epochTime + 10))
                         .orElse(Collections.emptySet());
 
         List<Long> memberIds =

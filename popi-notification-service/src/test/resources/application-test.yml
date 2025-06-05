@@ -12,6 +12,9 @@ spring:
       database: 1
   flyway:
     enabled: false
+  batch:
+    job:
+      enabled: false
 
 firebase:
   credentials-json: ${FIREBASE_SDK_KEY:{}}
