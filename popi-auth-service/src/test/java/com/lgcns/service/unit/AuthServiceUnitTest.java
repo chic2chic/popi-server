@@ -1,23 +1,33 @@
 package com.lgcns.service.unit;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import com.lgcns.client.MemberServiceClient;
+import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.RegisterTokenDto;
+import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
+import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.service.AuthServiceImpl;
+import com.lgcns.service.IdTokenVerifier;
 import com.lgcns.service.JwtTokenService;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +35,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceUnitTest {
@@ -34,6 +47,7 @@ public class AuthServiceUnitTest {
     @Mock MemberServiceClient memberServiceClient;
 
     @Mock JwtTokenService jwtTokenService;
+    @Mock IdTokenVerifier idTokenVerifier;
 
     @Nested
     class 회원가입할_때 {
@@ -105,6 +119,110 @@ public class AuthServiceUnitTest {
             assertThatThrownBy(() -> authService.registerMember("testRefreshTokenValue", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(AuthErrorCode.EXPIRED_REGISTER_TOKEN.getMessage());
+        }
+    }
+
+    @Nested
+    class 소셜_로그인할_때 {
+
+        @Test
+        void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() {
+            // given
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createRegisterToken(anyString(), anyString()))
+                    .thenReturn("fake-register-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            when(memberServiceClient.findByOauthInfo(any())).thenReturn(null);
+
+            // when
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isNull(),
+                    () -> assertThat(response.refreshToken()).isNull(),
+                    () -> assertThat(response.registerToken()).isEqualTo("fake-register-token"),
+                    () -> assertThat(response.isRegistered()).isFalse());
+        }
+
+        @Test
+        void 이미_회원가입된_회원은_로그인에_성공한다() {
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            MemberInternalInfoResponse memberResponse =
+                    new MemberInternalInfoResponse(
+                            1L,
+                            "최현태",
+                            MemberAge.TWENTIES,
+                            MemberGender.MALE,
+                            MemberRole.USER,
+                            MemberStatus.NORMAL);
+
+            when(memberServiceClient.findByOauthInfo(any())).thenReturn(memberResponse);
+
+            // when
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
+        }
+
+        @Test
+        void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() {
+            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
+            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .thenReturn("fake-access-token");
+            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+
+            IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
+
+            MemberInternalInfoResponse memberResponse =
+                    new MemberInternalInfoResponse(
+                            1L,
+                            "최현태",
+                            MemberAge.TWENTIES,
+                            MemberGender.MALE,
+                            MemberRole.USER,
+                            MemberStatus.DELETED);
+
+            when(memberServiceClient.findByOauthInfo(any())).thenReturn(memberResponse);
+            doNothing().when(memberServiceClient).rejoinMember(1L);
+
+            SocialLoginResponse response =
+                    authService.socialLoginMember(OauthProvider.KAKAO, request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
+                    () -> assertThat(response.registerToken()).isNull(),
+                    () -> assertThat(response.isRegistered()).isTrue());
+        }
+
+        private OidcUser mockOidcUser() {
+            OidcIdToken idToken =
+                    new OidcIdToken(
+                            "fake-id-token",
+                            Instant.now(),
+                            Instant.now().plusSeconds(3600),
+                            Map.of(
+                                    "sub", "test-subject",
+                                    "iss", "https://test-issuer.example.com"));
+
+            return new DefaultOidcUser(List.of(), idToken);
         }
     }
 }
