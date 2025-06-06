@@ -151,26 +151,17 @@ public class PaymentServiceUnitTest {
     @Nested
     class 결제_검증할_때 {
 
-        private final String merchantUid = "popup_1_order_test-uuid";
-        private final BigDecimal amount = BigDecimal.valueOf(129000);
-
         @BeforeEach
         void setUp() {
-            Payment payment = Payment.createPayment(1L, merchantUid, 129000, 1L);
-            when(paymentRepository.findByMerchantUid(merchantUid)).thenReturn(Optional.of(payment));
+            Payment payment = Payment.createPayment(1L, "popup_1_order_test-uuid", 129000, 1L);
+            when(paymentRepository.findByMerchantUid("popup_1_order_test-uuid"))
+                    .thenReturn(Optional.of(payment));
         }
 
         @Test
         void impUid와_결제정보가_일치하면_결제정보를_업데이트한다() throws IOException, IamportResponseException {
             // given
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
-
-            when(iamportPayment.getMerchantUid()).thenReturn(merchantUid);
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(amount);
-            when(iamportPayment.getStatus()).thenReturn("PAID");
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            stubIamportResponse(BigDecimal.valueOf(129000), "PAID");
 
             // when
             paymentService.findPaymentByImpUid("testImpUid");
@@ -181,21 +172,14 @@ public class PaymentServiceUnitTest {
             Assertions.assertAll(
                     () -> assertThat(payment.getAmount()).isEqualTo(129000),
                     () -> assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID),
-                    () -> assertThat(payment.getMerchantUid()).isEqualTo(merchantUid),
+                    () -> assertThat(payment.getMerchantUid()).isEqualTo("popup_1_order_test-uuid"),
                     () -> assertThat(payment.getPgProvider()).isEqualTo("tosspay"));
         }
 
         @Test
         void 결제_금액이_다르면_예외가_발생한다() throws IOException, IamportResponseException {
             // given
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
-
-            when(iamportPayment.getMerchantUid()).thenReturn(merchantUid);
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(1000));
-            when(iamportPayment.getStatus()).thenReturn("PAID");
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            stubIamportResponse(BigDecimal.valueOf(1000), "PAID");
 
             // when & then
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
@@ -206,19 +190,24 @@ public class PaymentServiceUnitTest {
         @Test
         void 결제_상태가_PAID가_아니면_예외가_발생한다() throws IOException, IamportResponseException {
             // given
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
-
-            when(iamportPayment.getMerchantUid()).thenReturn(merchantUid);
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(amount);
-            when(iamportPayment.getStatus()).thenReturn("READY");
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            stubIamportResponse(BigDecimal.valueOf(129000), "READY");
 
             // when & then
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.NOT_PAID.getMessage());
+        }
+
+        private void stubIamportResponse(BigDecimal amount, String status)
+                throws IOException, IamportResponseException {
+            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
+            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
+
+            when(iamportPayment.getMerchantUid()).thenReturn("popup_1_order_test-uuid");
+            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
+            when(iamportPayment.getAmount()).thenReturn(amount);
+            when(iamportPayment.getStatus()).thenReturn(status);
+            when(iamportPayment.getPaidAt()).thenReturn(new Date());
         }
     }
 
