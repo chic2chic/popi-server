@@ -5,7 +5,6 @@ import com.lgcns.repository.FcmDeviceRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,10 @@ public class NotificationServiceImpl implements NotificationService {
                 Optional.ofNullable(
                                 redisTemplate
                                         .opsForZSet()
-                                        .rangeByScore(ZSET_KEY, epochTime - 10, epochTime + 10))
+                                        .rangeByScore(
+                                                ZSET_KEY,
+                                                (double) (epochTime - 10),
+                                                (double) (epochTime + 10)))
                         .orElse(Collections.emptySet());
 
         List<Long> memberIds =
@@ -40,7 +42,7 @@ public class NotificationServiceImpl implements NotificationService {
                         .filter(parts -> parts.length == 2)
                         .map(parts -> parts[1])
                         .map(Long::parseLong)
-                        .collect(Collectors.toList());
+                        .toList();
 
         if (!zSetMembers.isEmpty()) {
             redisTemplate.opsForZSet().remove(ZSET_KEY, zSetMembers.toArray());
