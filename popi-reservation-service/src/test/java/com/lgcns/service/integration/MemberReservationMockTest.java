@@ -1,4 +1,4 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
@@ -8,10 +8,9 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.DatabaseCleaner;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.repository.MemberReservationRepository;
+import com.lgcns.service.MemberReservationService;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

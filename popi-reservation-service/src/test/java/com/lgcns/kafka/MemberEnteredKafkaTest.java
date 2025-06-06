@@ -1,6 +1,5 @@
 package com.lgcns.kafka;
 
-import com.lgcns.AbstractKafkaIntegrationTest;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;

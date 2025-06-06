@@ -7,8 +7,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.DatabaseCleaner;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
@@ -29,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import com.lgcns.service.integration.DatabaseCleaner;
+import com.lgcns.service.integration.WireMockIntegrationTest;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;

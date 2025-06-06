@@ -2,7 +2,6 @@ package com.lgcns.kafka;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.lgcns.AbstractKafkaIntegrationTest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.kafka.message.MemberAnswerMessage;
 import com.lgcns.kafka.message.dto.SurveyChoiceDto;
