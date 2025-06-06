@@ -13,10 +13,7 @@ import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.FlatPaymentItem;
 import com.lgcns.dto.request.PaymentReadyRequest;
-import com.lgcns.dto.response.ItemBuyerCountResponse;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.PaymentHistoryResponse;
-import com.lgcns.dto.response.PaymentReadyResponse;
+import com.lgcns.dto.response.*;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
@@ -299,6 +296,26 @@ public class PaymentServiceUnitTest {
             assertThat(second.popupId()).isEqualTo(2L);
             assertThat(second.items().get(0).itemName()).isEqualTo("크레용 파란색");
             assertThat(second.items().get(0).price()).isEqualTo(12000);
+        }
+    }
+
+    @Nested
+    class 관리자_서비스의_1인_평균_구매액_조회_요청을_처리할_때 {
+
+        @Test
+        void 평균_구매액을_정상적으로_조회한다() {
+            // given
+            Long popupId = 1L;
+
+            when(paymentRepository.findAverageAmountByPopupId(anyLong()))
+                    .thenReturn(new AverageAmountResponse(31333, 24500));
+
+            // when
+            AverageAmountResponse response = paymentService.findAverageAmount(popupId);
+
+            // then
+            assertThat(response.totalAverageAmount()).isEqualTo(31333);
+            assertThat(response.todayAverageAmount()).isEqualTo(24500);
         }
     }
 }
