@@ -127,8 +127,8 @@ public class NotificationJobTest extends NotificationIntegrationTest {
 
             FcmRequest fcmRequest = FcmRequest.of("token");
             doThrow(new CustomException(FirebaseErrorCode.FCM_SEND_FAILED))
-                    .when(fcmSender)
-                    .sendFcm(fcmRequest);
+                    .when(fcmService)
+                    .sendMessageSync(fcmRequest);
 
             JobParameters jobParameters = buildJobParameters();
 

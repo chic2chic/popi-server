@@ -99,7 +99,7 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             // then
             assertAll(
                     () -> verify(fcmDeviceRepository, times(1)).findFcmTokensByMemberIds(memberIds),
-                    () -> verify(fcmSender, times(2)).sendFcm(any(FcmRequest.class)));
+                    () -> verify(fcmService, times(2)).sendMessageSync(any(FcmRequest.class)));
         }
 
         @Test
@@ -113,7 +113,7 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             // then
             assertAll(
                     () -> verify(fcmDeviceRepository, times(1)).findFcmTokensByMemberIds(memberIds),
-                    () -> verify(fcmSender, never()).sendFcm(any(FcmRequest.class)));
+                    () -> verify(fcmService, never()).sendMessageSync(any(FcmRequest.class)));
         }
 
         @Test
@@ -127,8 +127,8 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             FcmRequest fcmRequest = FcmRequest.of("token");
 
             doThrow(new CustomException(FirebaseErrorCode.FCM_SEND_FAILED))
-                    .when(fcmSender)
-                    .sendFcm(fcmRequest);
+                    .when(fcmService)
+                    .sendMessageSync(fcmRequest);
 
             // when & then
             assertThatThrownBy(() -> notificationService.sendNotification(memberIds))
