@@ -43,12 +43,12 @@ public class PaymentServiceIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired private DatabaseCleaner databaseCleaner;
 
-    @Autowired PaymentService paymentService;
-    @Autowired PaymentRepository paymentRepository;
+    @Autowired private PaymentService paymentService;
+    @Autowired private PaymentRepository paymentRepository;
 
-    @MockitoBean IamportClient iamportClient;
-    @Mock IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse;
-    @Mock com.siot.IamportRestClient.response.Payment iamportPayment;
+    @MockitoBean private IamportClient iamportClient;
+    @Mock private IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse;
+    @Mock private com.siot.IamportRestClient.response.Payment iamportPayment;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
