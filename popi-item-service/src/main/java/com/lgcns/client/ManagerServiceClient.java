@@ -24,4 +24,7 @@ public interface ManagerServiceClient {
 
     @GetMapping("/internal/popups/{popupId}/items/default")
     List<ItemInfoResponse> findItemsDefault(@PathVariable(name = "popupId") Long popupId);
+
+    @GetMapping("/internal/popups/{popupId}/items/popularity")
+    List<ItemInfoResponse> findItemsPopularity(@PathVariable(name = "popupId") Long popupId);
 }
