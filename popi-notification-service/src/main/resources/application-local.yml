@@ -57,5 +57,5 @@ spring-doc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-firebase:
-  credentials-json: ${FIREBASE_SDK_KEY}
+fcm:
+  certification: ${FCM_CERTIFICATION}

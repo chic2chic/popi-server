@@ -16,5 +16,5 @@ spring:
     job:
       enabled: false
 
-firebase:
-  credentials-json: ${FIREBASE_SDK_KEY:{}}
+fcm:
+  certification: ${FCM_CERTIFICATION}
