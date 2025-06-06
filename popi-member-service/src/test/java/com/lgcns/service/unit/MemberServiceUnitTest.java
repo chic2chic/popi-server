@@ -265,4 +265,40 @@ class MemberServiceUnitTest {
             assertThat(response).isNull();
         }
     }
+
+    @Nested
+    class 인증_서비스의_회원_ID_조회_요청을_처리할_때 {
+
+        @Test
+        void 존재하는_회원이면_회원_정보를_반환한다() {
+            // given
+            Member member =
+                    Member.createMember(
+                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                            "testNickname",
+                            MemberGender.MALE,
+                            MemberAge.TWENTIES);
+
+            ReflectionTestUtils.setField(member, "id", 1L);
+
+            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+            // when
+            MemberInternalInfoResponse response = memberService.findMemberId(1L);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.memberId()).isEqualTo(1L),
+                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
+                    () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
+        }
+
+        @Test
+        void 존재하지_않는_회원이면_예외가_발생한다() {
+            // when & then
+            assertThatThrownBy(() -> memberService.findMemberId(999L))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
+        }
+    }
 }
