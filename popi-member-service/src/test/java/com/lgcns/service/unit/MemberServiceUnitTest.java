@@ -46,7 +46,6 @@ class MemberServiceUnitTest {
                             MemberAge.TWENTIES);
 
             ReflectionTestUtils.setField(member, "id", 1L);
-            ;
 
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
 
