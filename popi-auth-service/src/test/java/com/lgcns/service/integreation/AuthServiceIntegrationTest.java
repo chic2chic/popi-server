@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
