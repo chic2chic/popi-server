@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
+import com.lgcns.dto.AccessTokenDto;
+import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
@@ -16,6 +18,7 @@ import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
+import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
@@ -223,6 +226,57 @@ public class AuthServiceUnitTest {
                                     "iss", "https://test-issuer.example.com"));
 
             return new DefaultOidcUser(List.of(), idToken);
+        }
+    }
+
+    @Nested
+    class 토큰_재발급할_때 {
+
+        @Test
+        void 유효한_리프레시_토큰이면_새로운_토큰을_반환한다() {
+            // given
+            RefreshTokenDto oldRefreshTokenDto =
+                    RefreshTokenDto.of(1L, "fake-old-register-token", 604800L);
+            RefreshTokenDto newRefreshTokenDto =
+                    RefreshTokenDto.of(1L, "fake-new-refresh-token", 604800L);
+            AccessTokenDto newAccessTokenDto =
+                    AccessTokenDto.of(1L, MemberRole.USER, "fake-new-access-token");
+
+            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(oldRefreshTokenDto);
+            when(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
+                    .thenReturn(newRefreshTokenDto);
+            when(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
+                    .thenReturn(newAccessTokenDto);
+
+            MemberInternalInfoResponse memberResponse =
+                    new MemberInternalInfoResponse(
+                            1L,
+                            "최현태",
+                            MemberAge.TWENTIES,
+                            MemberGender.MALE,
+                            MemberRole.USER,
+                            MemberStatus.DELETED);
+
+            when(memberServiceClient.findByMemberId(1L)).thenReturn(memberResponse);
+
+            // when
+            TokenReissueResponse response = authService.reissueToken("testRefreshTokenValue");
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.accessToken()).isEqualTo("fake-new-access-token"),
+                    () -> assertThat(response.refreshToken()).isEqualTo("fake-new-refresh-token"));
+        }
+
+        @Test
+        void 만료된_리프레시_토큰이면_예외가_발생한다() {
+            // given
+            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(null);
+
+            // when & then
+            assertThatThrownBy(() -> authService.reissueToken("testRefreshTokenValue"))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(AuthErrorCode.EXPIRED_REFRESH_TOKEN.getMessage());
         }
     }
 }
