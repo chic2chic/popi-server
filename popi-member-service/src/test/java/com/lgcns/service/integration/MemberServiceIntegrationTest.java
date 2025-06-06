@@ -4,7 +4,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-import com.lgcns.IntegrationTest;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
