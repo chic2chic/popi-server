@@ -80,7 +80,7 @@ public class MemberReservationController {
     public ResponseEntity<Void> memberReservationEntrance(
             @Valid @RequestBody QrEntranceInfoRequest qrEntranceInfoRequest,
             @RequestParam Long popupId) {
-        memberReservationService.isEnterancePossible(qrEntranceInfoRequest, popupId);
+        memberReservationService.isEntrancePossible(qrEntranceInfoRequest, popupId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

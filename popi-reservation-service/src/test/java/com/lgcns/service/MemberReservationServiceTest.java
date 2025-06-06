@@ -1095,7 +1095,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when
-            memberReservationService.isEnterancePossible(request, popupId);
+            memberReservationService.isEntrancePossible(request, popupId);
 
             // then
             MemberReservation memberReservation = findMemberReservationById(memberReservationId);
@@ -1117,7 +1117,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
@@ -1138,8 +1138,8 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when & then
-            memberReservationService.isEnterancePossible(request, popupId);
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            memberReservationService.isEntrancePossible(request, popupId);
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_ALREADY_ENTERED.getMessage());
@@ -1163,7 +1163,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // when & then
             assertThatThrownBy(
                             () ->
-                                    memberReservationService.isEnterancePossible(
+                                    memberReservationService.isEntrancePossible(
                                             request, differentPopupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
@@ -1189,7 +1189,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
             // when & then
             assertThatThrownBy(
                             () -> {
-                                memberReservationService.isEnterancePossible(request, popupId);
+                                memberReservationService.isEntrancePossible(request, popupId);
                             })
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(MemberReservationErrorCode.INVALID_QR_CODE.getMessage());
@@ -1210,7 +1210,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now());
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_DATE_MISMATCH.getMessage());
@@ -1234,7 +1234,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             (LocalTime.now().plusMinutes(10)));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
@@ -1258,7 +1258,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             (LocalTime.now().minusMinutes(31)));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining(
                             MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
@@ -1282,7 +1282,7 @@ class MemberReservationServiceTest extends WireMockIntegrationTest {
                             LocalTime.now().minusMinutes((30)));
 
             // when
-            memberReservationService.isEnterancePossible(request, popupId);
+            memberReservationService.isEntrancePossible(request, popupId);
 
             // then
             MemberReservation memberReservation = findMemberReservationById(memberReservationId);

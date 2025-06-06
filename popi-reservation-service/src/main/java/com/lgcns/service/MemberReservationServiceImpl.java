@@ -164,7 +164,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
+    public void isEntrancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId) {
         LocalDate currentDate = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
 
