@@ -36,10 +36,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class MemberServiceUnitTest {
 
-    @InjectMocks MemberServiceImpl memberService;
-    @Mock MemberRepository memberRepository;
+    @InjectMocks private MemberServiceImpl memberService;
+    @Mock private MemberRepository memberRepository;
 
-    @Mock AuthServiceClient authServiceClient;
+    @Mock private AuthServiceClient authServiceClient;
 
     @Nested
     class 회원_정보를_조회할_때 {

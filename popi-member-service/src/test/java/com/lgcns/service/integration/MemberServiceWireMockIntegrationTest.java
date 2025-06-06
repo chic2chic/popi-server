@@ -27,10 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class MemberServiceWireMockIntegrationTest extends WireMockIntegrationTest {
 
+    @Autowired private DatabaseCleaner databaseCleaner;
+
     @Autowired private MemberService memberService;
     @Autowired private MemberRepository memberRepository;
-
-    @Autowired protected DatabaseCleaner databaseCleaner;
 
     @BeforeEach
     void setUp() {
