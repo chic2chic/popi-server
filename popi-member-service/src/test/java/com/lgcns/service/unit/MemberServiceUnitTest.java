@@ -3,13 +3,16 @@ package com.lgcns.service.unit;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
+import com.lgcns.dto.request.MemberInternalRegisterRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
+import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
@@ -123,6 +126,58 @@ class MemberServiceUnitTest {
             assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_ALREADY_DELETED.getMessage());
+        }
+    }
+
+    @Nested
+    class 인증_서비스의_회원_등록_요청을_처리할_때 {
+
+        @Test
+        void 등록되지_않은_회원이면_정상적으로_가입된다() {
+            // given
+            MemberInternalRegisterRequest request =
+                    new MemberInternalRegisterRequest(
+                            "testOauthId",
+                            "testOauthProvider",
+                            "testNickname",
+                            MemberAge.TWENTIES,
+                            MemberGender.MALE);
+
+            when(memberRepository.existsByOauthInfo(any(OauthInfo.class))).thenReturn(false);
+            when(memberRepository.save(any(Member.class)))
+                    .thenAnswer(
+                            invocation -> {
+                                Member saved = invocation.getArgument(0);
+                                ReflectionTestUtils.setField(saved, "id", 1L);
+                                return saved;
+                            });
+
+            // when
+            MemberInternalRegisterResponse response = memberService.registerMember(request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.memberId()).isEqualTo(1L),
+                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER));
+        }
+
+        @Test
+        void 이미_등록된_회원이면_예외가_발생한다() {
+            // given
+            MemberInternalRegisterRequest request =
+                    new MemberInternalRegisterRequest(
+                            "testOauthId",
+                            "testOauthProvider",
+                            "testNickname",
+                            MemberAge.TWENTIES,
+                            MemberGender.MALE);
+
+            when(memberRepository.existsByOauthInfo(any(OauthInfo.class))).thenReturn(true);
+
+            // when & then
+            assertThatThrownBy(() -> memberService.registerMember(request))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.ALREADY_REGISTERED.getMessage());
         }
     }
 }
