@@ -1,4 +1,4 @@
-package com.lgcns;
+package com.lgcns.kafka;
 
 import java.util.Map;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
