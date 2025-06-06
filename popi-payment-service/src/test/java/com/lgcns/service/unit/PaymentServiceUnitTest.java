@@ -12,6 +12,7 @@ import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.request.PaymentReadyRequest;
+import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.enums.MemberAge;
@@ -214,6 +215,35 @@ public class PaymentServiceUnitTest {
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.NOT_PAID.getMessage());
+        }
+    }
+
+    @Nested
+    class 관리자_서비스의_상품별_구매자_수_조회_요청을_처리할_때 {
+
+        @Test
+        void 상품별_구매자_수를_정상적으로_조회한다() {
+            // given
+            Long popupId = 1L;
+
+            when(paymentRepository.countItemBuyerByPopupId(popupId))
+                    .thenReturn(
+                            List.of(
+                                    new ItemBuyerCountResponse(1L, 2),
+                                    new ItemBuyerCountResponse(2L, 1),
+                                    new ItemBuyerCountResponse(3L, 1)));
+
+            // when
+            List<ItemBuyerCountResponse> result = paymentService.countItemBuyerByPopupId(popupId);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(result.get(0).itemId()).isEqualTo(1L),
+                    () -> assertThat(result.get(0).buyerCount()).isEqualTo(2),
+                    () -> assertThat(result.get(1).itemId()).isEqualTo(2L),
+                    () -> assertThat(result.get(1).buyerCount()).isEqualTo(1),
+                    () -> assertThat(result.get(2).itemId()).isEqualTo(3L),
+                    () -> assertThat(result.get(2).buyerCount()).isEqualTo(1));
         }
     }
 }
