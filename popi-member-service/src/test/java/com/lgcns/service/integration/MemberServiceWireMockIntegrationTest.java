@@ -20,6 +20,7 @@ import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
 import com.lgcns.service.MemberService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,13 @@ class MemberServiceWireMockIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired private MemberService memberService;
     @Autowired private MemberRepository memberRepository;
+
+    @Autowired protected DatabaseCleaner databaseCleaner;
+
+    @BeforeEach
+    void setUp() {
+        databaseCleaner.execute();
+    }
 
     @Nested
     class 회원_정보를_조회할_때 {
