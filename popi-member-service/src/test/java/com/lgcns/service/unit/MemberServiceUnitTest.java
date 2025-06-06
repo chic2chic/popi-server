@@ -3,8 +3,10 @@ package com.lgcns.service.unit;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
+import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.response.MemberInfoResponse;
@@ -29,8 +31,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class MemberServiceUnitTest {
 
-    @InjectMocks private MemberServiceImpl memberService;
-    @Mock private MemberRepository memberRepository;
+    @InjectMocks MemberServiceImpl memberService;
+    @Mock MemberRepository memberRepository;
+
+    @Mock AuthServiceClient authServiceClient;
 
     @Nested
     class 회원_정보를_조회할_때 {
@@ -68,6 +72,57 @@ class MemberServiceUnitTest {
             assertThatThrownBy(() -> memberService.findMemberInfo("1"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
+        }
+    }
+
+    @Nested
+    class 회원_탈퇴할_때 {
+
+        @Test
+        void 회원이_탈퇴하면_상태는_DELETED가_된다() {
+            // given
+            Member member =
+                    Member.createMember(
+                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                            "testNickname",
+                            MemberGender.MALE,
+                            MemberAge.TWENTIES);
+
+            ReflectionTestUtils.setField(member, "id", 1L);
+
+            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+            doNothing().when(authServiceClient).deleteRefreshToken("1");
+
+            // when
+            memberService.withdrawalMember(member.getId().toString());
+
+            // then
+            member = memberRepository.findById(1L).get();
+            assertThat(member.getStatus()).isEqualTo(MemberStatus.DELETED);
+        }
+
+        @Test
+        void 이미_탈퇴한_회원이_다시_탈퇴하면_예외가_발생한다() {
+            // given
+            Member member =
+                    Member.createMember(
+                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                            "testNickname",
+                            MemberGender.MALE,
+                            MemberAge.TWENTIES);
+
+            ReflectionTestUtils.setField(member, "id", 1L);
+
+            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+            ;
+
+            memberService.withdrawalMember(member.getId().toString());
+
+            // when & then
+            assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_ALREADY_DELETED.getMessage());
         }
     }
 }
