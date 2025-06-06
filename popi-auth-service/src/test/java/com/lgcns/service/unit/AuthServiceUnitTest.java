@@ -300,4 +300,21 @@ public class AuthServiceUnitTest {
             assertThat(refreshTokenRepository.findById(1L)).isEmpty();
         }
     }
+
+    @Nested
+    class 회원_서비스의_토큰_삭제_요청을_처리할_때 {
+        @Test
+        void 리프레시_토큰이_존재하면_삭제된다() {
+            // given
+            RefreshToken refreshToken =
+                    RefreshToken.builder().memberId(1L).token("testRefreshToken").build();
+            refreshTokenRepository.save(refreshToken);
+
+            // when
+            authService.deleteRefreshToken(String.valueOf(1L));
+
+            // then
+            assertThat(refreshTokenRepository.findById(1L)).isEmpty();
+        }
+    }
 }
