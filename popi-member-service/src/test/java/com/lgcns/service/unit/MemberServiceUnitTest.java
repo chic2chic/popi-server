@@ -11,7 +11,9 @@ import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
+import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
+import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
@@ -213,6 +215,54 @@ class MemberServiceUnitTest {
             assertThatThrownBy(() -> memberService.rejoinMember(999L))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
+        }
+    }
+
+    @Nested
+    class 인증_서비스의_OAuth_회원_조회_요청을_처리할_때 {
+
+        @Test
+        void 존재하는_회원이면_회원_정보를_반환한다() {
+            // given
+            Member member =
+                    Member.createMember(
+                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                            "testNickname",
+                            MemberGender.MALE,
+                            MemberAge.TWENTIES);
+
+            ReflectionTestUtils.setField(member, "id", 1L);
+
+            MemberOauthInfoRequest request =
+                    MemberOauthInfoRequest.of("testOauthId", "testOauthProvider");
+
+            when(memberRepository.findByOauthInfo(any(OauthInfo.class)))
+                    .thenReturn(Optional.of(member));
+
+            // when
+            MemberInternalInfoResponse response = memberService.findOauthInfo(request);
+
+            // then
+            Assertions.assertAll(
+                    () -> assertThat(response.memberId()).isEqualTo(1L),
+                    () -> assertThat(response.nickname()).isEqualTo("testNickname"),
+                    () -> assertThat(response.age()).isEqualTo(MemberAge.TWENTIES),
+                    () -> assertThat(response.gender()).isEqualTo(MemberGender.MALE),
+                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
+                    () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
+        }
+
+        @Test
+        void 존재하지_않는_회원이면_null을_반환한다() {
+            // given
+            MemberOauthInfoRequest request =
+                    MemberOauthInfoRequest.of("nonOauthId", "nonOauthProvider");
+
+            // when
+            MemberInternalInfoResponse response = memberService.findOauthInfo(request);
+
+            // then
+            assertThat(response).isNull();
         }
     }
 }
