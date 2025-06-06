@@ -1,6 +1,5 @@
 package com.lgcns.service.unit;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
@@ -47,13 +46,13 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceUnitTest {
 
-    @InjectMocks AuthServiceImpl authService;
-    @Mock RefreshTokenRepository refreshTokenRepository;
+    @InjectMocks private AuthServiceImpl authService;
+    @Mock private RefreshTokenRepository refreshTokenRepository;
 
-    @Mock MemberServiceClient memberServiceClient;
+    @Mock private MemberServiceClient memberServiceClient;
 
-    @Mock JwtTokenService jwtTokenService;
-    @Mock IdTokenVerifier idTokenVerifier;
+    @Mock private JwtTokenService jwtTokenService;
+    @Mock private IdTokenVerifier idTokenVerifier;
 
     @Nested
     class 회원가입할_때 {

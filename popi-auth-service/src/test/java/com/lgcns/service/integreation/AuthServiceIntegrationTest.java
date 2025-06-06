@@ -41,11 +41,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
 
-    @Autowired AuthService authService;
-    @Autowired RefreshTokenRepository refreshTokenRepository;
+    @Autowired private AuthService authService;
+    @Autowired private RefreshTokenRepository refreshTokenRepository;
 
-    @MockitoBean JwtTokenService jwtTokenService;
-    @MockitoBean IdTokenVerifier idTokenVerifier;
+    @MockitoBean private JwtTokenService jwtTokenService;
+    @MockitoBean private IdTokenVerifier idTokenVerifier;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
