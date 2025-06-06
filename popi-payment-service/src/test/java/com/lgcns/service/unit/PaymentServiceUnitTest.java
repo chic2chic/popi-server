@@ -11,9 +11,11 @@ import com.lgcns.client.managerClient.dto.response.ItemForPaymentResponse;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentStatus;
+import com.lgcns.dto.FlatPaymentItem;
 import com.lgcns.dto.request.PaymentReadyRequest;
 import com.lgcns.dto.response.ItemBuyerCountResponse;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
+import com.lgcns.dto.response.PaymentHistoryResponse;
 import com.lgcns.dto.response.PaymentReadyResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
@@ -23,12 +25,14 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.kafka.producer.ItemPurchasedProducer;
 import com.lgcns.repository.PaymentRepository;
+import com.lgcns.response.SliceResponse;
 import com.lgcns.service.PaymentServiceImpl;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +44,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 @ExtendWith(MockitoExtension.class)
 public class PaymentServiceUnitTest {
@@ -244,6 +251,54 @@ public class PaymentServiceUnitTest {
                     () -> assertThat(result.get(1).buyerCount()).isEqualTo(1),
                     () -> assertThat(result.get(2).itemId()).isEqualTo(3L),
                     () -> assertThat(result.get(2).buyerCount()).isEqualTo(1));
+        }
+    }
+
+    @Nested
+    class 결제_내역을_조회할_때 {
+
+        @Test
+        void 결제별로_상품_목록이_포함된_내역이_정상적으로_조회된다() {
+            // given
+            List<FlatPaymentItem> flatItems =
+                    List.of(
+                            new FlatPaymentItem(
+                                    1L, 1L, LocalDateTime.of(2024, 5, 31, 14, 0), "응원봉", 1, 25000),
+                            new FlatPaymentItem(
+                                    1L, 1L, LocalDateTime.of(2024, 5, 31, 14, 0), "포스터", 3, 9000),
+                            new FlatPaymentItem(
+                                    2L,
+                                    2L,
+                                    LocalDateTime.of(2024, 5, 30, 15, 30),
+                                    "크레용 파란색",
+                                    1,
+                                    12000));
+
+            Slice<FlatPaymentItem> slice = new SliceImpl<>(flatItems, PageRequest.of(0, 10), false);
+
+            when(paymentRepository.findAllPaymentHistoryByMemberId(anyLong(), any(), anyInt()))
+                    .thenReturn(slice);
+
+            // when
+            SliceResponse<PaymentHistoryResponse> response =
+                    paymentService.findAllPaymentHistory("1", null, 10);
+
+            // then
+            List<PaymentHistoryResponse> content = response.content();
+
+            PaymentHistoryResponse first = content.get(0);
+            assertThat(first.paymentId()).isEqualTo(1L);
+            assertThat(first.popupId()).isEqualTo(1L);
+            assertThat(first.items().get(0).itemName()).isEqualTo("응원봉");
+            assertThat(first.items().get(1).itemName()).isEqualTo("포스터");
+            assertThat(first.items().get(0).price()).isEqualTo(25000);
+            assertThat(first.items().get(1).price()).isEqualTo(27000); // 3 * 9000
+
+            PaymentHistoryResponse second = content.get(1);
+            assertThat(second.paymentId()).isEqualTo(2L);
+            assertThat(second.popupId()).isEqualTo(2L);
+            assertThat(second.items().get(0).itemName()).isEqualTo("크레용 파란색");
+            assertThat(second.items().get(0).price()).isEqualTo(12000);
         }
     }
 }
