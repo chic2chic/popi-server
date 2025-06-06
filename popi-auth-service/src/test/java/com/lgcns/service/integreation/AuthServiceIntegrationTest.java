@@ -1,4 +1,4 @@
-package com.lgcns.service;
+package com.lgcns.service.integreation;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -25,6 +25,9 @@ import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
+import com.lgcns.service.AuthService;
+import com.lgcns.service.IdTokenVerifier;
+import com.lgcns.service.JwtTokenService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +40,7 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class AuthServiceTest extends WireMockIntegrationTest {
+public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired AuthService authService;
     @Autowired RefreshTokenRepository refreshTokenRepository;
