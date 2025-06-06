@@ -11,15 +11,12 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureWireMock(port = 0)
-public abstract class IntegrationTest {
-
-    @Autowired protected DatabaseCleaner databaseCleaner;
+public abstract class WireMockIntegrationTest {
 
     @Autowired private WireMockServer wireMockServer;
 
     @BeforeEach
     void setUp() {
-        databaseCleaner.execute();
         wireMockServer.stop();
         wireMockServer.start();
     }
