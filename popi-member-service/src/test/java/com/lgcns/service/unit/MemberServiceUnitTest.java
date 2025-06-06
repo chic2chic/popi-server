@@ -47,14 +47,7 @@ class MemberServiceUnitTest {
         @Test
         void 회원이_존재하면_조회에_성공한다() {
             // given
-            Member member =
-                    Member.createMember(
-                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                            "testNickname",
-                            MemberGender.MALE,
-                            MemberAge.TWENTIES);
-
-            ReflectionTestUtils.setField(member, "id", 1L);
+            Member member = createTestMember(1L, MemberStatus.NORMAL);
 
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
 
@@ -86,14 +79,7 @@ class MemberServiceUnitTest {
         @Test
         void 회원이_탈퇴하면_상태는_DELETED가_된다() {
             // given
-            Member member =
-                    Member.createMember(
-                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                            "testNickname",
-                            MemberGender.MALE,
-                            MemberAge.TWENTIES);
-
-            ReflectionTestUtils.setField(member, "id", 1L);
+            Member member = createTestMember(1L, MemberStatus.NORMAL);
 
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
 
@@ -110,19 +96,9 @@ class MemberServiceUnitTest {
         @Test
         void 이미_탈퇴한_회원이_다시_탈퇴하면_예외가_발생한다() {
             // given
-            Member member =
-                    Member.createMember(
-                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                            "testNickname",
-                            MemberGender.MALE,
-                            MemberAge.TWENTIES);
-
-            ReflectionTestUtils.setField(member, "id", 1L);
+            Member member = createTestMember(1L, MemberStatus.DELETED);
 
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-            ;
-
-            memberService.withdrawalMember(member.getId().toString());
 
             // when & then
             assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
@@ -189,15 +165,7 @@ class MemberServiceUnitTest {
         @Test
         void 탈퇴한_회원이라면_상태는_NORMAL로_변경된다() {
             // given
-            Member member =
-                    Member.createMember(
-                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                            "testNickname",
-                            MemberGender.MALE,
-                            MemberAge.TWENTIES);
-
-            ReflectionTestUtils.setField(member, "id", 1L);
-            ReflectionTestUtils.setField(member, "status", MemberStatus.DELETED);
+            Member member = createTestMember(1L, MemberStatus.DELETED);
 
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
 
@@ -224,17 +192,10 @@ class MemberServiceUnitTest {
         @Test
         void 존재하는_회원이면_회원_정보를_반환한다() {
             // given
-            Member member =
-                    Member.createMember(
-                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                            "testNickname",
-                            MemberGender.MALE,
-                            MemberAge.TWENTIES);
-
-            ReflectionTestUtils.setField(member, "id", 1L);
-
             MemberOauthInfoRequest request =
                     MemberOauthInfoRequest.of("testOauthId", "testOauthProvider");
+
+            Member member = createTestMember(1L, MemberStatus.NORMAL);
 
             when(memberRepository.findByOauthInfo(any(OauthInfo.class)))
                     .thenReturn(Optional.of(member));
@@ -272,14 +233,7 @@ class MemberServiceUnitTest {
         @Test
         void 존재하는_회원이면_회원_정보를_반환한다() {
             // given
-            Member member =
-                    Member.createMember(
-                            OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
-                            "testNickname",
-                            MemberGender.MALE,
-                            MemberAge.TWENTIES);
-
-            ReflectionTestUtils.setField(member, "id", 1L);
+            Member member = createTestMember(1L, MemberStatus.NORMAL);
 
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
 
@@ -300,5 +254,19 @@ class MemberServiceUnitTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
         }
+    }
+
+    private Member createTestMember(Long id, MemberStatus status) {
+        Member member =
+                Member.createMember(
+                        OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),
+                        "testNickname",
+                        MemberGender.MALE,
+                        MemberAge.TWENTIES);
+
+        ReflectionTestUtils.setField(member, "id", id);
+        ReflectionTestUtils.setField(member, "status", status);
+
+        return member;
     }
 }
