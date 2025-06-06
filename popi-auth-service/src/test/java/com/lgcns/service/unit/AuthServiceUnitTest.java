@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
+import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
@@ -25,6 +26,7 @@ import com.lgcns.enums.MemberRole;
 import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
+import com.lgcns.repository.RefreshTokenRepository;
 import com.lgcns.service.AuthServiceImpl;
 import com.lgcns.service.IdTokenVerifier;
 import com.lgcns.service.JwtTokenService;
@@ -46,6 +48,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 public class AuthServiceUnitTest {
 
     @InjectMocks AuthServiceImpl authService;
+    @Mock RefreshTokenRepository refreshTokenRepository;
 
     @Mock MemberServiceClient memberServiceClient;
 
@@ -277,6 +280,24 @@ public class AuthServiceUnitTest {
             assertThatThrownBy(() -> authService.reissueToken("testRefreshTokenValue"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(AuthErrorCode.EXPIRED_REFRESH_TOKEN.getMessage());
+        }
+    }
+
+    @Nested
+    class 로그아웃할_때 {
+
+        @Test
+        void 리프레시_토큰이_존재하면_삭제된다() {
+            // given
+            RefreshToken refreshToken =
+                    RefreshToken.builder().memberId(1L).token("testRefreshToken").build();
+            refreshTokenRepository.save(refreshToken);
+
+            // when
+            authService.logoutMember(String.valueOf(1L));
+
+            // then
+            assertThat(refreshTokenRepository.findById(1L)).isEmpty();
         }
     }
 }
