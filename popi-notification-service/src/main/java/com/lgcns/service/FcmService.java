@@ -1,24 +1,20 @@
-package com.lgcns.infra.firebase;
+package com.lgcns.service;
 
+import com.google.api.core.ApiFuture;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.lgcns.dto.request.FcmRequest;
-import com.lgcns.error.exception.CustomException;
-import com.lgcns.exception.FirebaseErrorCode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
-@RequiredArgsConstructor
-@Slf4j
-public class FcmSender {
+@Service
+public class FcmService {
 
-    private final FirebaseMessaging firebaseMessaging;
+    public ApiFuture<String> sendMessageSync(FcmRequest fcmRequest) {
+        if (fcmRequest.fcmToken() == null || fcmRequest.fcmToken().isEmpty()) {
+            return null;
+        }
 
-    public void sendFcm(FcmRequest fcmRequest) {
         Notification notification =
                 Notification.builder()
                         .setTitle(fcmRequest.title())
@@ -32,11 +28,6 @@ public class FcmSender {
                         // .putData("key", fcmRequest.key()) // 추후 redirectUrl 추가하면서 리팩토링
                         .build();
 
-        try {
-            firebaseMessaging.send(message);
-        } catch (FirebaseMessagingException e) {
-            log.info("FCM ERROR : {}", e.getMessage());
-            throw new CustomException(FirebaseErrorCode.FCM_SEND_FAILED);
-        }
+        return FirebaseMessaging.getInstance().sendAsync(message);
     }
 }

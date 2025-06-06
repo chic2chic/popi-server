@@ -1,7 +1,6 @@
 package com.lgcns.service;
 
 import com.lgcns.dto.request.FcmRequest;
-import com.lgcns.infra.firebase.FcmSender;
 import com.lgcns.repository.FcmDeviceRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -19,8 +18,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private static final String ZSET_KEY = "reservation:notifications";
 
+    private final FcmService fcmService;
     private final FcmDeviceRepository fcmDeviceRepository;
-    private final FcmSender fcmSender;
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
@@ -57,7 +56,7 @@ public class NotificationServiceImpl implements NotificationService {
         fcmTokens.forEach(
                 fcmToken -> {
                     FcmRequest fcmRequest = FcmRequest.of(fcmToken);
-                    fcmSender.sendFcm(fcmRequest);
+                    fcmService.sendMessageSync(fcmRequest);
                 });
     }
 }
