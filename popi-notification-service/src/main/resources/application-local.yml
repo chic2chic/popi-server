@@ -58,4 +58,4 @@ spring-doc:
   default-produces-media-type: application/json
 
 fcm:
-  certification: ${FCM_CERTIFICATION}
+  certification: ${FCM_CERTIFICATION:}

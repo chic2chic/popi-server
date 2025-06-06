@@ -17,4 +17,4 @@ spring:
       enabled: false
 
 fcm:
-  certification: ${FCM_CERTIFICATION}
+  certification: ${FCM_CERTIFICATION:}
