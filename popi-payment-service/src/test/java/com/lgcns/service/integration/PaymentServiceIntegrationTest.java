@@ -1,4 +1,4 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -22,6 +22,7 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.repository.PaymentRepository;
 import com.lgcns.response.SliceResponse;
+import com.lgcns.service.PaymentService;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -40,7 +41,7 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class PaymentServiceTest extends WireMockIntegrationTest {
+public class PaymentServiceIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired protected DatabaseCleaner databaseCleaner;
 
