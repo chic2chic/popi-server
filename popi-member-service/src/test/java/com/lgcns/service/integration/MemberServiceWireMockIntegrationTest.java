@@ -1,10 +1,9 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-import com.lgcns.IntegrationTest;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
@@ -19,15 +18,24 @@ import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
+import com.lgcns.service.MemberService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class MemberServiceTest extends IntegrationTest {
+class MemberServiceWireMockIntegrationTest extends WireMockIntegrationTest {
+
+    @Autowired private DatabaseCleaner databaseCleaner;
 
     @Autowired private MemberService memberService;
     @Autowired private MemberRepository memberRepository;
+
+    @BeforeEach
+    void setUp() {
+        databaseCleaner.execute();
+    }
 
     @Nested
     class 회원_정보를_조회할_때 {
