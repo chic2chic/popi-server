@@ -1,12 +1,16 @@
 package com.lgcns.service.unit;
 
 import static com.lgcns.domain.MemberReservationStatus.RESERVED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.BDDAssertions.catchThrowable;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.response.DailyReservation;
 import com.lgcns.client.managerClient.dto.response.MonthlyReservationResponse;
@@ -21,12 +25,14 @@ import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.producer.MemberAnswerProducer;
 import com.lgcns.repository.MemberReservationRepository;
 import com.lgcns.service.MemberReservationServiceImpl;
+import feign.FeignException;
+import feign.Request;
+import feign.RequestTemplate;
+import feign.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.TextStyle;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +69,7 @@ public class MemberReservationServiceUnitTest {
             // given
             String invalidDate = "2025-July";
 
-            // when & then
+            // when & then)
             assertThatThrownBy(
                             () -> memberReservationService.findAvailableDate(popupId, invalidDate))
                     .isInstanceOf(CustomException.class)
@@ -100,17 +106,11 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 예약이_없는_경우_모든_시간이_예약_가능하다() {
             // given
-            String date = "2025-07";
+            String date = "2025-06";
+            LocalDate targetDate = LocalDate.of(2025, 6, 30);
 
-            MonthlyReservationResponse monthlyReservationResponse =
-                    new MonthlyReservationResponse(
-                            LocalDate.parse("2025-06-30"),
-                            LocalDate.parse("2025-07-02"),
-                            5,
-                            Collections.emptyList());
-
-            when(managerServiceClient.findMonthlyReservation(anyLong(), anyString()))
-                    .thenReturn(monthlyReservationResponse);
+            givenThisMonthReservation(date);
+            givenEmptyReservedTimeSlots(targetDate);
 
             // when
             AvailableDateResponse response =
@@ -126,6 +126,13 @@ public class MemberReservationServiceUnitTest {
                     assertThat(reservableTime.isPossible()).isTrue();
                 }
             }
+
+            verify(memberReservationRepository)
+                    .findDailyReservationCount(
+                            eq(popupId),
+                            eq(LocalDate.of(2025, 6, 30)),
+                            eq(LocalDate.of(2025, 7, 2)),
+                            eq("2025-06"));
         }
 
         @Test
@@ -134,8 +141,8 @@ public class MemberReservationServiceUnitTest {
             String date = "2025-07";
             LocalDate targetDate = LocalDate.of(2025, 7, 1);
 
-            stubMonthlyReservation(date);
-            stubAllTimeSlotsAreFullByCount(targetDate, 3);
+            givenNextMonthReservation(date);
+            givenAllReservedTimeSlots(targetDate);
 
             // when
             AvailableDateResponse response =
@@ -152,17 +159,23 @@ public class MemberReservationServiceUnitTest {
 
             assertThat(reservableDate.isReservable()).isFalse();
             reservableDate.timeSlots().forEach(slot -> assertThat(slot.isPossible()).isFalse());
+
+            verify(memberReservationRepository)
+                    .findDailyReservationCount(
+                            eq(popupId),
+                            eq(LocalDate.of(2025, 6, 30)),
+                            eq(LocalDate.of(2025, 7, 2)),
+                            eq("2025-07"));
         }
 
         @Test
-        void 일부_시간만_예약된_날짜는_정확하게_표시된다() {
+        void 예약_자리가_남으면_TRUE_차있으면_FALSE가_표시된다() {
             // given
             String date = "2025-07";
             LocalDate targetDate = LocalDate.of(2025, 7, 2);
-            int capacity = 3;
 
-            stubMonthlyReservation(date);
-            stubPartiallyReservedTimeSlots(targetDate, capacity);
+            givenNextMonthReservation(date);
+            givenPartiallyReservedTimeSlots(targetDate);
 
             // when
             AvailableDateResponse response =
@@ -181,11 +194,18 @@ public class MemberReservationServiceUnitTest {
 
             for (ReservableTime timeSlot : reservableDate.timeSlots()) {
                 if (timeSlot.time().equals(LocalTime.of(13, 0))) {
-                    assertThat(timeSlot.isPossible()).isFalse(); // 이미 예약됨
+                    assertThat(timeSlot.isPossible()).isFalse();
                 } else {
-                    assertThat(timeSlot.isPossible()).isTrue(); // 예약 가능
+                    assertThat(timeSlot.isPossible()).isTrue();
                 }
             }
+
+            verify(memberReservationRepository)
+                    .findDailyReservationCount(
+                            eq(popupId),
+                            eq(LocalDate.of(2025, 6, 30)),
+                            eq(LocalDate.of(2025, 7, 2)),
+                            eq("2025-07"));
         }
 
         @Test
@@ -193,8 +213,8 @@ public class MemberReservationServiceUnitTest {
             // given
             String date = "2025-08";
 
-            when(managerServiceClient.findMonthlyReservation(anyLong(), anyString()))
-                    .thenReturn(
+            given(managerServiceClient.findMonthlyReservation(eq(popupId), eq(date)))
+                    .willReturn(
                             new MonthlyReservationResponse(
                                     LocalDate.of(2025, 6, 30),
                                     LocalDate.of(2025, 7, 2),
@@ -210,24 +230,48 @@ public class MemberReservationServiceUnitTest {
         }
 
         @Test
-        void 존재하지_않는_팝업ID는_예외처리_된다() {
+        void 존재하지_않는_팝업ID는_예외처리_된다() throws Exception {
             // given
             Long popupId = 999L;
             String date = "2025-07";
 
-            when(managerServiceClient.findMonthlyReservation(any(), anyString()))
-                    .thenThrow(new RuntimeException("해당 팝업이 존재하지 않습니다."));
+            given(managerServiceClient.findMonthlyReservation(popupId, date))
+                    .willThrow(buildMonthlyReservationException(popupId, date));
 
-            // when & then
-            assertThatThrownBy(() -> memberReservationService.findAvailableDate(popupId, date))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("해당 팝업이 존재하지 않습니다.");
+            // when
+            Throwable thrown =
+                    catchThrowable(() -> memberReservationService.findAvailableDate(popupId, date));
+
+            // then
+            assertThat(thrown).isInstanceOf(FeignException.class);
+
+            String body = ((FeignException) thrown).contentUTF8();
+            String actualMessage =
+                    new ObjectMapper().readTree(body).path("data").path("message").asText();
+
+            assertThat(actualMessage).isEqualTo("해당 팝업이 존재하지 않습니다.");
         }
     }
 
-    private void stubMonthlyReservation(String date) {
-        when(managerServiceClient.findMonthlyReservation(eq(popupId), eq(date)))
-                .thenReturn(
+    private void givenThisMonthReservation(String date) {
+        given(managerServiceClient.findMonthlyReservation(eq(popupId), eq(date)))
+                .willReturn(
+                        new MonthlyReservationResponse(
+                                LocalDate.of(2025, 6, 30),
+                                LocalDate.of(2025, 7, 2),
+                                3,
+                                List.of(
+                                        new DailyReservation(
+                                                LocalDate.of(2025, 6, 30),
+                                                List.of(
+                                                        new TimeSlot(1L, LocalTime.of(12, 0)),
+                                                        new TimeSlot(2L, LocalTime.of(13, 0)),
+                                                        new TimeSlot(3L, LocalTime.of(14, 0)))))));
+    }
+
+    private void givenNextMonthReservation(String date) {
+        given(managerServiceClient.findMonthlyReservation(eq(popupId), eq(date)))
+                .willReturn(
                         new MonthlyReservationResponse(
                                 LocalDate.of(2025, 6, 30),
                                 LocalDate.of(2025, 7, 2),
@@ -236,52 +280,102 @@ public class MemberReservationServiceUnitTest {
                                         new DailyReservation(
                                                 LocalDate.of(2025, 7, 1),
                                                 List.of(
-                                                        new TimeSlot(1L, LocalTime.of(12, 0)),
-                                                        new TimeSlot(2L, LocalTime.of(13, 0)),
-                                                        new TimeSlot(3L, LocalTime.of(14, 0)))),
+                                                        new TimeSlot(4L, LocalTime.of(12, 0)),
+                                                        new TimeSlot(5L, LocalTime.of(13, 0)),
+                                                        new TimeSlot(6L, LocalTime.of(14, 0)))),
                                         new DailyReservation(
                                                 LocalDate.of(2025, 7, 2),
                                                 List.of(
-                                                        new TimeSlot(4L, LocalTime.of(12, 0)),
-                                                        new TimeSlot(5L, LocalTime.of(13, 0)),
-                                                        new TimeSlot(6L, LocalTime.of(14, 0)))))));
+                                                        new TimeSlot(7L, LocalTime.of(12, 0)),
+                                                        new TimeSlot(8L, LocalTime.of(13, 0)),
+                                                        new TimeSlot(9L, LocalTime.of(14, 0)))))));
     }
 
-    private void stubAllTimeSlotsAreFullByCount(LocalDate targetDate, int count) {
+    private void givenAllReservedTimeSlots(LocalDate targetDate) {
         List<HourlyReservationCount> hourlyCounts =
                 List.of(
-                        new HourlyReservationCount(LocalTime.of(12, 0), count),
-                        new HourlyReservationCount(LocalTime.of(13, 0), count),
-                        new HourlyReservationCount(LocalTime.of(14, 0), count));
+                        new HourlyReservationCount(LocalTime.of(12, 0), 3),
+                        new HourlyReservationCount(LocalTime.of(13, 0), 3),
+                        new HourlyReservationCount(LocalTime.of(14, 0), 3));
 
         List<DailyReservationCountResponse> countResponseList =
                 List.of(new DailyReservationCountResponse(targetDate, hourlyCounts));
 
-        when(memberReservationRepository.findDailyReservationCount(
-                        eq(popupId),
-                        eq(LocalDate.of(2025, 6, 30)),
-                        eq(LocalDate.of(2025, 7, 2)),
-                        eq("2025-07")))
-                .thenReturn(countResponseList);
+        given(
+                        memberReservationRepository.findDailyReservationCount(
+                                eq(popupId),
+                                eq(LocalDate.of(2025, 6, 30)),
+                                eq(LocalDate.of(2025, 7, 2)),
+                                eq("2025-07")))
+                .willReturn(countResponseList);
     }
 
-    private void stubPartiallyReservedTimeSlots(LocalDate date, int count) {
+    private void givenPartiallyReservedTimeSlots(LocalDate targetDate) {
         List<HourlyReservationCount> hourlyCounts =
                 List.of(
-                        new HourlyReservationCount(LocalTime.of(12, 0), 0), // 가능
-                        new HourlyReservationCount(LocalTime.of(13, 0), count), // 불가능
-                        new HourlyReservationCount(LocalTime.of(14, 0), 0) // 가능
-                        );
+                        new HourlyReservationCount(LocalTime.of(12, 0), 0),
+                        new HourlyReservationCount(LocalTime.of(13, 0), 3),
+                        new HourlyReservationCount(LocalTime.of(14, 0), 0));
 
         List<DailyReservationCountResponse> countResponseList =
-                List.of(new DailyReservationCountResponse(date, hourlyCounts));
+                List.of(new DailyReservationCountResponse(targetDate, hourlyCounts));
 
-        when(memberReservationRepository.findDailyReservationCount(
-                        eq(popupId),
-                        eq(LocalDate.of(2025, 6, 30)),
-                        eq(LocalDate.of(2025, 7, 2)),
-                        eq("2025-07")))
-                .thenReturn(countResponseList);
+        given(
+                        memberReservationRepository.findDailyReservationCount(
+                                eq(popupId),
+                                eq(LocalDate.of(2025, 6, 30)),
+                                eq(LocalDate.of(2025, 7, 2)),
+                                eq("2025-07")))
+                .willReturn(countResponseList);
+    }
+
+    private void givenEmptyReservedTimeSlots(LocalDate targetDate) {
+        List<HourlyReservationCount> hourlyCounts =
+                List.of(
+                        new HourlyReservationCount(LocalTime.of(12, 0), 0),
+                        new HourlyReservationCount(LocalTime.of(13, 0), 0),
+                        new HourlyReservationCount(LocalTime.of(14, 0), 0));
+
+        List<DailyReservationCountResponse> countResponseList =
+                List.of(new DailyReservationCountResponse(targetDate, hourlyCounts));
+
+        given(
+                        memberReservationRepository.findDailyReservationCount(
+                                eq(popupId),
+                                eq(LocalDate.of(2025, 6, 30)),
+                                eq(LocalDate.of(2025, 7, 2)),
+                                eq("2025-06")))
+                .willReturn(countResponseList);
+    }
+
+    private FeignException buildMonthlyReservationException(Long popupId, String date) {
+        String errorResponse =
+                """
+                {
+                  "success": false,
+                  "status": 404,
+                  "data": {
+                    "errorClassName": "POPUP_NOT_FOUND",
+                    "message": "해당 팝업이 존재하지 않습니다."
+                  }
+                }
+                """;
+        Request request =
+                Request.create(
+                        Request.HttpMethod.GET,
+                        "/internal/reservations/popups/" + popupId + "?date=" + date,
+                        Map.of("Content-Type", List.of("application/json")),
+                        null,
+                        new RequestTemplate());
+
+        return FeignException.errorStatus(
+                "findMonthlyReservation",
+                Response.builder()
+                        .status(404)
+                        .reason("Not Found")
+                        .request(request)
+                        .body(errorResponse, UTF_8)
+                        .build());
     }
 
     @Nested
@@ -290,14 +384,14 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 팝업이_존재하면_정상적으로_조회된다() {
             // given
-            stubSurveyChoices();
+            givenSurveyChoices();
 
             // when
             List<SurveyChoiceResponse> choices =
                     memberReservationService.findSurveyChoicesByPopupId(popupId);
 
+            // then
             assertThat(choices).hasSize(4);
-
             assertSurveyChoice(choices.get(0), 1L, 1L);
             assertSurveyChoice(choices.get(1), 2L, 6L);
             assertSurveyChoice(choices.get(2), 3L, 11L);
@@ -305,7 +399,7 @@ public class MemberReservationServiceUnitTest {
         }
     }
 
-    private void stubSurveyChoices() {
+    private void givenSurveyChoices() {
         List<SurveyChoiceResponse> surveyChoices =
                 List.of(
                         new SurveyChoiceResponse(
@@ -341,7 +435,7 @@ public class MemberReservationServiceUnitTest {
                                         new SurveyOption(19L, "보기4"),
                                         new SurveyOption(20L, "보기5"))));
 
-        when(managerServiceClient.findSurveyChoicesByPopupId(anyLong())).thenReturn(surveyChoices);
+        given(managerServiceClient.findSurveyChoicesByPopupId(anyLong())).willReturn(surveyChoices);
     }
 
     private void assertSurveyChoice(
@@ -354,13 +448,12 @@ public class MemberReservationServiceUnitTest {
 
         for (int i = 0; i < options.size(); i++) {
             SurveyOption option = options.get(i);
-            Long expectedChoiceId = startingChoiceId + i;
-            String expectedContent = "보기" + (i + 1);
+            Long choiceIdExpected = startingChoiceId + i;
+            String contentExpected = "보기" + (i + 1);
 
-            assertThat(option.choiceId()).isEqualTo(expectedChoiceId);
-            assertThat(option.content()).isEqualTo(expectedContent);
-            assertThat(option.choiceId()).isGreaterThan(0L);
-            assertThat(option.content()).isNotBlank();
+            assertThat(option.choiceId()).isEqualTo(choiceIdExpected);
+
+            assertThat(option.content()).isNotBlank().isEqualTo(contentExpected);
         }
     }
 
@@ -380,7 +473,9 @@ public class MemberReservationServiceUnitTest {
                             () ->
                                     memberReservationService.createMemberAnswer(
                                             popupId, memberId, invalidChoices))
-                    .isInstanceOf(CustomException.class);
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue(
+                            "errorCode", MemberReservationErrorCode.INVALID_SURVEY_CHOICES_COUNT);
         }
 
         @Test
@@ -389,9 +484,9 @@ public class MemberReservationServiceUnitTest {
             List<SurveyChoiceRequest> validChoices =
                     List.of(
                             new SurveyChoiceRequest(1L, 1L),
-                            new SurveyChoiceRequest(2L, 2L),
-                            new SurveyChoiceRequest(3L, 3L),
-                            new SurveyChoiceRequest(4L, 4L));
+                            new SurveyChoiceRequest(2L, 6L),
+                            new SurveyChoiceRequest(3L, 11L),
+                            new SurveyChoiceRequest(4L, 16L));
 
             // when
             memberReservationService.createMemberAnswer(popupId, memberId, validChoices);
@@ -418,11 +513,11 @@ public class MemberReservationServiceUnitTest {
             reservation.updateMemberReservation(
                     popupId, "qrImage", LocalDate.of(2025, 7, 1), LocalTime.of(12, 0));
 
-            when(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
-                    .thenReturn(List.of(reservation));
+            given(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
+                    .willReturn(List.of(reservation));
 
-            when(managerServiceClient.findReservedPopupInfoList(any()))
-                    .thenReturn(
+            given(managerServiceClient.findReservedPopupInfoList(any()))
+                    .willReturn(
                             List.of(
                                     new ReservationPopupInfoResponse(
                                             popupId,
@@ -451,13 +546,16 @@ public class MemberReservationServiceUnitTest {
                     () -> assertThat(reservationDetail.latitude()).isEqualTo(37.527097),
                     () -> assertThat(reservationDetail.longitude()).isEqualTo(126.927301),
                     () -> assertThat(reservationDetail.qrImage()).isEqualTo("qrImage"));
+
+            verify(memberReservationRepository).findByMemberIdAndStatus(anyLong(), eq(RESERVED));
+            verify(managerServiceClient).findReservedPopupInfoList(any());
         }
 
         @Test
         void 대기중인_예약만_존재하면_빈_리스트를_반환한다() {
             // given
-            when(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
-                    .thenReturn(Collections.emptyList());
+            given(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
+                    .willReturn(Collections.emptyList());
 
             // when
             List<ReservationDetailResponse> result =
@@ -470,8 +568,8 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 예약_내역이_존재하지_않으면_빈_리스트를_반환한다() {
             // given
-            when(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
-                    .thenReturn(Collections.emptyList());
+            given(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
+                    .willReturn(Collections.emptyList());
 
             // when
             List<ReservationDetailResponse> result =
@@ -484,8 +582,8 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 예약_날짜_및_시간이_오늘보다_이전인_경우_빈_리스트를_반환한다() {
             // given
-            when(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
-                    .thenReturn(Collections.emptyList());
+            given(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
+                    .willReturn(Collections.emptyList());
 
             // when
             List<ReservationDetailResponse> result =
@@ -496,7 +594,65 @@ public class MemberReservationServiceUnitTest {
         }
     }
 
-    // TODO 인기 팝업 조회할 때
+    @Nested
+    class 인기_팝업_아이디를_조회할_때 {
+
+        @Test
+        void 예약된_팝업이_4개_이상이면_크기가_4인_리스트를_예약자_수_내림차순으로_반환한다() {
+            // given
+            given(memberReservationRepository.findHotPopupIds())
+                    .willReturn(List.of(1L, 2L, 3L, 4L));
+
+            // when
+            List<Long> result = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(result).containsExactly(1L, 2L, 3L, 4L);
+            verify(memberReservationRepository, times(1)).findHotPopupIds();
+        }
+
+        @Test
+        void 예약자_수가_같으면_팝업_아이디_오름차순으로_반환한다() {
+            // given
+            given(memberReservationRepository.findHotPopupIds())
+                    .willReturn(List.of(1L, 2L, 3L, 4L));
+
+            // when
+            List<Long> result = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(result).containsExactly(1L, 2L, 3L, 4L);
+        }
+
+        @Test
+        void 예약된_팝업이_2개인_경우_크기가_2인_리스트를_예약자_수_내림차순으로_반환한다() {
+            // given
+            given(memberReservationRepository.findHotPopupIds()).willReturn(List.of(2L, 1L));
+
+            // when
+            List<Long> result = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(result).containsExactly(2L, 1L);
+
+            verify(memberReservationRepository).findHotPopupIds();
+        }
+
+        @Test
+        void 예약된_팝업이_없는_경우_빈_리스트를_반환한다() {
+            // given
+            given(memberReservationRepository.findHotPopupIds())
+                    .willReturn(Collections.emptyList());
+
+            // when
+            List<Long> result = memberReservationService.findHotPopupIds();
+
+            // then
+            assertThat(result).isEmpty();
+
+            verify(memberReservationRepository).findHotPopupIds();
+        }
+    }
 
     @Nested
     class 가장_가까운_예약_조회할_때 {
@@ -510,11 +666,11 @@ public class MemberReservationServiceUnitTest {
             reservation.updateMemberReservation(
                     popupId, "qrImage", now.plusDays(1), LocalTime.of(12, 0));
 
-            when(memberReservationRepository.findUpcomingReservation(any()))
-                    .thenReturn(reservation);
+            given(memberReservationRepository.findUpcomingReservation(any()))
+                    .willReturn(reservation);
 
-            when(managerServiceClient.findReservedPopupInfo(any()))
-                    .thenReturn(
+            given(managerServiceClient.findReservedPopupInfo(any()))
+                    .willReturn(
                             new ReservationPopupInfoResponse(
                                     popupId,
                                     "BLACK PINK 팝업스토어",
@@ -545,29 +701,43 @@ public class MemberReservationServiceUnitTest {
                     () -> assertThat(response.latitude()).isEqualTo(37.527097),
                     () -> assertThat(response.longitude()).isEqualTo(126.927301),
                     () -> assertThat(response.qrImage()).isEqualTo("qrImage"));
+
+            verify(memberReservationRepository).findUpcomingReservation(any());
+            verify(managerServiceClient).findReservedPopupInfo(any());
         }
 
         @Test
         void 예약했던_목록들이_현재_시간보다_이전이면_NULL을_반환한다() {
-            when(memberReservationRepository.findUpcomingReservation(anyLong())).thenReturn(null);
+            // given
+            given(memberReservationRepository.findUpcomingReservation(anyLong())).willReturn(null);
+
+            // when & then
             assertUpcomingReservationIsNull();
+
+            verify(memberReservationRepository).findUpcomingReservation(anyLong());
         }
 
         @Test
         void 예약_정보가_존재하지_않으면_NULL을_반환한다() {
-            when(memberReservationRepository.findUpcomingReservation(any())).thenReturn(null);
+            // given
+            given(memberReservationRepository.findUpcomingReservation(any())).willReturn(null);
+
+            // when & then
             assertUpcomingReservationIsNull();
         }
 
         @Test
         void 현재_시간_이후_대기중인_예약이_존재하면_NULL을_반환한다() {
-            when(memberReservationRepository.findUpcomingReservation(anyLong())).thenReturn(null);
+            // given
+            given(memberReservationRepository.findUpcomingReservation(anyLong())).willReturn(null);
+
+            // when & then
             assertUpcomingReservationIsNull();
         }
     }
 
     private void assertPopupDate(AvailableDateResponse response) {
-        org.junit.jupiter.api.Assertions.assertAll(
+        assertAll(
                 () -> assertThat(response.popupOpenDate()).isEqualTo("2025-06-30"),
                 () -> assertThat(response.popupCloseDate()).isEqualTo("2025-07-02"));
     }
