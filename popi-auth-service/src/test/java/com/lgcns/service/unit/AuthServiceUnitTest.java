@@ -3,8 +3,8 @@ package com.lgcns.service.unit;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
@@ -14,6 +14,7 @@ import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
 import com.lgcns.dto.request.MemberInternalRegisterRequest;
+import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.MemberInternalRegisterResponse;
@@ -60,29 +61,28 @@ public class AuthServiceUnitTest {
         @Test
         void 아직_회원가입하지_않은_회원이라면_가입에_성공한다() {
             // given
-            when(jwtTokenService.validateRegisterToken(anyString()))
-                    .thenReturn(
+            given(jwtTokenService.validateRegisterToken(anyString()))
+                    .willReturn(
                             RegisterTokenDto.of(
                                     "testOauthId", "testOauthProvider", "fake-register-token"));
-            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
-                    .thenReturn("fake-access-token");
-            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+            given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .willReturn("fake-access-token");
+            given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             MemberRegisterRequest request =
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
 
-            MemberInternalRegisterResponse memberResponse =
-                    new MemberInternalRegisterResponse(1L, MemberRole.USER);
-
-            when(memberServiceClient.registerMember(any(MemberInternalRegisterRequest.class)))
-                    .thenReturn(memberResponse);
+            given(memberServiceClient.registerMember(any(MemberInternalRegisterRequest.class)))
+                    .willReturn(new MemberInternalRegisterResponse(1L, MemberRole.USER));
 
             // when
             SocialLoginResponse response =
                     authService.registerMember("testRegisterTokenValue", request);
 
             // then
+            verify(memberServiceClient, times(1))
+                    .registerMember(any(MemberInternalRegisterRequest.class));
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
@@ -93,8 +93,8 @@ public class AuthServiceUnitTest {
         @Test
         void 이미_회원가입된_회원이_다시_회원가입하면_예외가_발생한다() {
             // given
-            when(jwtTokenService.validateRegisterToken(anyString()))
-                    .thenReturn(
+            given(jwtTokenService.validateRegisterToken(anyString()))
+                    .willReturn(
                             RegisterTokenDto.of(
                                     "testOauthId", "testOauthProvider", "fake-register-token"));
 
@@ -102,19 +102,21 @@ public class AuthServiceUnitTest {
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
 
-            when(memberServiceClient.registerMember(any()))
-                    .thenThrow(new RuntimeException("이미 가입된 사용자입니다. 로그인 후 이용해주세요."));
+            given(memberServiceClient.registerMember(any(MemberInternalRegisterRequest.class)))
+                    .willThrow(new RuntimeException("이미 가입된 사용자입니다. 로그인 후 이용해주세요."));
 
             // when & then
             assertThatThrownBy(() -> authService.registerMember("testRegisterTokenValue", request))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("이미 가입된 사용자입니다. 로그인 후 이용해주세요.");
+            verify(memberServiceClient, times(1))
+                    .registerMember(any(MemberInternalRegisterRequest.class));
         }
 
         @Test
         void 만료된_레지스터_토큰이면_예외가_발생한다() {
             // given
-            when(jwtTokenService.validateRegisterToken(anyString())).thenReturn(null);
+            given(jwtTokenService.validateRegisterToken(anyString())).willReturn(null);
 
             MemberRegisterRequest request =
                     new MemberRegisterRequest(
@@ -133,19 +135,18 @@ public class AuthServiceUnitTest {
         @Test
         void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() {
             // given
-            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
-            when(jwtTokenService.createRegisterToken(anyString(), anyString()))
-                    .thenReturn("fake-register-token");
+            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(jwtTokenService.createRegisterToken(anyString(), anyString()))
+                    .willReturn("fake-register-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
-
-            when(memberServiceClient.findByOauthInfo(any())).thenReturn(null);
 
             // when
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
 
             // then
+            verify(memberServiceClient, times(1)).findByOauthInfo(any());
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isNull(),
                     () -> assertThat(response.refreshToken()).isNull(),
@@ -155,10 +156,10 @@ public class AuthServiceUnitTest {
 
         @Test
         void 이미_회원가입된_회원은_로그인에_성공한다() {
-            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
-            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
-                    .thenReturn("fake-access-token");
-            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .willReturn("fake-access-token");
+            given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
@@ -171,13 +172,15 @@ public class AuthServiceUnitTest {
                             MemberRole.USER,
                             MemberStatus.NORMAL);
 
-            when(memberServiceClient.findByOauthInfo(any())).thenReturn(memberResponse);
+            given(memberServiceClient.findByOauthInfo(any())).willReturn(memberResponse);
 
             // when
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
 
             // then
+            verify(memberServiceClient, times(1))
+                    .findByOauthInfo(any(MemberOauthInfoRequest.class));
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
@@ -187,10 +190,10 @@ public class AuthServiceUnitTest {
 
         @Test
         void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() {
-            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
-            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
-                    .thenReturn("fake-access-token");
-            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .willReturn("fake-access-token");
+            given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
@@ -203,13 +206,15 @@ public class AuthServiceUnitTest {
                             MemberRole.USER,
                             MemberStatus.DELETED);
 
-            when(memberServiceClient.findByOauthInfo(any())).thenReturn(memberResponse);
-            doNothing().when(memberServiceClient).rejoinMember(1L);
+            given(memberServiceClient.findByOauthInfo(any())).willReturn(memberResponse);
 
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
 
             // then
+            verify(memberServiceClient, times(1))
+                    .findByOauthInfo(any(MemberOauthInfoRequest.class));
+            verify(memberServiceClient, times(1)).rejoinMember(1L);
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
@@ -244,11 +249,11 @@ public class AuthServiceUnitTest {
             AccessTokenDto newAccessTokenDto =
                     AccessTokenDto.of(1L, MemberRole.USER, "fake-new-access-token");
 
-            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(oldRefreshTokenDto);
-            when(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
-                    .thenReturn(newRefreshTokenDto);
-            when(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
-                    .thenReturn(newAccessTokenDto);
+            given(jwtTokenService.validateRefreshToken(anyString())).willReturn(oldRefreshTokenDto);
+            given(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
+                    .willReturn(newRefreshTokenDto);
+            given(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
+                    .willReturn(newAccessTokenDto);
 
             MemberInternalInfoResponse memberResponse =
                     new MemberInternalInfoResponse(
@@ -265,6 +270,7 @@ public class AuthServiceUnitTest {
             TokenReissueResponse response = authService.reissueToken("testRefreshTokenValue");
 
             // then
+            verify(memberServiceClient, times(1)).findByMemberId(1L);
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-new-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-new-refresh-token"));
@@ -272,13 +278,11 @@ public class AuthServiceUnitTest {
 
         @Test
         void 만료된_리프레시_토큰이면_예외가_발생한다() {
-            // given
-            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(null);
-
             // when & then
             assertThatThrownBy(() -> authService.reissueToken("testRefreshTokenValue"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(AuthErrorCode.EXPIRED_REFRESH_TOKEN.getMessage());
+            verify(jwtTokenService, times(1)).validateRefreshToken(anyString());
         }
     }
 
