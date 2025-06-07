@@ -54,10 +54,10 @@ public class PaymentServiceUnitTest {
     @Mock private MemberServiceClient memberServiceClient;
     @Mock private ManagerServiceClient managerServiceClient;
 
-    @Mock IamportClient iamportClient;
-    @Mock IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse;
-    @Mock com.siot.IamportRestClient.response.Payment iamportPayment;
-    @Mock ItemPurchasedProducer itemPurchasedProducer;
+    @Mock private IamportClient iamportClient;
+    @Mock private IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse;
+    @Mock private com.siot.IamportRestClient.response.Payment iamportPayment;
+    @Mock private ItemPurchasedProducer itemPurchasedProducer;
 
     @Nested
     class 결제_준비할_때 {
