@@ -4,8 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.*;
 
 import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
@@ -48,8 +47,7 @@ class MemberServiceUnitTest {
         void 회원이_존재하면_조회에_성공한다() {
             // given
             Member member = createTestMember(1L, MemberStatus.NORMAL);
-
-            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+            given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
             // when
             MemberInfoResponse response = memberService.findMemberInfo("1");
@@ -66,6 +64,9 @@ class MemberServiceUnitTest {
 
         @Test
         void 회원이_존재하지_않으면_예외가_발생한다() {
+            // given
+            given(memberRepository.findById(1L)).willReturn(Optional.empty());
+
             // when & then
             assertThatThrownBy(() -> memberService.findMemberInfo("1"))
                     .isInstanceOf(CustomException.class)
@@ -80,16 +81,13 @@ class MemberServiceUnitTest {
         void 회원이_탈퇴하면_상태는_DELETED가_된다() {
             // given
             Member member = createTestMember(1L, MemberStatus.NORMAL);
-
-            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-
-            doNothing().when(authServiceClient).deleteRefreshToken("1");
+            given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
             // when
             memberService.withdrawalMember(member.getId().toString());
 
             // then
-            member = memberRepository.findById(1L).get();
+            verify(authServiceClient).deleteRefreshToken("1");
             assertThat(member.getStatus()).isEqualTo(MemberStatus.DELETED);
         }
 
@@ -97,8 +95,7 @@ class MemberServiceUnitTest {
         void 이미_탈퇴한_회원이_다시_탈퇴하면_예외가_발생한다() {
             // given
             Member member = createTestMember(1L, MemberStatus.DELETED);
-
-            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+            given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
             // when & then
             assertThatThrownBy(() -> memberService.withdrawalMember(member.getId().toString()))
@@ -121,9 +118,9 @@ class MemberServiceUnitTest {
                             MemberAge.TWENTIES,
                             MemberGender.MALE);
 
-            when(memberRepository.existsByOauthInfo(any(OauthInfo.class))).thenReturn(false);
-            when(memberRepository.save(any(Member.class)))
-                    .thenAnswer(
+            given(memberRepository.existsByOauthInfo(any(OauthInfo.class))).willReturn(false);
+            given(memberRepository.save(any(Member.class)))
+                    .willAnswer(
                             invocation -> {
                                 Member saved = invocation.getArgument(0);
                                 ReflectionTestUtils.setField(saved, "id", 1L);
@@ -150,7 +147,7 @@ class MemberServiceUnitTest {
                             MemberAge.TWENTIES,
                             MemberGender.MALE);
 
-            when(memberRepository.existsByOauthInfo(any(OauthInfo.class))).thenReturn(true);
+            given(memberRepository.existsByOauthInfo(any(OauthInfo.class))).willReturn(true);
 
             // when & then
             assertThatThrownBy(() -> memberService.registerMember(request))
@@ -166,14 +163,12 @@ class MemberServiceUnitTest {
         void 탈퇴한_회원이라면_상태는_NORMAL로_변경된다() {
             // given
             Member member = createTestMember(1L, MemberStatus.DELETED);
-
-            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+            given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
             // when
             memberService.rejoinMember(1L);
 
             // then
-            member = memberRepository.findById(1L).get();
             assertThat(member.getStatus()).isEqualTo(MemberStatus.NORMAL);
         }
 
@@ -196,9 +191,8 @@ class MemberServiceUnitTest {
                     MemberOauthInfoRequest.of("testOauthId", "testOauthProvider");
 
             Member member = createTestMember(1L, MemberStatus.NORMAL);
-
-            when(memberRepository.findByOauthInfo(any(OauthInfo.class)))
-                    .thenReturn(Optional.of(member));
+            given(memberRepository.findByOauthInfo(any(OauthInfo.class)))
+                    .willReturn(Optional.of(member));
 
             // when
             MemberInternalInfoResponse response = memberService.findOauthInfo(request);
@@ -234,8 +228,7 @@ class MemberServiceUnitTest {
         void 존재하는_회원이면_회원_정보를_반환한다() {
             // given
             Member member = createTestMember(1L, MemberStatus.NORMAL);
-
-            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+            given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
             // when
             MemberInternalInfoResponse response = memberService.findMemberId(1L);
