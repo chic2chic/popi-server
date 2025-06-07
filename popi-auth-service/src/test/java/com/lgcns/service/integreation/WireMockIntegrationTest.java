@@ -1,4 +1,4 @@
-package com.lgcns;
+package com.lgcns.service.integreation;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterEach;
