@@ -3,7 +3,8 @@ package com.lgcns.service.unit;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.request.ItemIdsForPaymentRequest;
@@ -34,7 +35,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,6 +79,9 @@ public class PaymentServiceUnitTest {
             PaymentReadyResponse response = paymentService.preparePayment("1", request);
 
             // then
+            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(managerServiceClient, times(1))
+                    .findItemsForPayment(anyLong(), any(ItemIdsForPaymentRequest.class));
             Assertions.assertAll(
                     () -> assertThat(response.buyerName()).isEqualTo("현태"),
                     () -> assertThat(response.name()).isEqualTo("피규어 지수 외 1건"),
@@ -105,6 +108,9 @@ public class PaymentServiceUnitTest {
             assertThatThrownBy(() -> paymentService.preparePayment("1", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.ITEM_NOT_FOUND.getMessage());
+            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(managerServiceClient, times(1))
+                    .findItemsForPayment(anyLong(), any(ItemIdsForPaymentRequest.class));
         }
 
         @Test
@@ -124,11 +130,14 @@ public class PaymentServiceUnitTest {
             assertThatThrownBy(() -> paymentService.preparePayment("1", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.OUT_OF_STOCK.getMessage());
+            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(managerServiceClient, times(1))
+                    .findItemsForPayment(anyLong(), any(ItemIdsForPaymentRequest.class));
         }
 
         private void stubMemberInfo() {
-            when(memberServiceClient.findMemberInfo(anyLong()))
-                    .thenReturn(
+            given(memberServiceClient.findMemberInfo(anyLong()))
+                    .willReturn(
                             new MemberInternalInfoResponse(
                                     1L,
                                     "현태",
@@ -139,9 +148,10 @@ public class PaymentServiceUnitTest {
         }
 
         private void stubItemDetails() {
-            when(managerServiceClient.findItemsForPayment(
-                            anyLong(), any(ItemIdsForPaymentRequest.class)))
-                    .thenReturn(
+            given(
+                            managerServiceClient.findItemsForPayment(
+                                    anyLong(), any(ItemIdsForPaymentRequest.class)))
+                    .willReturn(
                             List.of(
                                     new ItemForPaymentResponse(9L, "피규어 지수", 84000, 20),
                                     new ItemForPaymentResponse(17L, "크룽크 미니백", 15000, 10)));
@@ -151,24 +161,19 @@ public class PaymentServiceUnitTest {
     @Nested
     class 결제_검증할_때 {
 
-        @BeforeEach
-        void setUp() {
-            Payment payment = Payment.createPayment(1L, "popup_1_order_test-uuid", 129000, 1L);
-            when(paymentRepository.findByMerchantUid("popup_1_order_test-uuid"))
-                    .thenReturn(Optional.of(payment));
-        }
-
         @Test
         void impUid와_결제정보가_일치하면_결제정보를_업데이트한다() throws IOException, IamportResponseException {
             // given
+            Payment payment = Payment.createPayment(1L, "popup_1_order_test-uuid", 129000, 1L);
+            given(paymentRepository.findByMerchantUid("popup_1_order_test-uuid"))
+                    .willReturn(Optional.of(payment));
+
             stubIamportResponse(BigDecimal.valueOf(129000), "PAID");
 
             // when
             paymentService.findPaymentByImpUid("testImpUid");
 
             // then
-            Payment payment =
-                    paymentRepository.findByMerchantUid("popup_1_order_test-uuid").orElseThrow();
             Assertions.assertAll(
                     () -> assertThat(payment.getAmount()).isEqualTo(129000),
                     () -> assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID),
@@ -179,6 +184,10 @@ public class PaymentServiceUnitTest {
         @Test
         void 결제_금액이_다르면_예외가_발생한다() throws IOException, IamportResponseException {
             // given
+            Payment payment = Payment.createPayment(1L, "popup_1_order_test-uuid", 129000, 1L);
+            given(paymentRepository.findByMerchantUid("popup_1_order_test-uuid"))
+                    .willReturn(Optional.of(payment));
+
             stubIamportResponse(BigDecimal.valueOf(1000), "PAID");
 
             // when & then
@@ -190,6 +199,10 @@ public class PaymentServiceUnitTest {
         @Test
         void 결제_상태가_PAID가_아니면_예외가_발생한다() throws IOException, IamportResponseException {
             // given
+            Payment payment = Payment.createPayment(1L, "popup_1_order_test-uuid", 129000, 1L);
+            given(paymentRepository.findByMerchantUid("popup_1_order_test-uuid"))
+                    .willReturn(Optional.of(payment));
+
             stubIamportResponse(BigDecimal.valueOf(129000), "READY");
 
             // when & then
@@ -200,14 +213,14 @@ public class PaymentServiceUnitTest {
 
         private void stubIamportResponse(BigDecimal amount, String status)
                 throws IOException, IamportResponseException {
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
+            given(iamportClient.paymentByImpUid(anyString())).willReturn(iamportResponse);
+            given(iamportResponse.getResponse()).willReturn(iamportPayment);
 
-            when(iamportPayment.getMerchantUid()).thenReturn("popup_1_order_test-uuid");
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(amount);
-            when(iamportPayment.getStatus()).thenReturn(status);
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            given(iamportPayment.getMerchantUid()).willReturn("popup_1_order_test-uuid");
+            given(iamportPayment.getPgProvider()).willReturn("tosspay");
+            given(iamportPayment.getAmount()).willReturn(amount);
+            given(iamportPayment.getStatus()).willReturn(status);
+            given(iamportPayment.getPaidAt()).willReturn(new Date());
         }
     }
 
@@ -219,8 +232,8 @@ public class PaymentServiceUnitTest {
             // given
             Long popupId = 1L;
 
-            when(paymentRepository.countItemBuyerByPopupId(popupId))
-                    .thenReturn(
+            given(paymentRepository.countItemBuyerByPopupId(popupId))
+                    .willReturn(
                             List.of(
                                     new ItemBuyerCountResponse(1L, 2),
                                     new ItemBuyerCountResponse(2L, 1),
@@ -262,8 +275,8 @@ public class PaymentServiceUnitTest {
 
             Slice<FlatPaymentItem> slice = new SliceImpl<>(flatItems, PageRequest.of(0, 10), false);
 
-            when(paymentRepository.findAllPaymentHistoryByMemberId(anyLong(), any(), anyInt()))
-                    .thenReturn(slice);
+            given(paymentRepository.findAllPaymentHistoryByMemberId(anyLong(), any(), anyInt()))
+                    .willReturn(slice);
 
             // when
             SliceResponse<PaymentHistoryResponse> response =
@@ -273,18 +286,20 @@ public class PaymentServiceUnitTest {
             List<PaymentHistoryResponse> content = response.content();
 
             PaymentHistoryResponse first = content.get(0);
-            assertThat(first.paymentId()).isEqualTo(1L);
-            assertThat(first.popupId()).isEqualTo(1L);
-            assertThat(first.items().get(0).itemName()).isEqualTo("응원봉");
-            assertThat(first.items().get(1).itemName()).isEqualTo("포스터");
-            assertThat(first.items().get(0).price()).isEqualTo(25000);
-            assertThat(first.items().get(1).price()).isEqualTo(27000); // 3 * 9000
+            Assertions.assertAll(
+                    () -> assertThat(first.paymentId()).isEqualTo(1L),
+                    () -> assertThat(first.popupId()).isEqualTo(1L),
+                    () -> assertThat(first.items().get(0).itemName()).isEqualTo("응원봉"),
+                    () -> assertThat(first.items().get(1).itemName()).isEqualTo("포스터"),
+                    () -> assertThat(first.items().get(0).price()).isEqualTo(25000),
+                    () -> assertThat(first.items().get(1).price()).isEqualTo(27000));
 
             PaymentHistoryResponse second = content.get(1);
-            assertThat(second.paymentId()).isEqualTo(2L);
-            assertThat(second.popupId()).isEqualTo(2L);
-            assertThat(second.items().get(0).itemName()).isEqualTo("크레용 파란색");
-            assertThat(second.items().get(0).price()).isEqualTo(12000);
+            Assertions.assertAll(
+                    () -> assertThat(second.paymentId()).isEqualTo(2L),
+                    () -> assertThat(second.popupId()).isEqualTo(2L),
+                    () -> assertThat(second.items().get(0).itemName()).isEqualTo("크레용 파란색"),
+                    () -> assertThat(second.items().get(0).price()).isEqualTo(12000));
         }
     }
 
@@ -296,8 +311,8 @@ public class PaymentServiceUnitTest {
             // given
             Long popupId = 1L;
 
-            when(paymentRepository.findAverageAmountByPopupId(anyLong()))
-                    .thenReturn(new AverageAmountResponse(31333, 24500));
+            given(paymentRepository.findAverageAmountByPopupId(anyLong()))
+                    .willReturn(new AverageAmountResponse(31333, 24500));
 
             // when
             AverageAmountResponse response = paymentService.findAverageAmount(popupId);
