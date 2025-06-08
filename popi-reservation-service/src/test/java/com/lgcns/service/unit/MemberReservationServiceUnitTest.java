@@ -2,10 +2,12 @@ package com.lgcns.service.unit;
 
 import static com.lgcns.domain.MemberReservationStatus.RESERVED;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.BDDAssertions.catchThrowable;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -21,6 +23,7 @@ import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.producer.MemberAnswerProducer;
 import com.lgcns.repository.MemberReservationRepository;
@@ -33,13 +36,23 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.TextStyle;
 import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Supplier;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class MemberReservationServiceUnitTest {
@@ -53,13 +66,17 @@ public class MemberReservationServiceUnitTest {
     @Mock MemberServiceClient memberServiceClient;
 
     @Mock private RedisTemplate<String, Long> reservationRedisTemplate;
-
+    @Mock private ValueOperations<String, Long> reservationRedisValueOperations;
     @Mock private RedisTemplate<String, String> notificationRedisTemplate;
+    @Mock private ValueOperations<String, String> notificationRedisValueOperations;
+
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @Mock MemberAnswerProducer memberAnswerProducer;
 
     private final String memberId = "1";
     private final Long popupId = 1L;
+    private final Long reservationId = 1L;
 
     @Nested
     class 예약_가능한_날짜를_조회할_때 {
@@ -69,7 +86,7 @@ public class MemberReservationServiceUnitTest {
             // given
             String invalidDate = "2025-July";
 
-            // when & then)
+            // when & then
             assertThatThrownBy(
                             () -> memberReservationService.findAvailableDate(popupId, invalidDate))
                     .isInstanceOf(CustomException.class)
@@ -496,7 +513,103 @@ public class MemberReservationServiceUnitTest {
         }
     }
 
-    // TODO 예약 생성할 때
+    @Nested
+    class 회원이_예약을_시도할_때 {
+
+        @BeforeEach
+        void setUp() {
+            ReflectionTestUtils.setField(
+                    memberReservationService, "reservationRedisTemplate", reservationRedisTemplate);
+        }
+
+        @Test
+        void 자리가_존재하고_예약_가능한_상태이면_예약에_성공한다() {
+            // given
+            stubExistMemberReservationAndRedis(false, () -> 1L, null, true);
+            ArgumentCaptor<MemberReservation> captor =
+                    ArgumentCaptor.forClass(MemberReservation.class);
+
+            // when
+            memberReservationService.createMemberReservation(memberId, reservationId);
+
+            // then
+            verify(memberReservationRepository, times(1)).save(captor.capture());
+            assertThat(captor.getValue().getMemberId()).isEqualTo(Long.parseLong(memberId));
+            verify(reservationRedisValueOperations, times(1)).decrement(reservationId.toString());
+            verify(eventPublisher, times(1)).publishEvent(any(MemberReservationUpdateEvent.class));
+        }
+
+        @Test
+        void 이미_예약한_사용자는_예외가_발생한다() {
+            // given
+            stubExistMemberReservationAndRedis(true, null, null, null);
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(
+                            MemberReservationErrorCode.RESERVATION_ALREADY_EXISTS.getMessage());
+        }
+
+        @Test
+        void redis_차감이_실패하면_예외가_발생한다() {
+            // given
+            stubExistMemberReservationAndRedis(
+                    false,
+                    () -> {
+                        throw new RedisConnectionFailureException("Redis down");
+                    },
+                    null,
+                    null);
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(RedisConnectionFailureException.class)
+                    .hasMessageContaining("Redis down");
+
+            verify(reservationRedisValueOperations, times(1)).decrement(reservationId.toString());
+        }
+
+        @Test
+        void 회원_예약_저장에_실패하면_Redis_복구가_일어난다() {
+            // given
+            stubExistMemberReservationAndRedis(false, () -> 0L, () -> 1L, false);
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(RESERVATION_FAILED.getMessage());
+
+            verify(reservationRedisValueOperations, times(1)).decrement(reservationId.toString());
+            verify(reservationRedisValueOperations, times(1)).increment(reservationId.toString());
+        }
+
+        @Test
+        void 자리가_없으면_예약에_실패하고_Redis_복구가_일어난다() {
+            // given
+            stubExistMemberReservationAndRedis(false, () -> -1L, () -> 0L, null);
+
+            // when & then
+            assertThatThrownBy(
+                            () ->
+                                    memberReservationService.createMemberReservation(
+                                            memberId, reservationId))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining(RESERVATION_FAILED.getMessage());
+
+            verify(reservationRedisValueOperations, times(1)).decrement(reservationId.toString());
+            verify(reservationRedisValueOperations, times(1)).increment(reservationId.toString());
+        }
+    }
 
     // TODO 예약 업데이트할 때
 
@@ -752,4 +865,40 @@ public class MemberReservationServiceUnitTest {
 
     // TODO 회원이 팝업 입장할 때
 
+    private void stubExistMemberReservationAndRedis(
+            Boolean exist,
+            Supplier<Long> decrementStub,
+            Supplier<Long> incrementStub,
+            Boolean save) {
+        given(
+                        memberReservationRepository
+                                .existsMemberReservationByMemberIdAndReservationId(
+                                        anyLong(), anyLong()))
+                .willReturn(exist);
+
+        if (!exist)
+            given(reservationRedisTemplate.opsForValue())
+                    .willReturn(reservationRedisValueOperations);
+
+        if (decrementStub != null)
+            given(reservationRedisValueOperations.decrement(anyString()))
+                    .willAnswer(inv -> decrementStub.get());
+
+        if (incrementStub != null)
+            given(reservationRedisValueOperations.increment(anyString()))
+                    .willAnswer(inv -> incrementStub.get());
+
+        if (save != null) {
+            if (save) {
+                given(memberReservationRepository.save(any(MemberReservation.class)))
+                        .willReturn(
+                                MemberReservation.createMemberReservation(
+                                        reservationId, Long.parseLong(memberId)));
+            } else {
+                doThrow(new RuntimeException("DB error"))
+                        .when(memberReservationRepository)
+                        .save(any(MemberReservation.class));
+            }
+        }
+    }
 }
