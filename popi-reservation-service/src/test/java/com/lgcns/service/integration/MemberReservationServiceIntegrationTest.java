@@ -17,6 +17,7 @@ import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.error.feign.FeignErrorCode;
+import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
 import com.lgcns.service.MemberReservationService;
@@ -580,9 +581,6 @@ class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
                                     "reservationTime",
                                     "12:00")));
 
-            String zSetKey = "reservation:notifications";
-            String member = memberReservation.getId() + "|" + memberReservation.getMemberId();
-
             // when
             memberReservationService.updateMemberReservation(memberReservation.getId());
 
@@ -599,25 +597,7 @@ class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
                                     .isEqualTo(LocalDate.of(2025, 6, 1)),
                     () ->
                             assertThat(updatedMemberReservation.getReservationTime())
-                                    .isEqualTo(LocalTime.of(12, 0)),
-                    () ->
-                            assertThat(
-                                            notificationRedisTemplate
-                                                    .opsForZSet()
-                                                    .score(zSetKey, member))
-                                    .isNotNull(),
-                    () ->
-                            assertThat(
-                                            notificationRedisTemplate
-                                                    .opsForZSet()
-                                                    .rangeByScore(zSetKey, 0, Long.MAX_VALUE))
-                                    .contains(member),
-                    () ->
-                            assertThat(notificationRedisTemplate.opsForZSet().size(zSetKey))
-                                    .isEqualTo(1));
-
-            reservationRedisTemplate.delete(reservationId.toString());
-            notificationRedisTemplate.opsForZSet().remove(zSetKey, member);
+                                    .isEqualTo(LocalTime.of(12, 0)));
         }
 
         @Test
@@ -729,6 +709,53 @@ class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
                                         .isEqualTo("RESERVATION_NOT_FOUND");
                                 assertThat(errorCode.getMessage()).contains("해당 예약을 찾을 수 없습니다.");
                             });
+        }
+    }
+
+    @Nested
+    class 회원예약_업데이트_이후_알림을_저장할_때 {
+
+        @Test
+        void 알림_저장에_성공한다() {
+            // given
+            MemberReservation memberReservation =
+                    MemberReservation.builder()
+                            .memberId(Long.parseLong(memberId))
+                            .reservationId(reservationId)
+                            .popupId(popupId)
+                            .qrImage(
+                                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8//8/AwAI/wP+vQAAAABJRU5ErkJggg==")
+                            .reservationDate(LocalDate.of(2025, 6, 1))
+                            .reservationTime(LocalTime.of(12, 0))
+                            .build();
+
+            String zSetKey = "reservation:notifications";
+            String member = memberReservation.getId() + "|" + memberReservation.getMemberId();
+
+            // when
+            memberReservationService.createReservationNotification(
+                    MemberReservationNotificationEvent.from(memberReservation));
+
+            // then
+            Assertions.assertAll(
+                    () ->
+                            assertThat(
+                                            notificationRedisTemplate
+                                                    .opsForZSet()
+                                                    .score(zSetKey, member))
+                                    .isNotNull(),
+                    () ->
+                            assertThat(
+                                            notificationRedisTemplate
+                                                    .opsForZSet()
+                                                    .rangeByScore(zSetKey, 0, Long.MAX_VALUE))
+                                    .contains(member),
+                    () ->
+                            assertThat(notificationRedisTemplate.opsForZSet().size(zSetKey))
+                                    .isEqualTo(1));
+
+            reservationRedisTemplate.delete(reservationId.toString());
+            notificationRedisTemplate.opsForZSet().remove(zSetKey, member);
         }
     }
 
