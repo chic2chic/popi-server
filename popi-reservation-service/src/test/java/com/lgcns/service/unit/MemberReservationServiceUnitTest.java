@@ -73,7 +73,6 @@ public class MemberReservationServiceUnitTest {
     @Mock private RedisTemplate<String, Long> reservationRedisTemplate;
     @Mock private ValueOperations<String, Long> reservationRedisValueOperations;
     @Mock private RedisTemplate<String, String> notificationRedisTemplate;
-    @Mock private ValueOperations<String, String> notificationRedisValueOperations;
 
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -1120,7 +1119,27 @@ public class MemberReservationServiceUnitTest {
                         .build());
     }
 
-    // TODO 오늘 예약자 수 조회할 때
+    @Nested
+    class 오늘_예약자_수_조회할_때 {
+
+        @Test
+        void 예약자_수가_존재하면_성공한다() {
+            // given
+            DailyMemberReservationCountResponse dailyMemberReservationCountResponse =
+                    mock(DailyMemberReservationCountResponse.class);
+            given(
+                            memberReservationRepository.findDailyMemberReservationCount(
+                                    anyLong(), any(LocalDate.class)))
+                    .willReturn(dailyMemberReservationCountResponse);
+
+            // when
+            memberReservationService.findDailyMemberReservationCount(popupId);
+
+            // then
+            verify(memberReservationRepository, times(1))
+                    .findDailyMemberReservationCount(eq(popupId), any(LocalDate.class));
+        }
+    }
 
     @Nested
     class 회원이_팝업_입장할_때 {
