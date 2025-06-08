@@ -1,8 +1,8 @@
 package com.lgcns.service.unit;
 
 import static com.lgcns.domain.MemberReservationStatus.RESERVED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.BDDAssertions.catchThrowable;
@@ -12,17 +12,20 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.client.managerClient.ManagerServiceClient;
-import com.lgcns.client.managerClient.dto.response.DailyReservation;
-import com.lgcns.client.managerClient.dto.response.MonthlyReservationResponse;
-import com.lgcns.client.managerClient.dto.response.ReservationPopupInfoResponse;
-import com.lgcns.client.managerClient.dto.response.TimeSlot;
+import com.lgcns.client.managerClient.dto.response.*;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
+import com.lgcns.enums.MemberAge;
+import com.lgcns.enums.MemberGender;
+import com.lgcns.enums.MemberRole;
+import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.producer.MemberAnswerProducer;
@@ -77,6 +80,7 @@ public class MemberReservationServiceUnitTest {
     private final String memberId = "1";
     private final Long popupId = 1L;
     private final Long reservationId = 1L;
+    private final Long memberReservationId = 1L;
 
     @Nested
     class 예약_가능한_날짜를_조회할_때 {
@@ -609,9 +613,144 @@ public class MemberReservationServiceUnitTest {
             verify(reservationRedisValueOperations, times(1)).decrement(reservationId.toString());
             verify(reservationRedisValueOperations, times(1)).increment(reservationId.toString());
         }
+
+        private void stubExistMemberReservationAndRedis(
+                Boolean exist,
+                Supplier<Long> decrementStub,
+                Supplier<Long> incrementStub,
+                Boolean save) {
+            given(
+                            memberReservationRepository
+                                    .existsMemberReservationByMemberIdAndReservationId(
+                                            anyLong(), anyLong()))
+                    .willReturn(exist);
+
+            if (!exist)
+                given(reservationRedisTemplate.opsForValue())
+                        .willReturn(reservationRedisValueOperations);
+
+            if (decrementStub != null)
+                given(reservationRedisValueOperations.decrement(anyString()))
+                        .willAnswer(inv -> decrementStub.get());
+
+            if (incrementStub != null)
+                given(reservationRedisValueOperations.increment(anyString()))
+                        .willAnswer(inv -> incrementStub.get());
+
+            if (save != null) {
+                if (save) {
+                    given(memberReservationRepository.save(any(MemberReservation.class)))
+                            .willReturn(
+                                    MemberReservation.createMemberReservation(
+                                            reservationId, Long.parseLong(memberId)));
+                } else {
+                    doThrow(new RuntimeException("DB error"))
+                            .when(memberReservationRepository)
+                            .save(any(MemberReservation.class));
+                }
+            }
+        }
     }
 
-    // TODO 예약 업데이트할 때
+    @Nested
+    class 회원예약_생성_후_업데이트_할_때 {
+        @Test
+        void 회원예약_업데이트에_성공한다() {
+            // given
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            given(memberReservationRepository.findById(anyLong()))
+                    .willReturn(Optional.of(reservation));
+            given(memberServiceClient.findMemberInfo(anyLong()))
+                    .willReturn(
+                            new MemberInternalInfoResponse(
+                                    Long.parseLong(memberId),
+                                    "testNickName",
+                                    MemberAge.TEENAGER,
+                                    MemberGender.MALE,
+                                    MemberRole.USER,
+                                    MemberStatus.NORMAL));
+
+            given(managerServiceClient.findReservationById(anyLong()))
+                    .willReturn(
+                            new ReservationInfoResponse(
+                                    popupId, LocalDate.now().plusDays(30), LocalTime.of(17, 0)));
+
+            // when
+            memberReservationService.updateMemberReservation(memberReservationId);
+
+            // then
+            verify(memberReservationRepository, times(1)).findById(anyLong());
+            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(eventPublisher, times(1))
+                    .publishEvent(any(MemberReservationNotificationEvent.class));
+        }
+
+        @Test
+        void 존재하지_않는_회원예약이면_예외가_발생한다() {
+            // given
+            given(memberReservationRepository.findById(anyLong())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.updateMemberReservation(999L))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void 회원_정보가_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
+            // given
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            given(memberReservationRepository.findById(anyLong()))
+                    .willReturn(Optional.of(reservation));
+            given(memberServiceClient.findMemberInfo(anyLong()))
+                    .willThrow(buildMemberInfoException(Long.parseLong(memberId)));
+
+            // when
+            Throwable thrown =
+                    catchThrowable(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            memberReservationId));
+
+            // then
+            assertThat(thrown).isInstanceOf(FeignException.class);
+            String body = ((FeignException) thrown).contentUTF8();
+            String actualMessage =
+                    new ObjectMapper().readTree(body).path("data").path("message").asText();
+            assertThat(actualMessage).isEqualTo("회원을 찾을 수 없습니다.");
+        }
+
+        @Test
+        void 예약_정보가_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
+            // given
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            given(memberReservationRepository.findById(anyLong()))
+                    .willReturn(Optional.of(reservation));
+            given(managerServiceClient.findReservationById(anyLong()))
+                    .willThrow(buildReservationInfoException(popupId));
+
+            // when
+            Throwable thrown =
+                    catchThrowable(
+                            () ->
+                                    memberReservationService.updateMemberReservation(
+                                            memberReservationId));
+
+            // then
+            assertThat(thrown).isInstanceOf(FeignException.class);
+            String body = ((FeignException) thrown).contentUTF8();
+            String actualMessage =
+                    new ObjectMapper().readTree(body).path("data").path("message").asText();
+            assertThat(actualMessage).isEqualTo("해당 예약을 찾을 수 없습니다.");
+        }
+    }
 
     // TODO 예약 취소할 때
 
@@ -861,44 +1000,68 @@ public class MemberReservationServiceUnitTest {
         assertThat(response).isNull();
     }
 
+    private FeignException buildMemberInfoException(Long memberId) {
+        String errorResponse =
+                """
+                {
+                  "success": false,
+                  "status": 404,
+                  "data": {
+                    "errorClassName": "MEMBER_NOT_FOUND",
+                    "message": "회원을 찾을 수 없습니다."
+                  }
+                }
+                """;
+        Request request =
+                Request.create(
+                        Request.HttpMethod.GET,
+                        "/internal/members/" + memberId,
+                        Map.of("Content-Type", List.of("application/json")),
+                        null,
+                        new RequestTemplate());
+
+        return FeignException.errorStatus(
+                "findMemberInfo",
+                Response.builder()
+                        .status(404)
+                        .reason("Not Found")
+                        .request(request)
+                        .body(errorResponse, UTF_8)
+                        .build());
+    }
+
+    private FeignException buildReservationInfoException(Long reservationId) {
+        String errorResponse =
+                """
+                {
+                  "success": false,
+                  "status": 404,
+                  "data": {
+                    "errorClassName": "RESERVATION_NOT_FOUND",
+                    "message": "해당 예약을 찾을 수 없습니다."
+                  }
+                }
+                """;
+        Request request =
+                Request.create(
+                        Request.HttpMethod.GET,
+                        "/internal/reservations/" + reservationId,
+                        Map.of("Content-Type", List.of("application/json")),
+                        null,
+                        new RequestTemplate());
+
+        return FeignException.errorStatus(
+                "findReservationById",
+                Response.builder()
+                        .status(404)
+                        .reason("Not Found")
+                        .request(request)
+                        .body(errorResponse, UTF_8)
+                        .build());
+    }
+
     // TODO 오늘 예약자 수 조회할 때
 
     // TODO 회원이 팝업 입장할 때
 
-    private void stubExistMemberReservationAndRedis(
-            Boolean exist,
-            Supplier<Long> decrementStub,
-            Supplier<Long> incrementStub,
-            Boolean save) {
-        given(
-                        memberReservationRepository
-                                .existsMemberReservationByMemberIdAndReservationId(
-                                        anyLong(), anyLong()))
-                .willReturn(exist);
-
-        if (!exist)
-            given(reservationRedisTemplate.opsForValue())
-                    .willReturn(reservationRedisValueOperations);
-
-        if (decrementStub != null)
-            given(reservationRedisValueOperations.decrement(anyString()))
-                    .willAnswer(inv -> decrementStub.get());
-
-        if (incrementStub != null)
-            given(reservationRedisValueOperations.increment(anyString()))
-                    .willAnswer(inv -> incrementStub.get());
-
-        if (save != null) {
-            if (save) {
-                given(memberReservationRepository.save(any(MemberReservation.class)))
-                        .willReturn(
-                                MemberReservation.createMemberReservation(
-                                        reservationId, Long.parseLong(memberId)));
-            } else {
-                doThrow(new RuntimeException("DB error"))
-                        .when(memberReservationRepository)
-                        .save(any(MemberReservation.class));
-            }
-        }
-    }
 }
