@@ -6,7 +6,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
