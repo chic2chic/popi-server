@@ -55,6 +55,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,7 +66,6 @@ public class MemberReservationServiceUnitTest {
     @Mock MemberReservationRepository memberReservationRepository;
 
     @Mock ManagerServiceClient managerServiceClient;
-
     @Mock MemberServiceClient memberServiceClient;
 
     @Mock private RedisTemplate<String, Long> reservationRedisTemplate;
@@ -657,9 +657,7 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 회원예약_업데이트에_성공한다() {
             // given
-            MemberReservation reservation =
-                    MemberReservation.createMemberReservation(
-                            reservationId, Long.parseLong(memberId));
+            MemberReservation reservation = mock(MemberReservation.class);
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
             given(memberServiceClient.findMemberInfo(anyLong()))
@@ -702,9 +700,8 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 회원_정보가_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
             // given
-            MemberReservation reservation =
-                    MemberReservation.createMemberReservation(
-                            reservationId, Long.parseLong(memberId));
+            MemberReservation reservation = mock(MemberReservation.class);
+            ;
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
             given(memberServiceClient.findMemberInfo(anyLong()))
@@ -728,9 +725,8 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 예약_정보가_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
             // given
-            MemberReservation reservation =
-                    MemberReservation.createMemberReservation(
-                            reservationId, Long.parseLong(memberId));
+            MemberReservation reservation = mock(MemberReservation.class);
+            ;
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
             given(managerServiceClient.findReservationById(anyLong()))
@@ -752,7 +748,69 @@ public class MemberReservationServiceUnitTest {
         }
     }
 
-    // TODO 예약 취소할 때
+    @Nested
+    class 회원예약_취소할_때 {
+
+        @BeforeEach
+        void setUp() {
+            ReflectionTestUtils.setField(
+                    memberReservationService, "reservationRedisTemplate", reservationRedisTemplate);
+            ReflectionTestUtils.setField(
+                    memberReservationService,
+                    "notificationRedisTemplate",
+                    notificationRedisTemplate);
+        }
+
+        @Test
+        void 회원예약_취소에_성공한다() {
+            // given
+            ZSetOperations<String, String> zSetOperations = mock(ZSetOperations.class);
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            given(memberReservationRepository.findById(memberReservationId))
+                    .willReturn(Optional.of(reservation));
+            given(reservationRedisTemplate.opsForValue())
+                    .willReturn(reservationRedisValueOperations);
+            given(reservationRedisValueOperations.increment(anyString())).willAnswer(inv -> 1L);
+            given(notificationRedisTemplate.opsForZSet()).willReturn(zSetOperations);
+
+            // when
+            memberReservationService.cancelMemberReservation(memberReservationId);
+
+            // then
+            verify(memberReservationRepository, times(1)).delete(reservation);
+            verify(reservationRedisValueOperations, times(1)).increment(reservationId.toString());
+            verify(notificationRedisTemplate.opsForZSet(), times(1))
+                    .remove("reservation:notifications", reservationId + "|" + memberId);
+        }
+
+        @Test
+        void 존재하지_않는_회원예약이면_예외가_발생한다() {
+            // given
+            given(memberReservationRepository.findById(anyLong())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.cancelMemberReservation(999L))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(
+                            MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void 예약ID가_null이면_예외가_발생한다() {
+            // given
+            MemberReservation reservation = mock(MemberReservation.class);
+            given(reservation.getReservationId()).willReturn(null);
+            given(memberReservationRepository.findById(anyLong()))
+                    .willReturn(Optional.of(reservation));
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.cancelMemberReservation(1L))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberReservationErrorCode.RESERVATION_NOT_FOUND.getMessage());
+        }
+    }
 
     @Nested
     class 예약_목록_조회할_때 {
