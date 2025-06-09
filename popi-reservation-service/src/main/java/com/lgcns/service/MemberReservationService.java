@@ -29,5 +29,5 @@ public interface MemberReservationService {
 
     void createMemberAnswer(Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices);
 
-    void isEnterancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId);
+    void isEntrancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId);
 }

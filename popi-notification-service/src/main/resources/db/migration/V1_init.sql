@@ -1,0 +1,5 @@
+CREATE TABLE fcm_device (
+fcm_token_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+member_id BIGINT NOT NULL,
+token VARCHAR(1000) NOT NULL
+);
