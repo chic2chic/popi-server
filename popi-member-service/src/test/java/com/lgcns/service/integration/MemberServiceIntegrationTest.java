@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class MemberServiceWireMockIntegrationTest extends WireMockIntegrationTest {
+class MemberServiceIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired private DatabaseCleaner databaseCleaner;
 
