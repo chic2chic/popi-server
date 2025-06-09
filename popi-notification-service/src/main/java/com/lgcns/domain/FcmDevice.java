@@ -25,7 +25,7 @@ public class FcmDevice {
         this.token = token;
     }
 
-    public static FcmDevice of(Long memberId, String token) {
+    public static FcmDevice createFcmDevice(Long memberId, String token) {
         return FcmDevice.builder().memberId(memberId).token(token).build();
     }
 }
