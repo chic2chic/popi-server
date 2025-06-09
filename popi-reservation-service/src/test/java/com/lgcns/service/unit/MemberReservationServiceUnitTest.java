@@ -645,9 +645,8 @@ public class MemberReservationServiceUnitTest {
                                     MemberReservation.createMemberReservation(
                                             reservationId, Long.parseLong(memberId)));
                 } else {
-                    doThrow(new RuntimeException("DB error"))
-                            .when(memberReservationRepository)
-                            .save(any(MemberReservation.class));
+                    given(memberReservationRepository.save(any(MemberReservation.class)))
+                            .willThrow(new CustomException(RESERVATION_FAILED));
                 }
             }
         }
@@ -1258,8 +1257,8 @@ public class MemberReservationServiceUnitTest {
             MemberReservation reservation =
                     createMemberReservation(
                             false, popupId, reservationId, today, now.plusMinutes(10));
-            when(memberReservationRepository.findById(memberReservationId))
-                    .thenReturn(Optional.of(reservation));
+            given(memberReservationRepository.findById(memberReservationId))
+                    .willReturn(Optional.of(reservation));
 
             QrEntranceInfoRequest request = createQrRequest(today, now.plusMinutes(5));
 
@@ -1277,8 +1276,8 @@ public class MemberReservationServiceUnitTest {
             MemberReservation reservation =
                     createMemberReservation(
                             false, popupId, reservationId, today, now.minusMinutes(40));
-            when(memberReservationRepository.findById(memberReservationId))
-                    .thenReturn(Optional.of(reservation));
+            given(memberReservationRepository.findById(memberReservationId))
+                    .willReturn(Optional.of(reservation));
 
             QrEntranceInfoRequest request = createQrRequest(today, now.minusMinutes(31));
 

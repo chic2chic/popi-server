@@ -1,5 +1,6 @@
 package com.lgcns.service.unit;
 
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.*;
 
 import com.lgcns.error.exception.CustomException;
@@ -77,8 +78,8 @@ public class MemberReservationEventHandlerUnitTest {
             // given
             MemberReservationUpdateEvent event = mock(MemberReservationUpdateEvent.class);
 
-            doThrow(new CustomException(MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND))
-                    .when(memberReservationService)
+            willThrow(new CustomException(MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND))
+                    .given(memberReservationService)
                     .updateMemberReservation(anyLong());
 
             // when

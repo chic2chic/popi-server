@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -58,9 +59,8 @@ public class MemberReservationMockTest extends WireMockIntegrationTest {
                     200,
                     objectMapper.writeValueAsString(
                             Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
-            doThrow(new RuntimeException("DB error"))
-                    .when(memberReservationRepository)
-                    .save(ArgumentMatchers.any(MemberReservation.class));
+            given(memberReservationRepository.save(ArgumentMatchers.any(MemberReservation.class)))
+                    .willThrow(new RuntimeException("DB error"));
 
             // when & then
             assertThatThrownBy(
