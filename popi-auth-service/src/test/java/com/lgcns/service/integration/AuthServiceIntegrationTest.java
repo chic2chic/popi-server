@@ -1,15 +1,15 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
@@ -25,6 +25,9 @@ import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
+import com.lgcns.service.AuthService;
+import com.lgcns.service.IdTokenVerifier;
+import com.lgcns.service.JwtTokenService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -37,13 +40,13 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class AuthServiceTest extends WireMockIntegrationTest {
+public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
 
-    @Autowired AuthService authService;
-    @Autowired RefreshTokenRepository refreshTokenRepository;
+    @Autowired private AuthService authService;
+    @Autowired private RefreshTokenRepository refreshTokenRepository;
 
-    @MockitoBean JwtTokenService jwtTokenService;
-    @MockitoBean IdTokenVerifier idTokenVerifier;
+    @MockitoBean private JwtTokenService jwtTokenService;
+    @MockitoBean private IdTokenVerifier idTokenVerifier;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -53,13 +56,13 @@ public class AuthServiceTest extends WireMockIntegrationTest {
         @Test
         void 아직_회원가입하지_않은_회원이라면_가입에_성공한다() throws JsonProcessingException {
             // given
-            when(jwtTokenService.validateRegisterToken(anyString()))
-                    .thenReturn(
+            given(jwtTokenService.validateRegisterToken(anyString()))
+                    .willReturn(
                             RegisterTokenDto.of(
                                     "testOauthId", "testOauthProvider", "fake-register-token"));
-            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
-                    .thenReturn("fake-access-token");
-            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+            given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .willReturn("fake-access-token");
+            given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             MemberRegisterRequest request =
                     new MemberRegisterRequest(
@@ -91,8 +94,8 @@ public class AuthServiceTest extends WireMockIntegrationTest {
         @Test
         void 이미_회원가입된_회원이_다시_회원가입하면_예외가_발생한다() throws JsonProcessingException {
             // given
-            when(jwtTokenService.validateRegisterToken(anyString()))
-                    .thenReturn(
+            given(jwtTokenService.validateRegisterToken(anyString()))
+                    .willReturn(
                             RegisterTokenDto.of(
                                     "testOauthId", "testOauthProvider", "fake-register-token"));
 
@@ -131,8 +134,6 @@ public class AuthServiceTest extends WireMockIntegrationTest {
         @Test
         void 만료된_레지스터_토큰이면_예외가_발생한다() {
             // given
-            when(jwtTokenService.validateRegisterToken(anyString())).thenReturn(null);
-
             MemberRegisterRequest request =
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
@@ -141,6 +142,7 @@ public class AuthServiceTest extends WireMockIntegrationTest {
             assertThatThrownBy(() -> authService.registerMember("testRefreshTokenValue", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(AuthErrorCode.EXPIRED_REGISTER_TOKEN.getMessage());
+            verify(jwtTokenService, times(1)).validateRegisterToken(anyString());
         }
     }
 
@@ -150,9 +152,9 @@ public class AuthServiceTest extends WireMockIntegrationTest {
         @Test
         void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() throws JsonProcessingException {
             // given
-            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
-            when(jwtTokenService.createRegisterToken(anyString(), anyString()))
-                    .thenReturn("fake-register-token");
+            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(jwtTokenService.createRegisterToken(anyString(), anyString()))
+                    .willReturn("fake-register-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
@@ -180,10 +182,10 @@ public class AuthServiceTest extends WireMockIntegrationTest {
 
         @Test
         void 이미_회원가입된_회원은_로그인에_성공한다() throws JsonProcessingException {
-            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
-            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
-                    .thenReturn("fake-access-token");
-            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .willReturn("fake-access-token");
+            given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
@@ -213,10 +215,10 @@ public class AuthServiceTest extends WireMockIntegrationTest {
 
         @Test
         void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() throws JsonProcessingException {
-            when(idTokenVerifier.getOidcUser(anyString(), any())).thenReturn(mockOidcUser());
-            when(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
-                    .thenReturn("fake-access-token");
-            when(jwtTokenService.createRefreshToken(anyLong())).thenReturn("fake-refresh-token");
+            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
+                    .willReturn("fake-access-token");
+            given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
@@ -272,11 +274,11 @@ public class AuthServiceTest extends WireMockIntegrationTest {
             AccessTokenDto newAccessTokenDto =
                     AccessTokenDto.of(1L, MemberRole.USER, "fake-new-access-token");
 
-            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(oldRefreshTokenDto);
-            when(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
-                    .thenReturn(newRefreshTokenDto);
-            when(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
-                    .thenReturn(newAccessTokenDto);
+            given(jwtTokenService.validateRefreshToken(anyString())).willReturn(oldRefreshTokenDto);
+            given(jwtTokenService.reissueRefreshToken(oldRefreshTokenDto))
+                    .willReturn(newRefreshTokenDto);
+            given(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
+                    .willReturn(newAccessTokenDto);
 
             String expectedResponse =
                     objectMapper.writeValueAsString(
@@ -301,13 +303,11 @@ public class AuthServiceTest extends WireMockIntegrationTest {
 
         @Test
         void 만료된_리프레시_토큰이면_예외가_발생한다() {
-            // given
-            when(jwtTokenService.validateRefreshToken(anyString())).thenReturn(null);
-
             // when & then
             assertThatThrownBy(() -> authService.reissueToken("testRefreshTokenValue"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(AuthErrorCode.EXPIRED_REFRESH_TOKEN.getMessage());
+            verify(jwtTokenService, times(1)).validateRefreshToken(anyString());
         }
     }
 
