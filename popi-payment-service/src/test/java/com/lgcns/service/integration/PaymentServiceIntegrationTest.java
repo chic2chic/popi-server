@@ -1,15 +1,13 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.DatabaseCleaner;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
@@ -22,6 +20,7 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.PaymentErrorCode;
 import com.lgcns.repository.PaymentRepository;
 import com.lgcns.response.SliceResponse;
+import com.lgcns.service.PaymentService;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -40,16 +39,16 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class PaymentServiceTest extends WireMockIntegrationTest {
+public class PaymentServiceIntegrationTest extends WireMockIntegrationTest {
 
-    @Autowired protected DatabaseCleaner databaseCleaner;
+    @Autowired private DatabaseCleaner databaseCleaner;
 
-    @Autowired PaymentService paymentService;
-    @Autowired PaymentRepository paymentRepository;
+    @Autowired private PaymentService paymentService;
+    @Autowired private PaymentRepository paymentRepository;
 
-    @MockitoBean IamportClient iamportClient;
-    @Mock IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse;
-    @Mock com.siot.IamportRestClient.response.Payment iamportPayment;
+    @MockitoBean private IamportClient iamportClient;
+    @Mock private IamportResponse<com.siot.IamportRestClient.response.Payment> iamportResponse;
+    @Mock private com.siot.IamportRestClient.response.Payment iamportPayment;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -181,14 +180,7 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
         @Test
         void impUid와_결제정보가_일치하면_결제정보를_업데이트한다() throws IOException, IamportResponseException {
             // given
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
-
-            when(iamportPayment.getMerchantUid()).thenReturn("popup_1_order_test-uuid");
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(129000));
-            when(iamportPayment.getStatus()).thenReturn("PAID");
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            stubIamportResponse(BigDecimal.valueOf(129000), "PAID");
 
             // when
             paymentService.findPaymentByImpUid("testImpUid");
@@ -205,14 +197,7 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
         @Test
         void 결제_금액이_다르면_예외가_발생한다() throws IOException, IamportResponseException {
             // given
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
-
-            when(iamportPayment.getMerchantUid()).thenReturn("popup_1_order_test-uuid");
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(1000));
-            when(iamportPayment.getStatus()).thenReturn("PAID");
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            stubIamportResponse(BigDecimal.valueOf(1000), "PAID");
 
             // when & then
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
@@ -223,19 +208,24 @@ public class PaymentServiceTest extends WireMockIntegrationTest {
         @Test
         void 결제_상태가_PAID가_아니면_예외가_발생한다() throws IOException, IamportResponseException {
             // given
-            when(iamportClient.paymentByImpUid(anyString())).thenReturn(iamportResponse);
-            when(iamportResponse.getResponse()).thenReturn(iamportPayment);
-
-            when(iamportPayment.getMerchantUid()).thenReturn("popup_1_order_test-uuid");
-            when(iamportPayment.getPgProvider()).thenReturn("tosspay");
-            when(iamportPayment.getAmount()).thenReturn(BigDecimal.valueOf(129000));
-            when(iamportPayment.getStatus()).thenReturn("READY");
-            when(iamportPayment.getPaidAt()).thenReturn(new Date());
+            stubIamportResponse(BigDecimal.valueOf(129000), "READY");
 
             // when & then
             assertThatThrownBy(() -> paymentService.findPaymentByImpUid("testImpUid"))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.NOT_PAID.getMessage());
+        }
+
+        private void stubIamportResponse(BigDecimal amount, String status)
+                throws IOException, IamportResponseException {
+            given(iamportClient.paymentByImpUid(anyString())).willReturn(iamportResponse);
+            given(iamportResponse.getResponse()).willReturn(iamportPayment);
+
+            given(iamportPayment.getMerchantUid()).willReturn("popup_1_order_test-uuid");
+            given(iamportPayment.getPgProvider()).willReturn("tosspay");
+            given(iamportPayment.getAmount()).willReturn(amount);
+            given(iamportPayment.getStatus()).willReturn(status);
+            given(iamportPayment.getPaidAt()).willReturn(new Date());
         }
     }
 
