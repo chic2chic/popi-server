@@ -29,5 +29,5 @@ public interface MemberReservationRepository
             AND mr.status = com.lgcns.domain.MemberReservationStatus.RESERVED
         GROUP BY mr.popupId
         """)
-    List<DayOfWeekReservationStatsResponse> findDayOfWeekReservationStats();
+    List<DayOfWeekReservationStatsResponse> findAllDayOfWeekReservationStats();
 }

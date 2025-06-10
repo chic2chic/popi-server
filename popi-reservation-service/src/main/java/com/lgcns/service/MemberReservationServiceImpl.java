@@ -18,6 +18,7 @@ import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.event.dto.MemberReservationNotificationEvent;
+import com.lgcns.error.exception.GlobalErrorCode;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.message.MemberAnswerMessage;
@@ -298,6 +299,24 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                 memberReservation.getReservationId() + "|" + memberReservation.getMemberId();
 
         notificationRedisTemplate.opsForZSet().remove("reservation:notifications", memberKey);
+    }
+
+    @Override
+    public Map<Long, DayOfWeekReservationStatsResponse> getDayOfWeekReservationStats() {
+        try {
+            List<DayOfWeekReservationStatsResponse> allStats =
+                    memberReservationRepository.findAllDayOfWeekReservationStats();
+
+            log.info("요일별 예약자 수 조회 완료. 조회된 팝업 수 : {}", allStats.size());
+
+            return allStats.stream()
+                    .collect(
+                            Collectors.toMap(
+                                    DayOfWeekReservationStatsResponse::popupId, stats -> stats));
+        } catch (Exception e) {
+            log.error("DB 조회 및 쿼리 수행 중 에러 발생 {}", e.getMessage(), e);
+            throw new CustomException(GlobalErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private MemberReservation findMemberReservationById(Long memberReservationId) {
