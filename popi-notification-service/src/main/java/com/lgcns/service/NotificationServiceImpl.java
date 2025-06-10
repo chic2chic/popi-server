@@ -1,11 +1,14 @@
 package com.lgcns.service;
 
 import com.lgcns.dto.request.FcmRequest;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.NotificationErrorCode;
 import com.lgcns.repository.FcmDeviceRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,5 +63,33 @@ public class NotificationServiceImpl implements NotificationService {
                     FcmRequest fcmRequest = FcmRequest.of(fcmToken);
                     fcmService.sendMessageSync(fcmRequest);
                 });
+    }
+
+    @Override
+    public void saveFcmToken(Long memberId, String fcmToken) {
+        validateFcmToken(fcmToken);
+
+        try {
+            String key = "memberId: " + memberId;
+            String existingToken = redisTemplate.opsForValue().get(key);
+
+            if (existingToken != null) {
+                if (existingToken.equals(fcmToken)) {
+                    return;
+                }
+                redisTemplate.delete(key);
+            }
+
+            redisTemplate.opsForValue().set(key, fcmToken);
+
+        } catch (DataAccessException e) {
+            throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
+        }
+    }
+
+    private void validateFcmToken(String fcmToken) {
+        if (fcmToken == null || fcmToken.isBlank()) {
+            throw new CustomException(NotificationErrorCode.FCM_TOKEN_NOT_FOUND);
+        }
     }
 }

@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import com.lgcns.NotificationIntegrationTest;
 import com.lgcns.dto.request.FcmRequest;
 import com.lgcns.error.exception.CustomException;
-import com.lgcns.exception.FirebaseErrorCode;
+import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -126,7 +126,7 @@ public class NotificationJobTest extends NotificationIntegrationTest {
                     .thenReturn(tokens);
 
             FcmRequest fcmRequest = FcmRequest.of("token");
-            doThrow(new CustomException(FirebaseErrorCode.FCM_SEND_FAILED))
+            doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)
                     .sendMessageSync(fcmRequest);
 
