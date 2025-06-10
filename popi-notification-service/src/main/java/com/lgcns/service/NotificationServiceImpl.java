@@ -3,7 +3,6 @@ package com.lgcns.service;
 import com.lgcns.dto.request.FcmRequest;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
-import com.lgcns.repository.FcmDeviceRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -21,7 +20,6 @@ public class NotificationServiceImpl implements NotificationService {
     private static final String ZSET_KEY = "reservation:notifications";
 
     private final FcmService fcmService;
-    private final FcmDeviceRepository fcmDeviceRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
@@ -56,7 +54,20 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendNotification(List<Long> memberIds) {
-        List<String> fcmTokens = fcmDeviceRepository.findFcmTokensByMemberIds(memberIds);
+        List<String> fcmTokens = new ArrayList<>();
+
+        memberIds.forEach(
+                memberId -> {
+                    try {
+                        String key = memberFcmKey(memberId);
+                        String fcmToken = redisTemplate.opsForValue().get(key);
+                        if (fcmToken != null) {
+                            fcmTokens.add(fcmToken);
+                        }
+                    } catch (DataAccessException e) {
+                        throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
+                    }
+                });
 
         fcmTokens.forEach(
                 fcmToken -> {
@@ -70,7 +81,7 @@ public class NotificationServiceImpl implements NotificationService {
         validateFcmToken(fcmToken);
 
         try {
-            String key = "memberId: " + memberId;
+            String key = memberFcmKey(memberId);
             String existingToken = redisTemplate.opsForValue().get(key);
 
             if (existingToken != null) {
@@ -91,5 +102,9 @@ public class NotificationServiceImpl implements NotificationService {
         if (fcmToken == null || fcmToken.isBlank()) {
             throw new CustomException(NotificationErrorCode.FCM_TOKEN_NOT_FOUND);
         }
+    }
+
+    private String memberFcmKey(Long memberId) {
+        return "memberId: " + memberId;
     }
 }
