@@ -9,12 +9,14 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -27,8 +29,6 @@ public class NotificationJobManager {
     public static final String NOTIFICATION_JOB = "notificationJob";
     public static final String SEND_NOTIFICATION_STEP = "sendNotificationStep";
     public static final String NOTIFICATION_TASK_EXECUTOR = "notificationTaskExecutor";
-    private static final String SEND_NOTIFICATION_ITEM_READER = "sendNotificationItemReader";
-    private static final String SEND_NOTIFICATION_ITEM_WRITER = "sendNotificationItemWriter";
 
     @Bean(name = NOTIFICATION_JOB)
     public Job notificationJob(JobRepository jobRepository, Step notificationStep) {
@@ -43,17 +43,23 @@ public class NotificationJobManager {
     public Step notificationStep(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            @Qualifier(SEND_NOTIFICATION_ITEM_READER) ItemReader<Long> sendNotificationReader,
-            @Qualifier(SEND_NOTIFICATION_ITEM_WRITER) ItemWriter<Long> sendNotificationWriter,
+            @Qualifier(NotificationStepManager.SEND_NOTIFICATION_ITEM_READER)
+                    ItemReader<Long> sendNotificationReader,
+            @Qualifier(NotificationStepManager.SEND_NOTIFICATION_ITEM_PROCESSOR)
+                    ItemProcessor<Long, String> sendNotificationProcessor,
+            @Qualifier(NotificationStepManager.SEND_NOTIFICATION_ITEM_WRITER)
+                    ItemWriter<String> sendNotificationWriter,
             @Qualifier(NOTIFICATION_TASK_EXECUTOR) TaskExecutor taskExecutor) {
         return new StepBuilder(SEND_NOTIFICATION_STEP, jobRepository)
-                .<Long, Long>chunk(CHUNK_SIZE, transactionManager)
+                .<Long, String>chunk(CHUNK_SIZE, transactionManager)
                 .reader(sendNotificationReader)
+                .processor(sendNotificationProcessor)
                 .writer(sendNotificationWriter)
                 .faultTolerant()
                 .retryLimit(3)
-                .retry(CustomException.class)
+                .retry(DataAccessException.class)
                 .skipLimit(3)
+                .skip(DataAccessException.class)
                 .skip(CustomException.class)
                 .taskExecutor(taskExecutor)
                 .build();

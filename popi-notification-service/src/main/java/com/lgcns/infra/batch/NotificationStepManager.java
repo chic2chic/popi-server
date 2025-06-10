@@ -14,8 +14,9 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class NotificationStepManager {
 
-    private static final String SEND_NOTIFICATION_ITEM_READER = "sendNotificationItemReader";
-    private static final String SEND_NOTIFICATION_ITEM_WRITER = "sendNotificationItemWriter";
+    public static final String SEND_NOTIFICATION_ITEM_READER = "sendNotificationItemReader";
+    public static final String SEND_NOTIFICATION_ITEM_PROCESSOR = "sendNotificationProcessor";
+    public static final String SEND_NOTIFICATION_ITEM_WRITER = "sendNotificationItemWriter";
 
     private final NotificationService notificationService;
 
@@ -33,12 +34,18 @@ public class NotificationStepManager {
         };
     }
 
+    @Bean(name = SEND_NOTIFICATION_ITEM_PROCESSOR)
+    @StepScope
+    public ItemProcessor<Long, String> sendNotificationItemProcessor() {
+        return notificationService::findFcmToken;
+    }
+
     @Bean(name = SEND_NOTIFICATION_ITEM_WRITER)
     @StepScope
-    public ItemWriter<Long> sendNotificationItemWriter() {
+    public ItemWriter<String> sendNotificationItemWriter() {
         return chunk -> {
-            List<Long> memberIds = new ArrayList<>(chunk.getItems());
-            notificationService.sendNotification(memberIds);
+            List<String> fcmTokens = new ArrayList<>(chunk.getItems());
+            notificationService.sendNotification(fcmTokens);
         };
     }
 }

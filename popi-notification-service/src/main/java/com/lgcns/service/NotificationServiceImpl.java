@@ -53,22 +53,17 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendNotification(List<Long> memberIds) {
-        List<String> fcmTokens = new ArrayList<>();
+    public String findFcmToken(Long memberId) {
+        try {
+            String key = memberFcmKey(memberId);
+            return redisTemplate.opsForValue().get(key);
+        } catch (DataAccessException e) {
+            throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
+        }
+    }
 
-        memberIds.forEach(
-                memberId -> {
-                    try {
-                        String key = memberFcmKey(memberId);
-                        String fcmToken = redisTemplate.opsForValue().get(key);
-                        if (fcmToken != null) {
-                            fcmTokens.add(fcmToken);
-                        }
-                    } catch (DataAccessException e) {
-                        throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
-                    }
-                });
-
+    @Override
+    public void sendNotification(List<String> fcmTokens) {
         fcmTokens.forEach(
                 fcmToken -> {
                     FcmRequest fcmRequest = FcmRequest.of(fcmToken);
