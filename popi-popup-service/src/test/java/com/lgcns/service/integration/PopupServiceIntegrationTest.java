@@ -1,4 +1,4 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -6,13 +6,13 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.dto.response.PopupDetailsResponse;
 import com.lgcns.dto.response.PopupInfoResponse;
 import com.lgcns.dto.response.PopupMapResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.response.SliceResponse;
+import com.lgcns.service.PopupService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
-public class PopupServiceTest extends WireMockIntegrationTest {
+public class PopupServiceIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired private PopupService popupService;
     @Autowired private ObjectMapper objectMapper;
