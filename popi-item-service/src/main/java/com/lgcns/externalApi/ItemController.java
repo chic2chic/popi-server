@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/{popupId}")
-@Tag(name = "2. 상품 API", description = "상품 관련 API 입니다.")
+@Tag(name = "상품 서버 API", description = "상품 서버 API 입니다.")
 public class ItemController {
 
     private final ItemService itemService;
