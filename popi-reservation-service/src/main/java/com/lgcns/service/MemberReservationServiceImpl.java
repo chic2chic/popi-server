@@ -302,7 +302,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     }
 
     @Override
-    public Map<Long, DayOfWeekReservationStatsResponse> getDayOfWeekReservationStats() {
+    public Map<Long, DayOfWeekReservationStatsResponse> getAllDayOfWeekReservationStats() {
         try {
             List<DayOfWeekReservationStatsResponse> allStats =
                     memberReservationRepository.findAllDayOfWeekReservationStats();

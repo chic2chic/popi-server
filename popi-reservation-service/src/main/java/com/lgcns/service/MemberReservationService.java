@@ -33,5 +33,5 @@ public interface MemberReservationService {
 
     void isEntrancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId);
 
-    Map<Long, DayOfWeekReservationStatsResponse> getDayOfWeekReservationStats();
+    Map<Long, DayOfWeekReservationStatsResponse> getAllDayOfWeekReservationStats();
 }
