@@ -4,29 +4,24 @@ import com.google.api.core.ApiFuture;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
-import com.lgcns.dto.request.FcmRequest;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FcmService {
 
-    public ApiFuture<String> sendMessageSync(FcmRequest fcmRequest) {
-        if (fcmRequest.fcmToken() == null || fcmRequest.fcmToken().isEmpty()) {
-            return null;
-        }
+    private static final String NOTIFICATION_TITLE = "PoPI 예약 알림";
+    private static final String NOTIFICATION_BODY = "예약하신 팝업이 1시간 뒤에 시작돼요. 잊지 말고 방문해 주세요!";
+
+    public ApiFuture<String> sendMessageSync(String fcmToken) {
 
         Notification notification =
                 Notification.builder()
-                        .setTitle(fcmRequest.title())
-                        .setBody(fcmRequest.body())
+                        .setTitle(NOTIFICATION_TITLE)
+                        .setBody(NOTIFICATION_BODY)
                         .build();
 
         Message message =
-                Message.builder()
-                        .setToken(fcmRequest.fcmToken())
-                        .setNotification(notification)
-                        // .putData("key", fcmRequest.key()) // 추후 redirectUrl 추가하면서 리팩토링
-                        .build();
+                Message.builder().setToken(fcmToken).setNotification(notification).build();
 
         return FirebaseMessaging.getInstance().sendAsync(message);
     }

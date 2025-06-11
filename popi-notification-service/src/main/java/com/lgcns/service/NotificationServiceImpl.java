@@ -1,11 +1,12 @@
 package com.lgcns.service;
 
-import com.lgcns.dto.request.FcmRequest;
-import com.lgcns.repository.FcmDeviceRepository;
+import com.lgcns.error.exception.CustomException;
+import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,6 @@ public class NotificationServiceImpl implements NotificationService {
     private static final String ZSET_KEY = "reservation:notifications";
 
     private final FcmService fcmService;
-    private final FcmDeviceRepository fcmDeviceRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
@@ -52,13 +52,38 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendNotification(List<Long> memberIds) {
-        List<String> fcmTokens = fcmDeviceRepository.findFcmTokensByMemberIds(memberIds);
+    public String findFcmToken(Long memberId) {
+        try {
+            String key = "memberId: " + memberId;
+            return redisTemplate.opsForValue().get(key);
+        } catch (DataAccessException e) {
+            throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
+        }
+    }
 
-        fcmTokens.forEach(
-                fcmToken -> {
-                    FcmRequest fcmRequest = FcmRequest.of(fcmToken);
-                    fcmService.sendMessageSync(fcmRequest);
-                });
+    @Override
+    public void sendNotification(List<String> fcmTokens) {
+        fcmTokens.forEach(fcmService::sendMessageSync);
+    }
+
+    @Override
+    public void saveFcmToken(String memberId, String fcmToken) {
+
+        try {
+            String key = "memberId: " + memberId;
+            String existingToken = redisTemplate.opsForValue().get(key);
+
+            if (existingToken != null) {
+                if (existingToken.equals(fcmToken)) {
+                    throw new CustomException(NotificationErrorCode.FCM_TOKEN_DUPLICATED);
+                }
+                redisTemplate.delete(key);
+            }
+
+            redisTemplate.opsForValue().set(key, fcmToken);
+
+        } catch (DataAccessException e) {
+            throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
+        }
     }
 }

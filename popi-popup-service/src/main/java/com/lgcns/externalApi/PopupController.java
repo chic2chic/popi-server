@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "팝업 API", description = "팝업 스토어 관련 API 입니다.")
+@Tag(name = "팝업 서버 API", description = "팝업 서버 API 입니다.")
 public class PopupController {
 
     private final PopupService popupService;

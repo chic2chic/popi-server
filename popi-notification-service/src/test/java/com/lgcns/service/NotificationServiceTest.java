@@ -5,9 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.lgcns.NotificationIntegrationTest;
-import com.lgcns.dto.request.FcmRequest;
 import com.lgcns.error.exception.CustomException;
-import com.lgcns.exception.FirebaseErrorCode;
+import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -83,57 +82,128 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
     }
 
     @Nested
+    class FCM_토큰을_조회할_때 {
+
+        @Test
+        void Redis에_member_id에_대응하는_FCM_토큰이_존재하면_조회에_성공한다() {
+            // given
+            Long memberId = 1L;
+            String key = memberFcmKey(memberId);
+            String token = "token";
+
+            redisTemplate.opsForValue().set(key, token);
+
+            // when
+            String result = notificationService.findFcmToken(memberId);
+
+            // then
+            assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).isEqualTo(token));
+        }
+    }
+
+    @Nested
     class 사용자에게_알림을_전송할_때 {
 
         @Test
-        void 알림을_전송할_사용자의_fcm_token이_있으면_전송에_성공한다() {
+        void FCM_토큰이_존재하면_전송에_성공한다() {
             // given
-            List<Long> memberIds = List.of(1L, 2L);
             List<String> tokens = List.of("token1", "token2");
 
-            when(fcmDeviceRepository.findFcmTokensByMemberIds(memberIds)).thenReturn(tokens);
-
             // when
-            notificationService.sendNotification(memberIds);
+            notificationService.sendNotification(tokens);
 
             // then
-            assertAll(
-                    () -> verify(fcmDeviceRepository, times(1)).findFcmTokensByMemberIds(memberIds),
-                    () -> verify(fcmService, times(2)).sendMessageSync(any(FcmRequest.class)));
+            assertAll(() -> verify(fcmService, times(2)).sendMessageSync(anyString()));
         }
 
         @Test
-        void 알림을_전송할_사용자가_없으면_전송하지_않는다() {
+        void FCM_토큰이_없으면_전송하지_않는다() {
             // given
-            List<Long> memberIds = new ArrayList<>();
+            List<String> tokens = new ArrayList<>();
 
             // when
-            notificationService.sendNotification(memberIds);
+            notificationService.sendNotification(tokens);
 
             // then
-            assertAll(
-                    () -> verify(fcmDeviceRepository, times(1)).findFcmTokensByMemberIds(memberIds),
-                    () -> verify(fcmService, never()).sendMessageSync(any(FcmRequest.class)));
+            assertAll(() -> verify(fcmService, never()).sendMessageSync(anyString()));
         }
 
         @Test
         void 알림_전송_과정에서_오류가_발생하면_예외를_반환한다() {
             // given
-            List<Long> memberIds = List.of(1L);
             List<String> tokens = List.of("token");
 
-            when(fcmDeviceRepository.findFcmTokensByMemberIds(memberIds)).thenReturn(tokens);
-
-            FcmRequest fcmRequest = FcmRequest.of("token");
-
-            doThrow(new CustomException(FirebaseErrorCode.FCM_SEND_FAILED))
+            doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)
-                    .sendMessageSync(fcmRequest);
+                    .sendMessageSync(tokens.get(0));
 
             // when & then
-            assertThatThrownBy(() -> notificationService.sendNotification(memberIds))
+            assertThatThrownBy(() -> notificationService.sendNotification(tokens))
                     .isInstanceOf(CustomException.class)
-                    .hasMessage(FirebaseErrorCode.FCM_SEND_FAILED.getMessage());
+                    .hasMessage(NotificationErrorCode.FCM_SEND_FAILED.getMessage());
         }
+    }
+
+    @Nested
+    class FCM_토큰을_저장할_때 {
+
+        @Test
+        void 유효한_토큰이_포함되고_Redis에_동일한_토큰이_존재하지_않으면_저장에_성공한다() {
+            // given
+            String memberId = "1";
+            String token = "token";
+            String key = "memberId: " + memberId;
+
+            // when
+            notificationService.saveFcmToken(memberId, token);
+
+            // then
+            assertAll(
+                    () -> assertThat(redisTemplate.hasKey(key)).isTrue(),
+                    () -> assertThat(redisTemplate.opsForValue().get(key)).isEqualTo(token));
+            redisTemplate.delete(key);
+        }
+
+        @Test
+        void Redis에_동일한_토큰이_존재하면_예외를_반환한다() {
+            // given
+            String memberId = "1";
+            String token = "token";
+            String key = "memberId: " + memberId;
+
+            redisTemplate.opsForValue().set(key, token);
+
+            // when & then
+            assertThatThrownBy(() -> notificationService.saveFcmToken(memberId, token))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(NotificationErrorCode.FCM_TOKEN_DUPLICATED.getMessage());
+            redisTemplate.delete(key);
+        }
+
+        @Test
+        void 동일한_사용자에_대해_새로운_토큰이_포함되면_토큰을_갱신한다() {
+            // given
+            String memberId = "1";
+            String token1 = "token1";
+            String token2 = "token2";
+            String key = "memberId: " + memberId;
+
+            redisTemplate.opsForValue().set(key, token1);
+
+            // when
+            notificationService.saveFcmToken(memberId, token2);
+
+            // then
+            assertAll(
+                    () -> assertThat(redisTemplate.hasKey(key)).isTrue(),
+                    () -> assertThat(redisTemplate.opsForValue().get(key)).isEqualTo(token2));
+            redisTemplate.delete(key);
+        }
+    }
+
+    private String memberFcmKey(Long memberId) {
+        return "memberId: " + memberId;
     }
 }

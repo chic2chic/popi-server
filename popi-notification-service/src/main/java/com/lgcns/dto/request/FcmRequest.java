@@ -1,11 +1,9 @@
 package com.lgcns.dto.request;
 
-public record FcmRequest(String title, String body, String fcmToken, String key) {
-    public static FcmRequest of(String fcmToken) {
-        return new FcmRequest(
-                "PoPI 예약 알림",
-                "예약하신 팝업이 1시간 뒤에 시작돼요. 잊지 말고 방문해 주세요!",
-                fcmToken,
-                "redirectUrl"); // 추후 redirectUrl 생성 로직 구현
-    }
-}
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+
+public record FcmRequest(
+        @NotBlank(message = "FCM 토큰은 필수입니다.")
+                @Schema(description = "FCM 토큰", example = "fcmToken123")
+                String fcmToken) {}

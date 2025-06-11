@@ -3,15 +3,12 @@ package com.lgcns.batch;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
 
 import com.lgcns.NotificationIntegrationTest;
-import com.lgcns.dto.request.FcmRequest;
 import com.lgcns.error.exception.CustomException;
-import com.lgcns.exception.FirebaseErrorCode;
+import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,9 +57,8 @@ public class NotificationJobTest extends NotificationIntegrationTest {
             redisTemplate.opsForZSet().add(ZSET_KEY, member1, epochTime);
             redisTemplate.opsForZSet().add(ZSET_KEY, member2, epochTime);
 
-            List<String> tokens = List.of("token1", "token2");
-            when(fcmDeviceRepository.findFcmTokensByMemberIds(List.of(memberId1, memberId2)))
-                    .thenReturn(tokens);
+            redisTemplate.opsForValue().set(memberFcmKey(memberId1), "token1");
+            redisTemplate.opsForValue().set(memberFcmKey(memberId2), "token2");
 
             JobParameters jobParameters = buildJobParameters();
 
@@ -79,6 +75,8 @@ public class NotificationJobTest extends NotificationIntegrationTest {
 
             redisTemplate.opsForZSet().remove(ZSET_KEY, member1);
             redisTemplate.opsForZSet().remove(ZSET_KEY, member2);
+            redisTemplate.delete(memberFcmKey(memberId1));
+            redisTemplate.delete(memberFcmKey(memberId2));
         }
 
         @Test
@@ -115,20 +113,17 @@ public class NotificationJobTest extends NotificationIntegrationTest {
             Long memberId = 1L;
             Long memberReservationId = 1L;
             String member = memberId + "|" + memberReservationId;
+            String token = "token";
 
             LocalDateTime now = LocalDateTime.now();
             long epochTime = now.atZone(ZoneId.of("Asia/Seoul")).toEpochSecond();
 
             redisTemplate.opsForZSet().add(ZSET_KEY, member, epochTime);
+            redisTemplate.opsForValue().set(memberFcmKey(memberId), token);
 
-            List<String> tokens = List.of("token");
-            when(fcmDeviceRepository.findFcmTokensByMemberIds(List.of(memberId)))
-                    .thenReturn(tokens);
-
-            FcmRequest fcmRequest = FcmRequest.of("token");
-            doThrow(new CustomException(FirebaseErrorCode.FCM_SEND_FAILED))
+            doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)
-                    .sendMessageSync(fcmRequest);
+                    .sendMessageSync(token);
 
             JobParameters jobParameters = buildJobParameters();
 
@@ -151,5 +146,9 @@ public class NotificationJobTest extends NotificationIntegrationTest {
         return new JobParametersBuilder()
                 .addLong("time", System.currentTimeMillis())
                 .toJobParameters();
+    }
+
+    private String memberFcmKey(Long memberId) {
+        return "memberId: " + memberId;
     }
 }
