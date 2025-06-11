@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.doThrow;
 
 import com.lgcns.NotificationIntegrationTest;
-import com.lgcns.dto.request.Fcm;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
@@ -114,17 +113,17 @@ public class NotificationJobTest extends NotificationIntegrationTest {
             Long memberId = 1L;
             Long memberReservationId = 1L;
             String member = memberId + "|" + memberReservationId;
+            String token = "token";
 
             LocalDateTime now = LocalDateTime.now();
             long epochTime = now.atZone(ZoneId.of("Asia/Seoul")).toEpochSecond();
 
             redisTemplate.opsForZSet().add(ZSET_KEY, member, epochTime);
-            redisTemplate.opsForValue().set(memberFcmKey(memberId), "token");
+            redisTemplate.opsForValue().set(memberFcmKey(memberId), token);
 
-            Fcm fcmRequest = Fcm.of("token");
             doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)
-                    .sendMessageSync(fcmRequest);
+                    .sendMessageSync(token);
 
             JobParameters jobParameters = buildJobParameters();
 

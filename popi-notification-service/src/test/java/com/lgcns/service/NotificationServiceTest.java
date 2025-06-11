@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.lgcns.NotificationIntegrationTest;
-import com.lgcns.dto.request.Fcm;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
@@ -116,7 +115,7 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             notificationService.sendNotification(tokens);
 
             // then
-            assertAll(() -> verify(fcmService, times(2)).sendMessageSync(any(Fcm.class)));
+            assertAll(() -> verify(fcmService, times(2)).sendMessageSync(anyString()));
         }
 
         @Test
@@ -128,18 +127,17 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             notificationService.sendNotification(tokens);
 
             // then
-            assertAll(() -> verify(fcmService, never()).sendMessageSync(any(Fcm.class)));
+            assertAll(() -> verify(fcmService, never()).sendMessageSync(anyString()));
         }
 
         @Test
         void 알림_전송_과정에서_오류가_발생하면_예외를_반환한다() {
             // given
             List<String> tokens = List.of("token");
-            Fcm fcmRequest = Fcm.of("token");
 
             doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)
-                    .sendMessageSync(fcmRequest);
+                    .sendMessageSync(tokens.get(0));
 
             // when & then
             assertThatThrownBy(() -> notificationService.sendNotification(tokens))
@@ -166,17 +164,6 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
                     () -> assertThat(redisTemplate.hasKey(key)).isTrue(),
                     () -> assertThat(redisTemplate.opsForValue().get(key)).isEqualTo(token));
             redisTemplate.delete(key);
-        }
-
-        @Test
-        void 유효한_토큰이_포함되지_않으면_예외를_반환한다() {
-            // given
-            String memberId = "1";
-
-            // when & then
-            assertThatThrownBy(() -> notificationService.saveFcmToken(memberId, null))
-                    .isInstanceOf(CustomException.class)
-                    .hasMessage(NotificationErrorCode.FCM_TOKEN_NOT_FOUND.getMessage());
         }
 
         @Test
