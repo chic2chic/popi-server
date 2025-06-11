@@ -148,6 +148,74 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
         }
     }
 
+    @Nested
+    class FCM_토큰을_저장할_때 {
+
+        @Test
+        void 유효한_토큰이_포함되고_Redis에_동일한_토큰이_존재하지_않으면_저장에_성공한다() {
+            // given
+            String memberId = "1";
+            String token = "token";
+            String key = "memberId: " + memberId;
+
+            // when
+            notificationService.saveFcmToken(memberId, token);
+
+            // then
+            assertAll(
+                    () -> assertThat(redisTemplate.hasKey(key)).isTrue(),
+                    () -> assertThat(redisTemplate.opsForValue().get(key)).isEqualTo(token));
+            redisTemplate.delete(key);
+        }
+
+        @Test
+        void 유효한_토큰이_포함되지_않으면_예외를_반환한다() {
+            // given
+            String memberId = "1";
+
+            // when & then
+            assertThatThrownBy(() -> notificationService.saveFcmToken(memberId, null))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(NotificationErrorCode.FCM_TOKEN_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void Redis에_동일한_토큰이_존재하면_예외를_반환한다() {
+            // given
+            String memberId = "1";
+            String token = "token";
+            String key = "memberId: " + memberId;
+
+            redisTemplate.opsForValue().set(key, token);
+
+            // when & then
+            assertThatThrownBy(() -> notificationService.saveFcmToken(memberId, token))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(NotificationErrorCode.FCM_TOKEN_DUPLICATED.getMessage());
+            redisTemplate.delete(key);
+        }
+
+        @Test
+        void 동일한_사용자에_대해_새로운_토큰이_포함되면_토큰을_갱신한다() {
+            // given
+            String memberId = "1";
+            String token1 = "token1";
+            String token2 = "token2";
+            String key = "memberId: " + memberId;
+
+            redisTemplate.opsForValue().set(key, token1);
+
+            // when
+            notificationService.saveFcmToken(memberId, token2);
+
+            // then
+            assertAll(
+                    () -> assertThat(redisTemplate.hasKey(key)).isTrue(),
+                    () -> assertThat(redisTemplate.opsForValue().get(key)).isEqualTo(token2));
+            redisTemplate.delete(key);
+        }
+    }
+
     private String memberFcmKey(Long memberId) {
         return "memberId: " + memberId;
     }

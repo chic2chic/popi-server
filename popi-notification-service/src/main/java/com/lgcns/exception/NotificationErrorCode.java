@@ -11,6 +11,7 @@ public enum NotificationErrorCode implements ErrorCode {
     FCM_FILE_CONVERSION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FCM 키 파일 변환에 실패했습니다."),
     FCM_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FCM 메세지 전송에 실패했습니다"),
     FCM_TOKEN_NOT_FOUND(HttpStatus.BAD_REQUEST, "FCM 토큰이 존재하지 않습니다."),
+    FCM_TOKEN_DUPLICATED(HttpStatus.BAD_REQUEST, "중복된 FCM 토큰이 존재합니다."),
 
     REDIS_ACCESS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Redis 접근에 실패했습니다.");
 

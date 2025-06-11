@@ -81,7 +81,7 @@ public class NotificationServiceImpl implements NotificationService {
 
             if (existingToken != null) {
                 if (existingToken.equals(fcmToken)) {
-                    return;
+                    throw new CustomException(NotificationErrorCode.FCM_TOKEN_DUPLICATED);
                 }
                 redisTemplate.delete(key);
             }
