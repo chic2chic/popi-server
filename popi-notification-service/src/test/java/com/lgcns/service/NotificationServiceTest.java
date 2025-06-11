@@ -83,47 +83,58 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
     }
 
     @Nested
+    class FCM_토큰을_조회할_때 {
+
+        @Test
+        void Redis에_member_id에_대응하는_FCM_토큰이_존재하면_조회에_성공한다() {
+            // given
+            Long memberId = 1L;
+            String key = memberFcmKey(memberId);
+            String token = "token";
+
+            redisTemplate.opsForValue().set(key, token);
+
+            // when
+            String result = notificationService.findFcmToken(memberId);
+
+            // then
+            assertAll(
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result).isEqualTo(token));
+        }
+    }
+
+    @Nested
     class 사용자에게_알림을_전송할_때 {
 
         @Test
-        void 알림을_전송할_사용자의_fcm_token이_있으면_전송에_성공한다() {
+        void FCM_토큰이_존재하면_전송에_성공한다() {
             // given
-            List<Long> memberIds = List.of(1L, 2L);
             List<String> tokens = List.of("token1", "token2");
 
-            when(fcmDeviceRepository.findFcmTokensByMemberIds(memberIds)).thenReturn(tokens);
-
             // when
-            notificationService.sendNotification(memberIds);
+            notificationService.sendNotification(tokens);
 
             // then
-            assertAll(
-                    () -> verify(fcmDeviceRepository, times(1)).findFcmTokensByMemberIds(memberIds),
-                    () -> verify(fcmService, times(2)).sendMessageSync(any(FcmRequest.class)));
+            assertAll(() -> verify(fcmService, times(2)).sendMessageSync(any(FcmRequest.class)));
         }
 
         @Test
-        void 알림을_전송할_사용자가_없으면_전송하지_않는다() {
+        void FCM_토큰이_없으면_전송하지_않는다() {
             // given
-            List<Long> memberIds = new ArrayList<>();
+            List<String> tokens = new ArrayList<>();
 
             // when
-            notificationService.sendNotification(memberIds);
+            notificationService.sendNotification(tokens);
 
             // then
-            assertAll(
-                    () -> verify(fcmDeviceRepository, times(1)).findFcmTokensByMemberIds(memberIds),
-                    () -> verify(fcmService, never()).sendMessageSync(any(FcmRequest.class)));
+            assertAll(() -> verify(fcmService, never()).sendMessageSync(any(FcmRequest.class)));
         }
 
         @Test
         void 알림_전송_과정에서_오류가_발생하면_예외를_반환한다() {
             // given
-            List<Long> memberIds = List.of(1L);
             List<String> tokens = List.of("token");
-
-            when(fcmDeviceRepository.findFcmTokensByMemberIds(memberIds)).thenReturn(tokens);
-
             FcmRequest fcmRequest = FcmRequest.of("token");
 
             doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
@@ -131,9 +142,13 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
                     .sendMessageSync(fcmRequest);
 
             // when & then
-            assertThatThrownBy(() -> notificationService.sendNotification(memberIds))
+            assertThatThrownBy(() -> notificationService.sendNotification(tokens))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(NotificationErrorCode.FCM_SEND_FAILED.getMessage());
         }
+    }
+
+    private String memberFcmKey(Long memberId) {
+        return "memberId: " + memberId;
     }
 }

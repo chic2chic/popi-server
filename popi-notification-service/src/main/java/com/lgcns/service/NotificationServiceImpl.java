@@ -55,7 +55,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public String findFcmToken(Long memberId) {
         try {
-            String key = memberFcmKey(memberId);
+            String key = "memberId: " + memberId;
             return redisTemplate.opsForValue().get(key);
         } catch (DataAccessException e) {
             throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
@@ -72,11 +72,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void saveFcmToken(Long memberId, String fcmToken) {
+    public void saveFcmToken(String memberId, String fcmToken) {
         validateFcmToken(fcmToken);
 
         try {
-            String key = memberFcmKey(memberId);
+            String key = "memberId: " + memberId;
             String existingToken = redisTemplate.opsForValue().get(key);
 
             if (existingToken != null) {
@@ -97,9 +97,5 @@ public class NotificationServiceImpl implements NotificationService {
         if (fcmToken == null || fcmToken.isBlank()) {
             throw new CustomException(NotificationErrorCode.FCM_TOKEN_NOT_FOUND);
         }
-    }
-
-    private String memberFcmKey(Long memberId) {
-        return "memberId: " + memberId;
     }
 }

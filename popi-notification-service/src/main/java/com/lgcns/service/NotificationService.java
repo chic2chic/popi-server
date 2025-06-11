@@ -9,5 +9,5 @@ public interface NotificationService {
 
     String findFcmToken(Long memberId);
 
-    void saveFcmToken(Long memberId, String fcmToken);
+    void saveFcmToken(String memberId, String fcmToken);
 }
