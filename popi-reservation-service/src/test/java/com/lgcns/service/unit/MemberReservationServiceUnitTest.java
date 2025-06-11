@@ -657,7 +657,9 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 회원예약_업데이트에_성공한다() {
             // given
-            MemberReservation reservation = mock(MemberReservation.class);
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
             given(memberServiceClient.findMemberInfo(anyLong()))
@@ -700,7 +702,8 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 회원_정보가_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
             // given
-            MemberReservation reservation = mock(MemberReservation.class);
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(reservationId, -1L);
             ;
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
@@ -725,8 +728,9 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 예약_정보가_존재하지_않으면_예외가_발생한다() throws JsonProcessingException {
             // given
-            MemberReservation reservation = mock(MemberReservation.class);
-            ;
+            MemberReservation reservation =
+                    MemberReservation.createMemberReservation(-1L, Long.parseLong(memberId));
+            memberReservationRepository.save(reservation);
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
             given(managerServiceClient.findReservationById(anyLong()))
@@ -765,11 +769,11 @@ public class MemberReservationServiceUnitTest {
         void 회원예약_취소에_성공한다() {
             // given
             ZSetOperations<String, String> zSetOperations = mock(ZSetOperations.class);
-            MemberReservation reservation =
+            MemberReservation memberReservation =
                     MemberReservation.createMemberReservation(
                             reservationId, Long.parseLong(memberId));
             given(memberReservationRepository.findById(memberReservationId))
-                    .willReturn(Optional.of(reservation));
+                    .willReturn(Optional.of(memberReservation));
             given(reservationRedisTemplate.opsForValue())
                     .willReturn(reservationRedisValueOperations);
             given(reservationRedisValueOperations.increment(anyString())).willAnswer(inv -> 1L);
@@ -779,7 +783,7 @@ public class MemberReservationServiceUnitTest {
             memberReservationService.cancelMemberReservation(memberReservationId);
 
             // then
-            verify(memberReservationRepository, times(1)).delete(reservation);
+            verify(memberReservationRepository, times(1)).delete(memberReservation);
             verify(reservationRedisValueOperations, times(1)).increment(reservationId.toString());
             verify(notificationRedisTemplate.opsForZSet(), times(1))
                     .remove("reservation:notifications", reservationId + "|" + memberId);
@@ -800,10 +804,10 @@ public class MemberReservationServiceUnitTest {
         @Test
         void 예약ID가_null이면_예외가_발생한다() {
             // given
-            MemberReservation reservation = mock(MemberReservation.class);
-            given(reservation.getReservationId()).willReturn(null);
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(null, Long.parseLong(memberId));
             given(memberReservationRepository.findById(anyLong()))
-                    .willReturn(Optional.of(reservation));
+                    .willReturn(Optional.of(memberReservation));
 
             // when & then
             assertThatThrownBy(() -> memberReservationService.cancelMemberReservation(1L))
@@ -822,7 +826,6 @@ public class MemberReservationServiceUnitTest {
                     MemberReservation.createMemberReservation(1L, Long.parseLong(memberId));
             reservation.updateMemberReservation(
                     popupId, "qrImage", LocalDate.of(2025, 7, 1), LocalTime.of(12, 0));
-
             given(memberReservationRepository.findByMemberIdAndStatus(anyLong(), eq(RESERVED)))
                     .willReturn(List.of(reservation));
 
@@ -1125,7 +1128,7 @@ public class MemberReservationServiceUnitTest {
         void 예약자_수가_존재하면_성공한다() {
             // given
             DailyMemberReservationCountResponse dailyMemberReservationCountResponse =
-                    mock(DailyMemberReservationCountResponse.class);
+                    DailyMemberReservationCountResponse.of(100L);
             given(
                             memberReservationRepository.findDailyMemberReservationCount(
                                     anyLong(), any(LocalDate.class)))
@@ -1148,20 +1151,25 @@ public class MemberReservationServiceUnitTest {
             // given
             LocalDate today = LocalDate.now();
             LocalTime now = LocalTime.now();
-            MemberReservation memberReservation =
-                    createMemberReservation(
-                            false, popupId, memberReservationId, today, now.minusMinutes(5));
+
+            MemberReservation mockMemberReservation = mock(MemberReservation.class);
+            given(mockMemberReservation.getReservationId()).willReturn(reservationId);
+            given(mockMemberReservation.getPopupId()).willReturn(popupId);
+            given(mockMemberReservation.getIsEntered()).willReturn(false);
+            given(mockMemberReservation.getReservationDate()).willReturn(today);
+            given(mockMemberReservation.getReservationTime()).willReturn(now);
+
             given(memberReservationRepository.findById(memberReservationId))
-                    .willReturn(Optional.of(memberReservation));
+                    .willReturn(Optional.of(mockMemberReservation));
 
             QrEntranceInfoRequest request = createQrRequest(today, now.minusMinutes(5));
 
             // when
-            memberReservationService.isEnterancePossible(request, popupId);
+            memberReservationService.isEntrancePossible(request, popupId);
 
             // then
-            verify(memberReservation).updateIsEntered();
-            verify(eventPublisher).publishEvent(any(MemberEnteredMessage.class));
+            verify(mockMemberReservation, times(1)).updateIsEntered();
+            verify(eventPublisher, times(1)).publishEvent(any(MemberEnteredMessage.class));
         }
 
         @Test
@@ -1173,7 +1181,7 @@ public class MemberReservationServiceUnitTest {
             QrEntranceInfoRequest request = createQrRequest(LocalDate.now(), LocalTime.now());
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(
                             MemberReservationErrorCode.MEMBER_RESERVATION_NOT_FOUND.getMessage());
@@ -1183,7 +1191,10 @@ public class MemberReservationServiceUnitTest {
         void 이미_입장한_회원예약이면_예외가_발생한다() {
             // given
             MemberReservation memberReservation =
-                    createMemberReservation(true, null, null, null, null);
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            memberReservation.updateIsEntered();
+
             given(memberReservationRepository.findById(memberReservationId))
                     .willReturn(Optional.of(memberReservation));
 
@@ -1191,7 +1202,7 @@ public class MemberReservationServiceUnitTest {
                     createQrRequest(LocalDate.now(), LocalTime.now().minusMinutes(5));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(
                             MemberReservationErrorCode.RESERVATION_ALREADY_ENTERED.getMessage());
@@ -1201,7 +1212,11 @@ public class MemberReservationServiceUnitTest {
         void 팝업ID가_일치하지_않으면_예외가_발생한다() {
             // given
             MemberReservation memberReservation =
-                    createMemberReservation(false, 999L, null, null, null);
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            memberReservation.updateMemberReservation(
+                    -1L, "qrImage", LocalDate.now(), LocalTime.now());
+
             given(memberReservationRepository.findById(memberReservationId))
                     .willReturn(Optional.of(memberReservation));
 
@@ -1209,7 +1224,7 @@ public class MemberReservationServiceUnitTest {
                     createQrRequest(LocalDate.now(), LocalTime.now().minusMinutes(5));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberReservationErrorCode.RESERVATION_POPUP_MISMATCH.getMessage());
         }
@@ -1218,7 +1233,10 @@ public class MemberReservationServiceUnitTest {
         void QR에_저장된_예약_ID와__실제_예약_ID가_일치하지_않으면_예외가_발생한다() {
             // given
             MemberReservation memberReservation =
-                    createMemberReservation(false, popupId, 888L, null, null);
+                    MemberReservation.createMemberReservation(-1L, Long.parseLong(memberId));
+            memberReservation.updateMemberReservation(
+                    popupId, "qrImage", LocalDate.now(), LocalTime.now());
+
             given(memberReservationRepository.findById(memberReservationId))
                     .willReturn(Optional.of(memberReservation));
 
@@ -1226,7 +1244,7 @@ public class MemberReservationServiceUnitTest {
                     createQrRequest(LocalDate.now(), LocalTime.now().minusMinutes(5));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberReservationErrorCode.INVALID_QR_CODE.getMessage());
         }
@@ -1237,14 +1255,18 @@ public class MemberReservationServiceUnitTest {
             LocalDate yesterday = LocalDate.now().minusDays(1);
             LocalTime now = LocalTime.now();
             MemberReservation memberReservation =
-                    createMemberReservation(false, popupId, reservationId, yesterday, null);
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            memberReservation.updateMemberReservation(
+                    popupId, "qrImage", yesterday, now.minusMinutes(5));
+
             given(memberReservationRepository.findById(memberReservationId))
                     .willReturn(Optional.of(memberReservation));
 
             QrEntranceInfoRequest request = createQrRequest(yesterday, now.minusMinutes(5));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberReservationErrorCode.RESERVATION_DATE_MISMATCH.getMessage());
         }
@@ -1254,16 +1276,19 @@ public class MemberReservationServiceUnitTest {
             // given
             LocalDate today = LocalDate.now();
             LocalTime now = LocalTime.now();
-            MemberReservation reservation =
-                    createMemberReservation(
-                            false, popupId, reservationId, today, now.plusMinutes(10));
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            memberReservation.updateMemberReservation(
+                    popupId, "qrImage", today, now.plusMinutes(10));
+
             given(memberReservationRepository.findById(memberReservationId))
-                    .willReturn(Optional.of(reservation));
+                    .willReturn(Optional.of(memberReservation));
 
             QrEntranceInfoRequest request = createQrRequest(today, now.plusMinutes(5));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
         }
@@ -1273,34 +1298,21 @@ public class MemberReservationServiceUnitTest {
             // given
             LocalDate today = LocalDate.now();
             LocalTime now = LocalTime.now();
-            MemberReservation reservation =
-                    createMemberReservation(
-                            false, popupId, reservationId, today, now.minusMinutes(40));
+            MemberReservation memberReservation =
+                    MemberReservation.createMemberReservation(
+                            reservationId, Long.parseLong(memberId));
+            memberReservation.updateMemberReservation(
+                    popupId, "qrImage", today, now.minusMinutes(40));
+
             given(memberReservationRepository.findById(memberReservationId))
-                    .willReturn(Optional.of(reservation));
+                    .willReturn(Optional.of(memberReservation));
 
             QrEntranceInfoRequest request = createQrRequest(today, now.minusMinutes(31));
 
             // when & then
-            assertThatThrownBy(() -> memberReservationService.isEnterancePossible(request, popupId))
+            assertThatThrownBy(() -> memberReservationService.isEntrancePossible(request, popupId))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberReservationErrorCode.RESERVATION_TIME_MISMATCH.getMessage());
-        }
-
-        private MemberReservation createMemberReservation(
-                Boolean isEntered,
-                Long popupId,
-                Long reservationId,
-                LocalDate date,
-                LocalTime time) {
-            MemberReservation memberReservation = mock(MemberReservation.class);
-            if (isEntered != null) given(memberReservation.getIsEntered()).willReturn(isEntered);
-            if (popupId != null) given(memberReservation.getPopupId()).willReturn(popupId);
-            if (reservationId != null)
-                given(memberReservation.getReservationId()).willReturn(reservationId);
-            if (date != null) given(memberReservation.getReservationDate()).willReturn(date);
-            if (time != null) given(memberReservation.getReservationTime()).willReturn(time);
-            return memberReservation;
         }
 
         private QrEntranceInfoRequest createQrRequest(LocalDate date, LocalTime time) {
