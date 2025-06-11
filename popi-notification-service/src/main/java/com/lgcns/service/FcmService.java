@@ -13,9 +13,6 @@ public class FcmService {
     private static final String NOTIFICATION_BODY = "예약하신 팝업이 1시간 뒤에 시작돼요. 잊지 말고 방문해 주세요!";
 
     public ApiFuture<String> sendMessageSync(String fcmToken) {
-        if (fcmToken == null || fcmToken.isEmpty()) {
-            return null;
-        }
 
         Notification notification =
                 Notification.builder()
