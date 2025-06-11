@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.doThrow;
 
 import com.lgcns.NotificationIntegrationTest;
-import com.lgcns.dto.request.FcmRequest;
+import com.lgcns.dto.request.Fcm;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
@@ -121,7 +121,7 @@ public class NotificationJobTest extends NotificationIntegrationTest {
             redisTemplate.opsForZSet().add(ZSET_KEY, member, epochTime);
             redisTemplate.opsForValue().set(memberFcmKey(memberId), "token");
 
-            FcmRequest fcmRequest = FcmRequest.of("token");
+            Fcm fcmRequest = Fcm.of("token");
             doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)
                     .sendMessageSync(fcmRequest);

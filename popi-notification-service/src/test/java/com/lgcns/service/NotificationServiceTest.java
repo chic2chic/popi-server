@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.lgcns.NotificationIntegrationTest;
-import com.lgcns.dto.request.FcmRequest;
+import com.lgcns.dto.request.Fcm;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
@@ -116,7 +116,7 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             notificationService.sendNotification(tokens);
 
             // then
-            assertAll(() -> verify(fcmService, times(2)).sendMessageSync(any(FcmRequest.class)));
+            assertAll(() -> verify(fcmService, times(2)).sendMessageSync(any(Fcm.class)));
         }
 
         @Test
@@ -128,14 +128,14 @@ public class NotificationServiceTest extends NotificationIntegrationTest {
             notificationService.sendNotification(tokens);
 
             // then
-            assertAll(() -> verify(fcmService, never()).sendMessageSync(any(FcmRequest.class)));
+            assertAll(() -> verify(fcmService, never()).sendMessageSync(any(Fcm.class)));
         }
 
         @Test
         void 알림_전송_과정에서_오류가_발생하면_예외를_반환한다() {
             // given
             List<String> tokens = List.of("token");
-            FcmRequest fcmRequest = FcmRequest.of("token");
+            Fcm fcmRequest = Fcm.of("token");
 
             doThrow(new CustomException(NotificationErrorCode.FCM_SEND_FAILED))
                     .when(fcmService)

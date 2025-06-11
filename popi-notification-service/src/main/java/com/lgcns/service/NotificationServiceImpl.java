@@ -1,6 +1,5 @@
 package com.lgcns.service;
 
-import com.lgcns.dto.request.FcmRequest;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
 import java.time.LocalDateTime;
@@ -64,16 +63,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendNotification(List<String> fcmTokens) {
-        fcmTokens.forEach(
-                fcmToken -> {
-                    FcmRequest fcmRequest = FcmRequest.of(fcmToken);
-                    fcmService.sendMessageSync(fcmRequest);
-                });
+        fcmTokens.forEach(fcmService::sendMessageSync);
     }
 
     @Override
     public void saveFcmToken(String memberId, String fcmToken) {
-        validateFcmToken(fcmToken);
 
         try {
             String key = "memberId: " + memberId;
@@ -90,12 +84,6 @@ public class NotificationServiceImpl implements NotificationService {
 
         } catch (DataAccessException e) {
             throw new CustomException(NotificationErrorCode.REDIS_ACCESS_FAILED);
-        }
-    }
-
-    private void validateFcmToken(String fcmToken) {
-        if (fcmToken == null || fcmToken.isBlank()) {
-            throw new CustomException(NotificationErrorCode.FCM_TOKEN_NOT_FOUND);
         }
     }
 }
