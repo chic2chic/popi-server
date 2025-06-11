@@ -63,12 +63,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 public class MemberReservationServiceUnitTest {
 
-    @InjectMocks MemberReservationServiceImpl memberReservationService;
+    @InjectMocks private MemberReservationServiceImpl memberReservationService;
 
-    @Mock MemberReservationRepository memberReservationRepository;
+    @Mock private MemberReservationRepository memberReservationRepository;
 
-    @Mock ManagerServiceClient managerServiceClient;
-    @Mock MemberServiceClient memberServiceClient;
+    @Mock private ManagerServiceClient managerServiceClient;
+    @Mock private MemberServiceClient memberServiceClient;
 
     @Mock private RedisTemplate<String, Long> reservationRedisTemplate;
     @Mock private ValueOperations<String, Long> reservationRedisValueOperations;
