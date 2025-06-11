@@ -1,17 +1,17 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.DatabaseCleaner;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.repository.MemberReservationRepository;
+import com.lgcns.service.MemberReservationService;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -59,9 +59,8 @@ public class MemberReservationMockTest extends WireMockIntegrationTest {
                     200,
                     objectMapper.writeValueAsString(
                             Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
-            doThrow(new RuntimeException("DB error"))
-                    .when(memberReservationRepository)
-                    .save(ArgumentMatchers.any(MemberReservation.class));
+            given(memberReservationRepository.save(ArgumentMatchers.any(MemberReservation.class)))
+                    .willThrow(new RuntimeException("DB error"));
 
             // when & then
             assertThatThrownBy(

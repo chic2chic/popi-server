@@ -6,6 +6,7 @@ import com.lgcns.dto.response.AvailableDateResponse;
 import com.lgcns.dto.response.DailyMemberReservationCountResponse;
 import com.lgcns.dto.response.ReservationDetailResponse;
 import com.lgcns.dto.response.SurveyChoiceResponse;
+import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import java.util.List;
 
 public interface MemberReservationService {
@@ -20,6 +21,8 @@ public interface MemberReservationService {
     void createMemberReservation(String memberId, Long reservationId);
 
     void updateMemberReservation(Long memberReservationId);
+
+    void createReservationNotification(MemberReservationNotificationEvent event);
 
     void cancelMemberReservation(Long memberReservationId);
 

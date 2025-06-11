@@ -1,6 +1,7 @@
 package com.lgcns.event.handler;
 
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.message.MemberEnteredMessage;
@@ -25,6 +26,12 @@ public class MemberReservationEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMemberReservationUpdateEvent(MemberReservationUpdateEvent event) {
         tryUpdateEvent(event.memberReservationId(), event.waitTime(), 0);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleMemberReservationNotificationEvent(MemberReservationNotificationEvent event) {
+        memberReservationService.createReservationNotification(event);
     }
 
     @Async

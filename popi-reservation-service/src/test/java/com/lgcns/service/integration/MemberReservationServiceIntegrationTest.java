@@ -1,4 +1,4 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
@@ -7,8 +7,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lgcns.DatabaseCleaner;
-import com.lgcns.WireMockIntegrationTest;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.domain.MemberReservationStatus;
@@ -21,6 +19,7 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.error.feign.FeignErrorCode;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.repository.MemberReservationRepository;
+import com.lgcns.service.MemberReservationService;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.TextStyle;
@@ -39,7 +38,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 
-class MemberReservationServiceTest extends WireMockIntegrationTest {
+class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
 
     @Autowired private MemberReservationService memberReservationService;
     @Autowired private MemberReservationRepository memberReservationRepository;

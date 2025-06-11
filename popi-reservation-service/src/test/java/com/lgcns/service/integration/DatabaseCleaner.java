@@ -1,4 +1,4 @@
-package com.lgcns;
+package com.lgcns.service.integration;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

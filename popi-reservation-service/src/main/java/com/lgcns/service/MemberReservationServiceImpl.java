@@ -17,6 +17,7 @@ import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
 import com.lgcns.dto.response.*;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
 import com.lgcns.kafka.message.MemberAnswerMessage;
@@ -255,7 +256,31 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                 reservationInfoResponse.reservationDate(),
                 reservationInfoResponse.reservationTime());
 
-        createReservationNotification(memberReservation);
+        eventPublisher.publishEvent(MemberReservationNotificationEvent.from(memberReservation));
+    }
+
+    @Override
+    public void createReservationNotification(MemberReservationNotificationEvent event) {
+        try {
+            LocalDate reservationDate = event.reservationDate();
+            LocalTime reservationTime = event.reservationTime();
+            LocalDateTime reservationDateTime = LocalDateTime.of(reservationDate, reservationTime);
+
+            long epochTime =
+                    reservationDateTime
+                            .minusHours(1)
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toEpochSecond();
+
+            String memberKey = event.memberReservationId() + "|" + event.memberId();
+
+            notificationRedisTemplate
+                    .opsForZSet()
+                    .add("reservation:notifications", memberKey, epochTime);
+
+        } catch (Exception e) {
+            log.error("예약 알림 등록 오류: {}", e.getMessage(), e);
+        }
     }
 
     @Override
@@ -269,9 +294,10 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         memberReservationRepository.delete(memberReservation);
         safeIncrement(reservationId.toString());
 
-        String member = getMember(memberReservation);
+        String memberKey =
+                memberReservation.getReservationId() + "|" + memberReservation.getMemberId();
 
-        notificationRedisTemplate.opsForZSet().remove("reservation:notifications", member);
+        notificationRedisTemplate.opsForZSet().remove("reservation:notifications", memberKey);
     }
 
     private MemberReservation findMemberReservationById(Long memberReservationId) {
@@ -408,32 +434,5 @@ public class MemberReservationServiceImpl implements MemberReservationService {
         }
 
         return reservableDateList;
-    }
-
-    private void createReservationNotification(MemberReservation memberReservation) {
-        try {
-            LocalDate reservationDate = memberReservation.getReservationDate();
-            LocalTime reservationTime = memberReservation.getReservationTime();
-            LocalDateTime reservationDateTime = LocalDateTime.of(reservationDate, reservationTime);
-
-            long epochTime =
-                    reservationDateTime
-                            .minusHours(1)
-                            .atZone(ZoneId.of("Asia/Seoul"))
-                            .toEpochSecond();
-
-            String member = getMember(memberReservation);
-
-            notificationRedisTemplate
-                    .opsForZSet()
-                    .add("reservation:notifications", member, epochTime);
-
-        } catch (Exception e) {
-            log.error("예약 알림 등록 오류: {}", e.getMessage(), e);
-        }
-    }
-
-    private String getMember(MemberReservation memberReservation) {
-        return memberReservation.getId() + "|" + memberReservation.getMemberId();
     }
 }
