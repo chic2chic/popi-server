@@ -26,6 +26,7 @@ import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
 import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
+import com.lgcns.error.exception.GlobalErrorCode;
 import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import com.lgcns.event.dto.MemberReservationUpdateEvent;
 import com.lgcns.exception.MemberReservationErrorCode;
@@ -1046,6 +1047,92 @@ public class MemberReservationServiceUnitTest {
 
             // when & then
             assertUpcomingReservationIsNull();
+        }
+    }
+
+    @Nested
+    class 요일별_예약_통계를_조회할_때 {
+
+        @Test
+        void 여러_팝업의_요일별_예약_통계를_정상적으로_조회한다() {
+            // given
+            List<DayOfWeekReservationStatsResponse> mockStats =
+                    List.of(
+                            DayOfWeekReservationStatsResponse.of(1L, 5, 3, 2, 0, 0, 0, 0),
+                            DayOfWeekReservationStatsResponse.of(2L, 0, 0, 0, 0, 4, 6, 0),
+                            DayOfWeekReservationStatsResponse.of(3L, 1, 1, 1, 1, 1, 1, 1));
+
+            given(memberReservationRepository.findAllDayOfWeekReservationStats())
+                    .willReturn(mockStats);
+
+            // when
+            Map<Long, DayOfWeekReservationStatsResponse> result =
+                    memberReservationService.getAllDayOfWeekReservationStats();
+
+            // then
+            assertThat(result).hasSize(3);
+
+            DayOfWeekReservationStatsResponse popup1Stats = result.get(1L);
+            assertThat(popup1Stats.popupId()).isEqualTo(1L);
+            assertThat(popup1Stats.mondayCount()).isEqualTo(5);
+            assertThat(popup1Stats.tuesdayCount()).isEqualTo(3);
+            assertThat(popup1Stats.wednesdayCount()).isEqualTo(2);
+            assertThat(popup1Stats.thursdayCount()).isEqualTo(0);
+            assertThat(popup1Stats.fridayCount()).isEqualTo(0);
+            assertThat(popup1Stats.saturdayCount()).isEqualTo(0);
+            assertThat(popup1Stats.sundayCount()).isEqualTo(0);
+
+            DayOfWeekReservationStatsResponse popup2Stats = result.get(2L);
+            assertThat(popup2Stats.popupId()).isEqualTo(2L);
+            assertThat(popup2Stats.mondayCount()).isEqualTo(0);
+            assertThat(popup2Stats.tuesdayCount()).isEqualTo(0);
+            assertThat(popup2Stats.wednesdayCount()).isEqualTo(0);
+            assertThat(popup2Stats.thursdayCount()).isEqualTo(0);
+            assertThat(popup2Stats.fridayCount()).isEqualTo(4);
+            assertThat(popup2Stats.saturdayCount()).isEqualTo(6);
+            assertThat(popup2Stats.sundayCount()).isEqualTo(0);
+
+            DayOfWeekReservationStatsResponse popup3Stats = result.get(3L);
+            assertThat(popup3Stats.popupId()).isEqualTo(3L);
+            assertThat(popup3Stats.mondayCount()).isEqualTo(1);
+            assertThat(popup3Stats.tuesdayCount()).isEqualTo(1);
+            assertThat(popup3Stats.wednesdayCount()).isEqualTo(1);
+            assertThat(popup3Stats.thursdayCount()).isEqualTo(1);
+            assertThat(popup3Stats.fridayCount()).isEqualTo(1);
+            assertThat(popup3Stats.saturdayCount()).isEqualTo(1);
+            assertThat(popup3Stats.sundayCount()).isEqualTo(1);
+
+            verify(memberReservationRepository, times(1)).findAllDayOfWeekReservationStats();
+        }
+
+        @Test
+        void 예약_통계가_없는_경우_빈_맵을_반환한다() {
+            // given
+            given(memberReservationRepository.findAllDayOfWeekReservationStats())
+                    .willReturn(Collections.emptyList());
+
+            // when
+            Map<Long, DayOfWeekReservationStatsResponse> result =
+                    memberReservationService.getAllDayOfWeekReservationStats();
+
+            // then
+            assertThat(result).isEmpty();
+            verify(memberReservationRepository, times(1)).findAllDayOfWeekReservationStats();
+        }
+
+        @Test
+        void 데이터베이스_조회_중_예외가_발생하면_500_에러를_발생시킨다() {
+            // given
+            given(memberReservationRepository.findAllDayOfWeekReservationStats())
+                    .willThrow(new RuntimeException("Database connection failed"));
+
+            // when & then
+            assertThatThrownBy(() -> memberReservationService.getAllDayOfWeekReservationStats())
+                    .isInstanceOf(CustomException.class)
+                    .hasFieldOrPropertyWithValue(
+                            "errorCode", GlobalErrorCode.INTERNAL_SERVER_ERROR);
+
+            verify(memberReservationRepository, times(1)).findAllDayOfWeekReservationStats();
         }
     }
 
