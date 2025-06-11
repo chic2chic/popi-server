@@ -21,7 +21,7 @@ public class NotificationController {
     @PostMapping("/fcm/register")
     @Operation(summary = "FCM 토큰 등록", description = "사용자 디바이스의 FCM 토큰을 등록합니다.")
     public ResponseEntity<Void> fcmTokenCreate(
-            @RequestHeader("member-id") Long memberId,
+            @RequestHeader("member-id") String memberId,
             @RequestParam(name = "fcmToken") String fcmToken) {
         notificationService.saveFcmToken(memberId, fcmToken);
         return ResponseEntity.status(HttpStatus.CREATED).build();
