@@ -1,5 +1,6 @@
 package com.lgcns.service;
 
+import com.lgcns.aop.annotation.AutoRetry;
 import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final MemberServiceClient memberServiceClient;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    @AutoRetry
     @Override
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
         OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
@@ -80,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
         return getLoginResponse(response.memberId(), response.role());
     }
 
+    @AutoRetry
     @Override
     public TokenReissueResponse reissueToken(String refreshTokenValue) {
         RefreshTokenDto oldRefreshTokenDto =

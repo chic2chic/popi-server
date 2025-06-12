@@ -1,5 +1,6 @@
 package com.lgcns.service;
 
+import com.lgcns.aop.annotation.AutoRetry;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.PopupIdsRequest;
 import com.lgcns.client.reservationClient.ReservationServiceClient;
@@ -18,17 +19,20 @@ public class PopupServiceImpl implements PopupService {
     private final ManagerServiceClient managerServiceClient;
     private final ReservationServiceClient reservationServiceClient;
 
+    @AutoRetry
     @Override
     public SliceResponse<PopupInfoResponse> findPopupsByName(
             String keyword, Long lastPopupId, int size) {
         return managerServiceClient.findPopupsByName(keyword, lastPopupId, size);
     }
 
+    @AutoRetry
     @Override
     public PopupDetailsResponse findPopupDetailsById(Long popupId) {
         return managerServiceClient.findPopupDetailsById(popupId);
     }
 
+    @AutoRetry
     @Override
     public List<PopupInfoResponse> findHotPopups() {
         List<Long> popupIds = reservationServiceClient.findHotPopupIds();
@@ -36,6 +40,7 @@ public class PopupServiceImpl implements PopupService {
         return managerServiceClient.findHotPopupsByIds(popupIdsRequest);
     }
 
+    @AutoRetry
     @Override
     public List<PopupMapResponse> findPopupsByMapArea(
             Double latMin, Double latMax, Double lngMin, Double lngMax) {
