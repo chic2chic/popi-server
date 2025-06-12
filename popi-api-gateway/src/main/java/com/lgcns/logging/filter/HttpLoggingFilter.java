@@ -29,9 +29,7 @@ public class HttpLoggingFilter implements GlobalFilter, Ordered {
         String traceId = UUID.randomUUID().toString();
         MDC.put("traceId", traceId);
 
-        ServerHttpRequest request = exchange.getRequest();
-
-        log.info(HttpRequestLogInfo.from(request).toJson());
+        logRequest(exchange);
 
         ServerHttpResponse originalResponse = exchange.getResponse();
 
@@ -54,19 +52,7 @@ public class HttpLoggingFilter implements GlobalFilter, Ordered {
                                                                                 .readableByteCount()];
                                                         joined.read(content);
 
-                                                        String contentType =
-                                                                originalResponse
-                                                                        .getHeaders()
-                                                                        .getFirst("Content-Type");
-
-                                                        HttpResponseLogInfo responseLog =
-                                                                HttpResponseLogInfo.from(
-                                                                        content,
-                                                                        originalResponse
-                                                                                .getStatusCode(),
-                                                                        contentType);
-
-                                                        log.info(responseLog.toJson());
+                                                        logResponse(content, originalResponse);
 
                                                         // 읽은 응답 바디를 클라이언트에게 다시 전달 (body는 한 번만 소비
                                                         // 가능하므로 wrap 필요)
@@ -88,5 +74,19 @@ public class HttpLoggingFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         return -1;
+    }
+
+    private static void logRequest(ServerWebExchange exchange) {
+        ServerHttpRequest request = exchange.getRequest();
+        log.info(HttpRequestLogInfo.from(request).toJson());
+    }
+
+    private static void logResponse(byte[] content, ServerHttpResponse originalResponse) {
+        String contentType = originalResponse.getHeaders().getFirst("Content-Type");
+
+        HttpResponseLogInfo responseLog =
+                HttpResponseLogInfo.from(content, originalResponse.getStatusCode(), contentType);
+
+        log.info(responseLog.toJson());
     }
 }
