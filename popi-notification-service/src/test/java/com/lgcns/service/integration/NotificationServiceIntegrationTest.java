@@ -1,12 +1,12 @@
-package com.lgcns.service;
+package com.lgcns.service.integration;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.lgcns.NotificationIntegrationTest;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
+import com.lgcns.service.NotificationService;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 
-public class NotificationServiceTest extends NotificationIntegrationTest {
+public class NotificationServiceIntegrationTest extends NotificationIntegrationTest {
 
     @Autowired private NotificationService notificationService;
     @Autowired private RedisTemplate<String, String> redisTemplate;
