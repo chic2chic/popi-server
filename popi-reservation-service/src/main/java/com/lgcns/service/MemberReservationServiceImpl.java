@@ -315,7 +315,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                                     DayOfWeekReservationStatsResponse::popupId, stats -> stats));
         } catch (Exception e) {
             log.error("DB 조회 및 쿼리 수행 중 에러 발생 {}", e.getMessage(), e);
-            throw new CustomException(GlobalErrorCode.INTERNAL_SERVER_ERROR);
+            throw new CustomException(GlobalErrorCode.DATABASE_ERROR);
         }
     }
 

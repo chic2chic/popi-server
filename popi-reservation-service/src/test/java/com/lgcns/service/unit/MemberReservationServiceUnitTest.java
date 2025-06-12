@@ -1129,8 +1129,7 @@ public class MemberReservationServiceUnitTest {
             // when & then
             assertThatThrownBy(() -> memberReservationService.getAllDayOfWeekReservationStats())
                     .isInstanceOf(CustomException.class)
-                    .hasFieldOrPropertyWithValue(
-                            "errorCode", GlobalErrorCode.INTERNAL_SERVER_ERROR);
+                    .hasFieldOrPropertyWithValue("errorCode", GlobalErrorCode.DATABASE_ERROR);
 
             verify(memberReservationRepository, times(1)).findAllDayOfWeekReservationStats();
         }
