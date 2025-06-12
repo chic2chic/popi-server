@@ -1,6 +1,7 @@
 package com.lgcns.aop.aspect;
 
 import com.lgcns.aop.util.LoggingUtil;
+import com.lgcns.error.exception.CustomException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,15 @@ public class RepositoryLoggingAspect {
                     methodName,
                     duration);
             return result;
+
+        } catch (CustomException ce) {
+            log.info(
+                    "[CustomException] TraceId: {}, Method: {}, Code: {}, Message: {}",
+                    traceId,
+                    methodName,
+                    ce.getErrorCode(),
+                    ce.getMessage());
+            throw ce;
 
         } catch (Exception e) {
             log.error(
