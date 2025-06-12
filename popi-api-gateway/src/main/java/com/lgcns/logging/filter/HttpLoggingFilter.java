@@ -31,6 +31,8 @@ public class HttpLoggingFilter implements GlobalFilter, Ordered {
 
         logRequest(exchange);
 
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getPath().value();
         ServerHttpResponse originalResponse = exchange.getResponse();
 
         // 응답 바디를 가로채기 위해 응답 객체를 데코레이터로 감쌈
@@ -39,6 +41,11 @@ public class HttpLoggingFilter implements GlobalFilter, Ordered {
 
                     @Override
                     public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
+                        if (path.startsWith("/auth")) {
+                            logResponse(null, originalResponse);
+                            return super.writeWith(body);
+                        }
+
                         if (body instanceof Flux<? extends DataBuffer> fluxBody) {
                             return super.writeWith(
                                     fluxBody.buffer()

@@ -30,7 +30,7 @@ public record HttpResponseLogInfo(String traceId, String responseBody, Integer r
                 isVisible(
                         MediaType.valueOf(contentType == null ? "application/json" : contentType));
         if (visible) {
-            if (content.length > 0) {
+            if (content != null && content.length > 0) {
                 return new String(
                         content, 0, Math.min(content.length, 5120), StandardCharsets.UTF_8);
             } else {
