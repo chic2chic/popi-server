@@ -17,9 +17,11 @@ public record HttpRequestLogInfo(
 
     // WebFlux용 from 메서드
     public static HttpRequestLogInfo from(ServerHttpRequest request) {
+        String queryString = request.getURI().getQuery();
         String traceId = MDC.get("traceId");
         String requestMethod = request.getMethod().toString();
-        String requestUri = request.getURI().toString();
+        String requestUri =
+                request.getURI().getPath() + (queryString == null ? "" : "?" + queryString);
         String xAmznTraceId = request.getHeaders().getFirst("x-amzn-trace-id");
         String userAgent = request.getHeaders().getFirst("user-agent");
 
