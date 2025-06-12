@@ -2,12 +2,10 @@ package com.lgcns.service;
 
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
-import com.lgcns.dto.response.AvailableDateResponse;
-import com.lgcns.dto.response.DailyMemberReservationCountResponse;
-import com.lgcns.dto.response.ReservationDetailResponse;
-import com.lgcns.dto.response.SurveyChoiceResponse;
+import com.lgcns.dto.response.*;
 import com.lgcns.event.dto.MemberReservationNotificationEvent;
 import java.util.List;
+import java.util.Map;
 
 public interface MemberReservationService {
     AvailableDateResponse findAvailableDate(Long popupId, String date);
@@ -33,4 +31,6 @@ public interface MemberReservationService {
     void createMemberAnswer(Long popupId, String memberId, List<SurveyChoiceRequest> surveyChoices);
 
     void isEntrancePossible(QrEntranceInfoRequest qrEntranceInfoRequest, Long popupId);
+
+    Map<Long, DayOfWeekReservationStatsResponse> getAllDayOfWeekReservationStats();
 }

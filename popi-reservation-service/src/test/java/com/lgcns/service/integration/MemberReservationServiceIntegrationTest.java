@@ -1290,6 +1290,103 @@ class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
         }
     }
 
+    @Nested
+    class 요일별_예약_집계_테이블을_조회할_때 {
+
+        @Test
+        void 여러_팝업의_요일별_예약자_수를_정상적으로_조회한다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            insertReservationsForDayOfWeek(1L, LocalDate.of(2025, 6, 2), 5);
+            insertReservationsForDayOfWeek(1L, LocalDate.of(2025, 6, 3), 3);
+            insertReservationsForDayOfWeek(1L, LocalDate.of(2025, 6, 4), 2);
+
+            insertReservationsForDayOfWeek(2L, LocalDate.of(2025, 6, 6), 4);
+            insertReservationsForDayOfWeek(2L, LocalDate.of(2025, 6, 7), 6);
+
+            // when
+            Map<Long, DayOfWeekReservationStatsResponse> result =
+                    memberReservationService.getAllDayOfWeekReservationStats();
+
+            // then
+            assertThat(result).hasSize(2);
+
+            DayOfWeekReservationStatsResponse popup1Stats = result.get(1L);
+            assertThat(popup1Stats.popupId()).isEqualTo(1L);
+            assertThat(popup1Stats.mondayCount()).isEqualTo(5);
+            assertThat(popup1Stats.tuesdayCount()).isEqualTo(3);
+            assertThat(popup1Stats.wednesdayCount()).isEqualTo(2);
+            assertThat(popup1Stats.thursdayCount()).isEqualTo(0);
+            assertThat(popup1Stats.fridayCount()).isEqualTo(0);
+            assertThat(popup1Stats.saturdayCount()).isEqualTo(0);
+            assertThat(popup1Stats.sundayCount()).isEqualTo(0);
+
+            DayOfWeekReservationStatsResponse popup2Stats = result.get(2L);
+            assertThat(popup2Stats.popupId()).isEqualTo(2L);
+            assertThat(popup2Stats.mondayCount()).isEqualTo(0);
+            assertThat(popup2Stats.tuesdayCount()).isEqualTo(0);
+            assertThat(popup2Stats.wednesdayCount()).isEqualTo(0);
+            assertThat(popup2Stats.thursdayCount()).isEqualTo(0);
+            assertThat(popup2Stats.fridayCount()).isEqualTo(4);
+            assertThat(popup2Stats.saturdayCount()).isEqualTo(6);
+            assertThat(popup2Stats.sundayCount()).isEqualTo(0);
+        }
+
+        @Test
+        void 예약_통계가_없는_경우_빈_맵을_반환한다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            // when
+            Map<Long, DayOfWeekReservationStatsResponse> result =
+                    memberReservationService.getAllDayOfWeekReservationStats();
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void PENDING_상태의_예약은_통계에서_제외된다() {
+            // given
+            memberReservationRepository.deleteAll();
+
+            insertPendingMemberReservation(LocalDate.of(2025, 6, 2), LocalTime.of(12, 0));
+
+            insertReservationsForDayOfWeek(1L, LocalDate.of(2025, 6, 2), 3);
+
+            // when
+            Map<Long, DayOfWeekReservationStatsResponse> result =
+                    memberReservationService.getAllDayOfWeekReservationStats();
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result.get(1L).mondayCount()).isEqualTo(3);
+        }
+    }
+
+    private void insertReservationsForDayOfWeek(Long popupId, LocalDate date, int count) {
+        for (int i = 0; i < count; i++) {
+            MemberReservation reservation =
+                    MemberReservation.builder()
+                            .reservationId(reservationIdGenerator.getAndIncrement())
+                            .memberId(memberIdGenerator.getAndIncrement())
+                            .popupId(popupId)
+                            .qrImage("iVBORw0KGgoAAAA...")
+                            .reservationDate(date)
+                            .reservationTime(LocalTime.of(12, 0))
+                            .build();
+
+            reservation.updateMemberReservation(
+                    reservation.getPopupId(),
+                    reservation.getQrImage(),
+                    reservation.getReservationDate(),
+                    reservation.getReservationTime());
+
+            memberReservationRepository.save(reservation);
+        }
+    }
+
     private void insertMultipleReservations(Long popupId, int count) {
         for (int i = 0; i < count; i++) {
             MemberReservation reservation =

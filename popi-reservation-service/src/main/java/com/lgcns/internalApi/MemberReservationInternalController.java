@@ -1,10 +1,12 @@
 package com.lgcns.internalApi;
 
 import com.lgcns.dto.response.DailyMemberReservationCountResponse;
+import com.lgcns.dto.response.DayOfWeekReservationStatsResponse;
 import com.lgcns.service.MemberReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,5 +31,10 @@ public class MemberReservationInternalController {
     public DailyMemberReservationCountResponse findDailyMemberReservationCount(
             @PathVariable(name = "popupId") Long popupId) {
         return memberReservationService.findDailyMemberReservationCount(popupId);
+    }
+
+    @GetMapping("/day-of-week-count")
+    public Map<Long, DayOfWeekReservationStatsResponse> getAllDayOfWeekReservationStats() {
+        return memberReservationService.getAllDayOfWeekReservationStats();
     }
 }
