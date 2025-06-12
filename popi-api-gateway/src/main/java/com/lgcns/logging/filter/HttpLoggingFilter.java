@@ -9,6 +9,7 @@ import org.slf4j.MDC;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.*;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -20,7 +21,8 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-public class HttpLoggingFilter implements GlobalFilter, Ordered {
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class HttpLoggingFilter implements GlobalFilter {
 
     private static final DataBufferFactory bufferFactory = new DefaultDataBufferFactory();
 
@@ -75,12 +77,6 @@ public class HttpLoggingFilter implements GlobalFilter, Ordered {
         // 응답 객체만 데코레이터로 변환 + 체인 필터 실행
         return chain.filter(exchange.mutate().response(decoratedResponse).build())
                 .doFinally(signal -> MDC.clear());
-    }
-
-    // 필터 우선순위 설정 - 가장 먼저 실행
-    @Override
-    public int getOrder() {
-        return -1;
     }
 
     private static void logRequest(ServerWebExchange exchange) {

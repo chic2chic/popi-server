@@ -15,7 +15,6 @@ public record HttpRequestLogInfo(
         String userAgent) {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    // WebFlux용 from 메서드
     public static HttpRequestLogInfo from(ServerHttpRequest request) {
         String queryString = request.getURI().getQuery();
         String traceId = MDC.get("traceId");
