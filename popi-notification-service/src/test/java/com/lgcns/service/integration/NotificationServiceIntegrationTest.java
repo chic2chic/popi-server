@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.lgcns.NotificationIntegrationTest;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.NotificationErrorCode;
 import com.lgcns.service.NotificationService;

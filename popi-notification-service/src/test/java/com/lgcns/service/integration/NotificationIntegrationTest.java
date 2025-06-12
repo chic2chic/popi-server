@@ -1,4 +1,4 @@
-package com.lgcns;
+package com.lgcns.service.integration;
 
 import com.lgcns.service.FcmService;
 import org.springframework.boot.test.context.SpringBootTest;
