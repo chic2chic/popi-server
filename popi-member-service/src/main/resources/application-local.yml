@@ -49,3 +49,7 @@ spring-doc:
 auth:
   service:
     name: auth
+
+grpc:
+  server:
+    port: 9092
