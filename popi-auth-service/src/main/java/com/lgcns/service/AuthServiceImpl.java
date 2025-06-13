@@ -106,10 +106,15 @@ public class AuthServiceImpl implements AuthService {
         RefreshTokenDto newRefreshTokenDto =
                 jwtTokenService.reissueRefreshToken(oldRefreshTokenDto);
 
-        MemberInternalInfoResponse response =
-                memberServiceClient.findByMemberId(newRefreshTokenDto.memberId());
+        MemberInternalInfoResponse grpcResponse =
+                memberGrpcClient.findByMemberId(
+                        MemberInternalIdRequest.newBuilder()
+                                .setMemberId(newRefreshTokenDto.memberId())
+                                .build());
+
         AccessTokenDto newAccessTokenDto =
-                jwtTokenService.reissueAccessToken(response.memberId(), response.role());
+                jwtTokenService.reissueAccessToken(
+                        grpcResponse.getMemberId(), toDomainMemberRole(grpcResponse.getRole()));
 
         return TokenReissueResponse.of(
                 newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());

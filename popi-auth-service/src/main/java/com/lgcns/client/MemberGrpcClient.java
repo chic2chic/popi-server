@@ -24,4 +24,8 @@ public class MemberGrpcClient {
     public MemberInternalInfoResponse findByOauthInfo(MemberInternalOauthInfoRequest request) {
         return stub().findByOauthInfo(request);
     }
+
+    public MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request) {
+        return stub().findByMemberId(request);
+    }
 }

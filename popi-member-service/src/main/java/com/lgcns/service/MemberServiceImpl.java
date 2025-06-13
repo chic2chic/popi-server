@@ -80,16 +80,17 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional(readOnly = true)
-    public com.lgcns.dto.response.MemberInternalInfoResponse findMemberId(Long memberId) {
-        final Member member = findByMemberId(memberId);
+    public MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request) {
+        final Member member = findByMemberId(request.getMemberId());
 
-        return new com.lgcns.dto.response.MemberInternalInfoResponse(
-                member.getId(),
-                member.getNickname(),
-                member.getAge(),
-                member.getGender(),
-                member.getRole(),
-                member.getStatus());
+        return MemberInternalInfoResponse.newBuilder()
+                .setMemberId(member.getId())
+                .setNickname(member.getNickname())
+                .setAge(toGrpcMemberAge(member.getAge()))
+                .setGender(toGrpcMemberGender(member.getGender()))
+                .setRole(toGrpcMemberRole(member.getRole()))
+                .setStatus(toGrpcMemberStatus(member.getStatus()))
+                .build();
     }
 
     @Override

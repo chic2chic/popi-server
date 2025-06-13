@@ -12,7 +12,7 @@ public interface MemberService {
 
     MemberInternalInfoResponse findByOauthInfo(MemberInternalOauthInfoRequest request);
 
-    com.lgcns.dto.response.MemberInternalInfoResponse findMemberId(Long memberId);
+    MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request);
 
     void rejoinMember(Long memberId);
 }

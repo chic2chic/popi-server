@@ -20,7 +20,6 @@ public class MemberGrpcService extends MemberServiceGrpc.MemberServiceImplBase {
             MemberInternalRegisterRequest request,
             StreamObserver<MemberInternalRegisterResponse> responseObserver) {
         MemberInternalRegisterResponse grpcResponse = memberService.registerMember(request);
-
         responseObserver.onNext(grpcResponse);
         responseObserver.onCompleted();
     }
@@ -46,9 +45,16 @@ public class MemberGrpcService extends MemberServiceGrpc.MemberServiceImplBase {
     public void findByMemberId(
             MemberInternalIdRequest request,
             StreamObserver<MemberInternalInfoResponse> responseObserver) {
-        MemberInternalInfoResponse grpcResponse = memberService.findByMemberId(request);
-
-        responseObserver.onNext(grpcResponse);
-        responseObserver.onCompleted();
+        try {
+            MemberInternalInfoResponse grpcResponse = memberService.findByMemberId(request);
+            responseObserver.onNext(grpcResponse);
+            responseObserver.onCompleted();
+        } catch (CustomException e) {
+            if (e.getErrorCode() == MemberErrorCode.MEMBER_NOT_FOUND) {
+                responseObserver.onError(Status.NOT_FOUND.asRuntimeException());
+            } else {
+                responseObserver.onError(Status.INTERNAL.asRuntimeException());
+            }
+        }
     }
 }
