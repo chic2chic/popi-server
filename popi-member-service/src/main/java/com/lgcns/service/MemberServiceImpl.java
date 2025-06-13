@@ -5,15 +5,11 @@ import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
 import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
-import com.popi.common.grpc.member.MemberInternalRegisterRequest;
-import com.popi.common.grpc.member.MemberInternalRegisterResponse;
-import java.util.Optional;
+import com.popi.common.grpc.member.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,31 +60,30 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public MemberInternalInfoResponse findOauthInfo(MemberOauthInfoRequest request) {
-        Optional<Member> optionalMember =
-                memberRepository.findByOauthInfo(
-                        OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()));
+    public MemberInternalInfoResponse findByOauthInfo(MemberInternalOauthInfoRequest request) {
+        Member member =
+                memberRepository
+                        .findByOauthInfo(
+                                OauthInfo.createOauthInfo(
+                                        request.getOauthId(), request.getOauthProvider()))
+                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        if (optionalMember.isPresent()) {
-            Member member = optionalMember.get();
-            return new MemberInternalInfoResponse(
-                    member.getId(),
-                    member.getNickname(),
-                    member.getAge(),
-                    member.getGender(),
-                    member.getRole(),
-                    member.getStatus());
-        }
-
-        return null;
+        return MemberInternalInfoResponse.newBuilder()
+                .setMemberId(member.getId())
+                .setNickname(member.getNickname())
+                .setAge(toGrpcMemberAge(member.getAge()))
+                .setGender(toGrpcMemberGender(member.getGender()))
+                .setRole(toGrpcMemberRole(member.getRole()))
+                .setStatus(toGrpcMemberStatus(member.getStatus()))
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public MemberInternalInfoResponse findMemberId(Long memberId) {
+    public com.lgcns.dto.response.MemberInternalInfoResponse findMemberId(Long memberId) {
         final Member member = findByMemberId(memberId);
 
-        return new MemberInternalInfoResponse(
+        return new com.lgcns.dto.response.MemberInternalInfoResponse(
                 member.getId(),
                 member.getNickname(),
                 member.getAge(),

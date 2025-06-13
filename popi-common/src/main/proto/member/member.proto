@@ -6,6 +6,8 @@ option java_outer_classname = "MemberProto";
 
 service MemberService {
   rpc RegisterMember (MemberInternalRegisterRequest) returns (MemberInternalRegisterResponse);
+  rpc FindByOauthInfo (MemberInternalOauthInfoRequest) returns (MemberInternalInfoResponse);
+  rpc FindByMemberId (MemberInternalIdRequest) returns (MemberInternalInfoResponse);
 }
 
 message MemberInternalRegisterRequest {
@@ -16,9 +18,27 @@ message MemberInternalRegisterRequest {
   MemberGender gender = 5;
 }
 
+message MemberInternalOauthInfoRequest {
+  string oauthId = 1;
+  string oauthProvider = 2;
+}
+
+message MemberInternalIdRequest {
+  int64 memberId = 1;
+}
+
 message MemberInternalRegisterResponse {
   int64 memberId = 1;
   MemberRole role = 2;
+}
+
+message MemberInternalInfoResponse {
+  int64 memberId = 1;
+  string nickname = 2;
+  MemberAge age = 3;
+  MemberGender gender = 4;
+  MemberRole role = 5;
+  MemberStatus status = 6;
 }
 
 enum MemberAge {
@@ -36,4 +56,10 @@ enum MemberGender {
 enum MemberRole {
   ADMIN = 0;
   USER = 1;
+}
+
+enum MemberStatus {
+    NORMAL = 0;
+    DELETED = 1;
+    FORBIDDEN = 2;
 }

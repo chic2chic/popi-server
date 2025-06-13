@@ -1,9 +1,9 @@
 package com.lgcns.grpc.mapper;
 
-import com.lgcns.enums.MemberStatus;
 import com.popi.common.grpc.member.MemberAge;
 import com.popi.common.grpc.member.MemberGender;
 import com.popi.common.grpc.member.MemberRole;
+import com.popi.common.grpc.member.MemberStatus;
 
 public class MemberGrpcMapper {
 

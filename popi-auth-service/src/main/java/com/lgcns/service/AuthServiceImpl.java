@@ -9,18 +9,16 @@ import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberRole;
-import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
-import com.popi.common.grpc.member.MemberInternalRegisterRequest;
-import com.popi.common.grpc.member.MemberInternalRegisterResponse;
+import com.popi.common.grpc.member.*;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -43,23 +41,32 @@ public class AuthServiceImpl implements AuthService {
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
         OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
 
-        MemberInternalInfoResponse response =
-                memberServiceClient.findByOauthInfo(
-                        MemberOauthInfoRequest.of(
-                                oidcUser.getSubject(), oidcUser.getIssuer().toString()));
+        try {
+            MemberInternalInfoResponse grpcResponse =
+                    memberGrpcClient.findByOauthInfo(
+                            MemberInternalOauthInfoRequest.newBuilder()
+                                    .setOauthId(oidcUser.getSubject())
+                                    .setOauthProvider(oidcUser.getIssuer().toString())
+                                    .build());
 
-        if (response != null) {
-            if (response.status() == MemberStatus.DELETED) {
-                memberServiceClient.rejoinMember(response.memberId());
+            if (grpcResponse.getStatus() == MemberStatus.DELETED) {
+                memberServiceClient.rejoinMember(grpcResponse.getMemberId());
             }
 
-            return getLoginResponse(response.memberId(), response.role());
-        }
+            return getLoginResponse(
+                    grpcResponse.getMemberId(), toDomainMemberRole(grpcResponse.getRole()));
 
-        String registerToken =
-                jwtTokenService.createRegisterToken(
-                        oidcUser.getSubject(), oidcUser.getIssuer().toString());
-        return SocialLoginResponse.notRegistered(registerToken);
+        } catch (StatusRuntimeException e) {
+            Status.Code code = e.getStatus().getCode();
+
+            if (code == Status.Code.NOT_FOUND) {
+                String registerToken =
+                        jwtTokenService.createRegisterToken(
+                                oidcUser.getSubject(), oidcUser.getIssuer().toString());
+                return SocialLoginResponse.notRegistered(registerToken);
+            }
+            throw e;
+        }
     }
 
     @Override
