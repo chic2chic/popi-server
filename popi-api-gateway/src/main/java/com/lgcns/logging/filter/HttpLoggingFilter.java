@@ -81,7 +81,7 @@ public class HttpLoggingFilter implements GlobalFilter {
 
     private static void logRequest(ServerWebExchange exchange) {
         ServerHttpRequest request = exchange.getRequest();
-        log.info(HttpRequestLogInfo.from(request).toJson());
+        log.info("{}", HttpRequestLogInfo.from(request));
     }
 
     private static void logResponse(byte[] content, ServerHttpResponse originalResponse) {
@@ -90,6 +90,6 @@ public class HttpLoggingFilter implements GlobalFilter {
         HttpResponseLogInfo responseLog =
                 HttpResponseLogInfo.from(content, originalResponse.getStatusCode(), contentType);
 
-        log.info(responseLog.toJson());
+        log.info("{}", responseLog);
     }
 }

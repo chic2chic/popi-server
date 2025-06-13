@@ -1,6 +1,5 @@
 package com.lgcns.logging.dto;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import org.slf4j.MDC;
@@ -31,13 +30,5 @@ public record HttpRequestLogInfo(
                 .xAmznTraceId(xAmznTraceId)
                 .userAgent(userAgent)
                 .build();
-    }
-
-    public String toJson() {
-        try {
-            return objectMapper.writeValueAsString(this).replace("\\", "");
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
