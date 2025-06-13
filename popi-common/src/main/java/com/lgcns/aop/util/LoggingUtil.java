@@ -16,8 +16,8 @@ public class LoggingUtil {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static final String TRACE_ID = "trace-id";
-    public static final String MEMBER_ID = "member-id";
+    public static final String TRACE_ID = "traceId";
+    public static final String MEMBER_ID = "memberId";
 
     public static void setTraceId(String traceId) {
         if (isNotEmpty(traceId)) MDC.put(TRACE_ID, traceId);

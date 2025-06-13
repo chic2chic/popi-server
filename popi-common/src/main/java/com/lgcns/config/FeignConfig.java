@@ -1,8 +1,5 @@
 package com.lgcns.config;
 
-import static com.lgcns.aop.util.LoggingUtil.MEMBER_ID;
-import static com.lgcns.aop.util.LoggingUtil.TRACE_ID;
-
 import com.lgcns.aop.util.LoggingUtil;
 import com.lgcns.error.feign.FeignErrorDecoder;
 import feign.RequestInterceptor;
@@ -26,8 +23,8 @@ public class FeignConfig {
             String traceId = LoggingUtil.getTraceId();
             String memberId = LoggingUtil.getMemberId();
 
-            if (traceId != null) template.header(TRACE_ID, traceId);
-            if (memberId != null) template.header(MEMBER_ID, memberId);
+            if (traceId != null) template.header("trace-id", traceId);
+            if (memberId != null) template.header("member-id", memberId);
         };
     }
 }
