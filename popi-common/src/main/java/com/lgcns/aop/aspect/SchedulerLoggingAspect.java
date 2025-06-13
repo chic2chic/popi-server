@@ -3,7 +3,6 @@ package com.lgcns.aop.aspect;
 import com.lgcns.aop.util.LoggingUtil;
 import com.lgcns.error.exception.CustomException;
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -26,7 +25,6 @@ public class SchedulerLoggingAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String methodName = LoggingUtil.getMethodSignature(method);
-        Map<String, Object> params = LoggingUtil.extractParams(method, joinPoint.getArgs());
 
         String traceId = UUID.randomUUID().toString();
         LoggingUtil.setTraceId(traceId);
@@ -45,8 +43,8 @@ public class SchedulerLoggingAspect {
             return result;
 
         } catch (CustomException ce) {
-            log.info(
-                    "[CustomException] TraceId: {}, Method: {}, Code: {}, Message: {}",
+            log.warn(
+                    "[SCHEDULER-CUSTOM] TraceId: {}, Method: {}, Code: {}, Message: {}",
                     traceId,
                     methodName,
                     ce.getErrorCode(),
@@ -55,7 +53,7 @@ public class SchedulerLoggingAspect {
 
         } catch (Exception e) {
             log.error(
-                    "[UnhandledException] TraceId: {}, Method: {}, Exception: {}, Message: {}",
+                    "[SCHEDULER-ERROR] TraceId: {}, Method: {}, Exception: {}, Message: {}",
                     traceId,
                     methodName,
                     e.getClass().getSimpleName(),

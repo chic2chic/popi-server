@@ -3,7 +3,6 @@ package com.lgcns.aop.aspect;
 import com.lgcns.aop.util.LoggingUtil;
 import com.lgcns.error.exception.CustomException;
 import java.lang.reflect.Method;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -25,7 +24,6 @@ public class RepositoryLoggingAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String methodName = LoggingUtil.getMethodSignature(method);
-        Map<String, Object> params = LoggingUtil.extractParams(method, joinPoint.getArgs());
 
         String traceId = LoggingUtil.getTraceId();
         String memberId = LoggingUtil.getMemberId();
@@ -37,7 +35,7 @@ public class RepositoryLoggingAspect {
             long duration = System.currentTimeMillis() - start;
 
             log.info(
-                    "[Repository] TraceId: {}, MemberId: {}, Method: {}, Duration: {}ms",
+                    "[REPOSITORY] TraceId: {}, MemberId: {}, Method: {}, Duration: {}ms",
                     traceId,
                     memberId,
                     methodName,
@@ -45,9 +43,10 @@ public class RepositoryLoggingAspect {
             return result;
 
         } catch (CustomException ce) {
-            log.info(
-                    "[CustomException] TraceId: {}, Method: {}, Code: {}, Message: {}",
+            log.warn(
+                    "[REPOSITORY-CUSTOM] TraceId: {}, MemberId: {}, Method: {}, Code: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     ce.getErrorCode(),
                     ce.getMessage());
@@ -55,8 +54,9 @@ public class RepositoryLoggingAspect {
 
         } catch (Exception e) {
             log.error(
-                    "[UnhandledException] TraceId: {}, Method: {}, Exception: {}, Message: {}",
+                    "[REPOSITORY-ERROR] TraceId: {}, MemberId: {}, Method: {}, Exception: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     e.getClass().getSimpleName(),
                     e.getMessage());

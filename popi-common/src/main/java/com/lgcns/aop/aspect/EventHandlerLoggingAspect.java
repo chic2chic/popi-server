@@ -3,8 +3,6 @@ package com.lgcns.aop.aspect;
 import com.lgcns.aop.util.LoggingUtil;
 import com.lgcns.error.exception.CustomException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -26,10 +24,9 @@ public class EventHandlerLoggingAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String methodName = LoggingUtil.getMethodSignature(method);
-        Map<String, Object> params = LoggingUtil.extractParams(method, joinPoint.getArgs());
 
-        String traceId = UUID.randomUUID().toString();
-        LoggingUtil.setTraceId(traceId);
+        String traceId = LoggingUtil.getTraceId();
+        String memberId = LoggingUtil.getMemberId();
 
         long start = System.currentTimeMillis();
 
@@ -38,16 +35,18 @@ public class EventHandlerLoggingAspect {
             long duration = System.currentTimeMillis() - start;
 
             log.info(
-                    "[EVENT] TraceId: {}, Method: {}, Duration: {}ms",
+                    "[EVENT] TraceId: {}, MemberId: {}, Method: {}, Duration: {}ms",
                     traceId,
+                    memberId,
                     methodName,
                     duration);
-            return result;
 
+            return result;
         } catch (CustomException ce) {
             log.warn(
-                    "[EVENT-CUSTOM] TraceId: {}, Method: {}, Code: {}, Message: {}",
+                    "[EVENT-CUSTOM] TraceId: {}, MemberId: {}, Method: {}, Code: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     ce.getErrorCode(),
                     ce.getMessage());
@@ -55,15 +54,13 @@ public class EventHandlerLoggingAspect {
 
         } catch (Exception e) {
             log.error(
-                    "[EVENT-ERROR] TraceId: {}, Method: {}, Exception: {}, Message: {}",
+                    "[EVENT-ERROR] TraceId: {}, MemberId: {}, Method: {}, Exception: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     e.getClass().getSimpleName(),
                     e.getMessage());
             throw e;
-
-        } finally {
-            LoggingUtil.clearMDC();
         }
     }
 }

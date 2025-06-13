@@ -3,7 +3,6 @@ package com.lgcns.aop.aspect;
 import com.lgcns.aop.util.LoggingUtil;
 import com.lgcns.error.exception.CustomException;
 import java.lang.reflect.Method;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -25,7 +24,6 @@ public class FeignLoggingAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String methodName = LoggingUtil.getMethodSignature(method);
-        Map<String, Object> params = LoggingUtil.extractParams(method, joinPoint.getArgs());
 
         String traceId = LoggingUtil.getTraceId();
         String memberId = LoggingUtil.getMemberId();
@@ -45,22 +43,20 @@ public class FeignLoggingAspect {
             return result;
 
         } catch (CustomException ce) {
-            log.info(
-                    "[CustomException] TraceId: {}, Method: {}, Code: {}, Message: {}",
+            log.warn(
+                    "[FEIGN-CUSTOM] TraceId: {}, MemberId: {}, Method: {}, Code: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     ce.getErrorCode(),
                     ce.getMessage());
             throw ce;
 
         } catch (Exception e) {
-            if (e instanceof feign.RetryableException) {
-                throw e;
-            }
-
             log.error(
-                    "[UnhandledException] TraceId: {}, Method: {}, Exception: {}, Message: {}",
+                    "[FEIGN-ERROR] TraceId: {}, MemberId: {}, Method: {}, Exception: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     e.getClass().getSimpleName(),
                     e.getMessage());

@@ -42,12 +42,12 @@ public class KafkaProducerLoggingAspect {
                     methodName,
                     params,
                     duration);
-
             return result;
         } catch (Exception e) {
             log.error(
-                    "[KAFKA-EXCEPTION] TraceId: {}, Method: {}, Exception: {}, Message: {}",
+                    "[KAFKA-ERROR] TraceId: {}, MemberId: {}, Method: {}, Exception: {}, Message: {}",
                     traceId,
+                    memberId,
                     methodName,
                     e.getClass().getSimpleName(),
                     e.getMessage());
