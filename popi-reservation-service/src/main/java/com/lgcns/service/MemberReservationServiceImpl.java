@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -377,7 +378,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
             data.put("age", age);
             data.put("gender", gender);
             data.put("reservationDate", reservationDate.toString());
-            data.put("reservationTime", reservationTime.toString());
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+            data.put("reservationTime", reservationTime.format(timeFormatter));
 
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(data);
