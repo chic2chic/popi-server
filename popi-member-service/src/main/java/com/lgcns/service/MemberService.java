@@ -1,10 +1,10 @@
 package com.lgcns.service;
 
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
 import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
+import com.popi.common.grpc.member.MemberInternalRegisterRequest;
+import com.popi.common.grpc.member.MemberInternalRegisterResponse;
 
 public interface MemberService {
     MemberInfoResponse findMemberInfo(String memberId);

@@ -1,16 +1,17 @@
 package com.lgcns.service;
 
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
+
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
 import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberRole;
@@ -18,11 +19,15 @@ import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
+import com.popi.common.grpc.member.MemberInternalRegisterRequest;
+import com.popi.common.grpc.member.MemberInternalRegisterResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenService jwtTokenService;
     private final IdTokenVerifier idTokenVerifier;
     private final MemberServiceClient memberServiceClient;
+    private final MemberGrpcClient memberGrpcClient;
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
@@ -66,18 +72,19 @@ public class AuthServiceImpl implements AuthService {
             throw new CustomException(AuthErrorCode.EXPIRED_REGISTER_TOKEN);
         }
 
-        MemberInternalRegisterRequest registerRequest =
-                new MemberInternalRegisterRequest(
-                        registerTokenDto.oauthId(),
-                        registerTokenDto.oauthProvider(),
-                        request.nickname(),
-                        request.age(),
-                        request.gender());
+        MemberInternalRegisterRequest grpcRequest =
+                MemberInternalRegisterRequest.newBuilder()
+                        .setOauthId(registerTokenDto.oauthId())
+                        .setOauthProvider(registerTokenDto.oauthProvider())
+                        .setNickname(request.nickname())
+                        .setAge(toGrpcMemberAge(request.age()))
+                        .setGender(toGrpcMemberGender(request.gender()))
+                        .build();
 
-        MemberInternalRegisterResponse response =
-                memberServiceClient.registerMember(registerRequest);
+        MemberInternalRegisterResponse grpcResponse = memberGrpcClient.registerMember(grpcRequest);
 
-        return getLoginResponse(response.memberId(), response.role());
+        return getLoginResponse(
+                grpcResponse.getMemberId(), toDomainMemberRole(grpcResponse.getRole()));
     }
 
     @Override

@@ -3,3 +3,37 @@ syntax = "proto3";
 option java_multiple_files = true;
 option java_package = "com.popi.common.grpc.member";
 option java_outer_classname = "MemberProto";
+
+service MemberService {
+  rpc RegisterMember (MemberInternalRegisterRequest) returns (MemberInternalRegisterResponse);
+}
+
+message MemberInternalRegisterRequest {
+  string oauthId = 1;
+  string oauthProvider = 2;
+  string nickname = 3;
+  MemberAge age = 4;
+  MemberGender gender = 5;
+}
+
+message MemberInternalRegisterResponse {
+  int64 memberId = 1;
+  MemberRole role = 2;
+}
+
+enum MemberAge {
+  TEENAGER = 0;
+  TWENTIES = 1;
+  THIRTIES = 2;
+  FORTIES_AND_ABOVE = 3;
+}
+
+enum MemberGender {
+  MALE = 0;
+  FEMALE = 1;
+}
+
+enum MemberRole {
+  ADMIN = 0;
+  USER = 1;
+}

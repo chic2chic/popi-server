@@ -1,16 +1,18 @@
 package com.lgcns.service;
 
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
+
 import com.lgcns.client.AuthServiceClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
 import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
 import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
+import com.popi.common.grpc.member.MemberInternalRegisterRequest;
+import com.popi.common.grpc.member.MemberInternalRegisterResponse;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,19 +45,22 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request) {
         if (memberRepository.existsByOauthInfo(
-                OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()))) {
+                OauthInfo.createOauthInfo(request.getOauthId(), request.getOauthProvider()))) {
             throw new CustomException(MemberErrorCode.ALREADY_REGISTERED);
         }
 
         Member member =
                 Member.createMember(
-                        OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()),
-                        request.nickname(),
-                        request.gender(),
-                        request.age());
+                        OauthInfo.createOauthInfo(request.getOauthId(), request.getOauthProvider()),
+                        request.getNickname(),
+                        toDomainMemberGender(request.getGender()),
+                        toDomainMemberAge(request.getAge()));
         memberRepository.save(member);
 
-        return MemberInternalRegisterResponse.of(member.getId(), member.getRole());
+        return MemberInternalRegisterResponse.newBuilder()
+                .setMemberId(member.getId())
+                .setRole(toGrpcMemberRole(member.getRole()))
+                .build();
     }
 
     @Override
