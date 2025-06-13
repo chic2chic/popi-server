@@ -1,21 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration scan="true" scanPeriod="10 seconds">
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <property name="APP_NAME" value="popi-auth-service"/>
 
+    <springProfile name="local">
+        <property name="LOKI_URL" value="http://localhost:3100/loki/api/v1/push"/>
+    </springProfile>
+    <springProfile name="k8s">
+        <property name="LOKI_URL" value="http://loki.monitoring.svc:3100/loki/api/v1/push"/>
+    </springProfile>
+
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>${LOKI_URL}</url>
+        </http>
+        <format>
+            <label>
+                <pattern>app=${APP_NAME},level=%level</pattern>
+            </label>
+            <message class="com.github.loki4j.logback.JsonLayout"/>
+        </format>
+    </appender>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%-5level","thread":"%thread","message":"%msg"}%n</pattern>
+            <pattern>
+                {"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%p","thread":"%thread","logger":"%logger","traceId":"%X{trace-id}","memberId":"%X{member-id}","message":"%msg"}%n
+            </pattern>
+
         </encoder>
     </appender>
 
-    <!--    stackTrace 에러 로그를 남기지 않도록 설정-->
-    <logger name="org.springframework.boot.web" level="OFF"/>
     <logger name="org.springframework" level="WARN"/>
     <logger name="org.hibernate" level="WARN"/>
     <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="reactor.netty" level="WARN"/>
+    <logger name="org.springframework.cloud.gateway" level="WARN"/>
 
     <root level="INFO">
+        <appender-ref ref="LOKI"/>
         <appender-ref ref="CONSOLE"/>
     </root>
 
