@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class ServiceLoggingAspect {
 
-    @Around("com.lgcns.aop.pointcut.LoggingPointCut.allService()")
+    @Pointcut("execution(public * com.lgcns..service..*.*(..))")
+    public void allService() {}
+
+    @Around("allService()")
     public Object logService(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();

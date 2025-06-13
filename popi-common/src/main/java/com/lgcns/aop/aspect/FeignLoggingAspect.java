@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class FeignLoggingAspect {
 
-    @Around("com.lgcns.aop.pointcut.LoggingPointCut.allFeignClient()")
+    @Pointcut("execution(* com.lgcns..client..*.*(..))")
+    public void allFeignClient() {}
+
+    @Around("allFeignClient()")
     public Object logFeign(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();

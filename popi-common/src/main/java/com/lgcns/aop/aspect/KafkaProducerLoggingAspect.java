@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +16,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class KafkaProducerLoggingAspect {
 
-    @Around("com.lgcns.aop.pointcut.LoggingPointCut.allKafkaProducer()")
+    @Pointcut("execution(* com.lgcns..producer..*Producer.sendMessage(..))")
+    public void allKafkaProducer() {}
+
+    @Around("allKafkaProducer()")
     public Object logKafkaProducer(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
