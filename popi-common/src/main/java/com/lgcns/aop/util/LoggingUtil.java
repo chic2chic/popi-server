@@ -1,6 +1,5 @@
 package com.lgcns.aop.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -72,11 +71,13 @@ public class LoggingUtil {
         return paramMap;
     }
 
-    public static String toJson(Object obj) {
-        try {
-            return objectMapper.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            return "{}";
-        }
+    public static long calculateDuration(long startTime) {
+        return System.currentTimeMillis() - startTime;
+    }
+
+    public static String getShortErrorMessage(String errorMessage) {
+        return errorMessage != null && errorMessage.contains(":")
+                ? errorMessage.substring(errorMessage.lastIndexOf(":") + 1).trim()
+                : errorMessage;
     }
 }
