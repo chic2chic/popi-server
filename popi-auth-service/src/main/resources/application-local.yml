@@ -57,12 +57,10 @@ spring-doc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-member:
-  service:
-    name: members
-
 grpc:
   client:
     member-service:
       address: "static://localhost:9092"
       negotiationType: plaintext
+  server:
+    port: 9091
