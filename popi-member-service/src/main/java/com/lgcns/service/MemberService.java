@@ -1,10 +1,7 @@
 package com.lgcns.service;
 
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
+import com.popi.common.grpc.member.*;
 
 public interface MemberService {
     MemberInfoResponse findMemberInfo(String memberId);
@@ -13,9 +10,9 @@ public interface MemberService {
 
     MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request);
 
-    MemberInternalInfoResponse findOauthInfo(MemberOauthInfoRequest request);
+    MemberInternalInfoResponse findByOauthInfo(MemberInternalOauthInfoRequest request);
 
-    MemberInternalInfoResponse findMemberId(Long memberId);
+    MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request);
 
-    void rejoinMember(Long memberId);
+    void rejoinMember(MemberInternalIdRequest request);
 }

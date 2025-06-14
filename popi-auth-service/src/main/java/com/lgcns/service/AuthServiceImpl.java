@@ -1,28 +1,31 @@
 package com.lgcns.service;
 
-import com.lgcns.client.MemberServiceClient;
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
+
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberRole;
-import com.lgcns.enums.MemberStatus;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
+import com.popi.common.grpc.auth.RefreshTokenDeleteRequest;
+import com.popi.common.grpc.member.*;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -30,30 +33,42 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenService jwtTokenService;
     private final IdTokenVerifier idTokenVerifier;
-    private final MemberServiceClient memberServiceClient;
+    private final MemberGrpcClient memberGrpcClient;
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public SocialLoginResponse socialLoginMember(OauthProvider provider, IdTokenRequest request) {
         OidcUser oidcUser = idTokenVerifier.getOidcUser(request.idToken(), provider);
 
-        MemberInternalInfoResponse response =
-                memberServiceClient.findByOauthInfo(
-                        MemberOauthInfoRequest.of(
-                                oidcUser.getSubject(), oidcUser.getIssuer().toString()));
+        try {
+            MemberInternalInfoResponse grpcResponse =
+                    memberGrpcClient.findByOauthInfo(
+                            MemberInternalOauthInfoRequest.newBuilder()
+                                    .setOauthId(oidcUser.getSubject())
+                                    .setOauthProvider(oidcUser.getIssuer().toString())
+                                    .build());
 
-        if (response != null) {
-            if (response.status() == MemberStatus.DELETED) {
-                memberServiceClient.rejoinMember(response.memberId());
+            if (grpcResponse.getStatus() == MemberStatus.DELETED) {
+                memberGrpcClient.rejoinMember(
+                        MemberInternalIdRequest.newBuilder()
+                                .setMemberId(grpcResponse.getMemberId())
+                                .build());
             }
 
-            return getLoginResponse(response.memberId(), response.role());
-        }
+            return getLoginResponse(
+                    grpcResponse.getMemberId(), toDomainMemberRole(grpcResponse.getRole()));
 
-        String registerToken =
-                jwtTokenService.createRegisterToken(
-                        oidcUser.getSubject(), oidcUser.getIssuer().toString());
-        return SocialLoginResponse.notRegistered(registerToken);
+        } catch (StatusRuntimeException e) {
+            Status.Code code = e.getStatus().getCode();
+
+            if (code == Status.Code.NOT_FOUND) {
+                String registerToken =
+                        jwtTokenService.createRegisterToken(
+                                oidcUser.getSubject(), oidcUser.getIssuer().toString());
+                return SocialLoginResponse.notRegistered(registerToken);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -66,18 +81,19 @@ public class AuthServiceImpl implements AuthService {
             throw new CustomException(AuthErrorCode.EXPIRED_REGISTER_TOKEN);
         }
 
-        MemberInternalRegisterRequest registerRequest =
-                new MemberInternalRegisterRequest(
-                        registerTokenDto.oauthId(),
-                        registerTokenDto.oauthProvider(),
-                        request.nickname(),
-                        request.age(),
-                        request.gender());
+        MemberInternalRegisterRequest grpcRequest =
+                MemberInternalRegisterRequest.newBuilder()
+                        .setOauthId(registerTokenDto.oauthId())
+                        .setOauthProvider(registerTokenDto.oauthProvider())
+                        .setNickname(request.nickname())
+                        .setAge(toGrpcMemberAge(request.age()))
+                        .setGender(toGrpcMemberGender(request.gender()))
+                        .build();
 
-        MemberInternalRegisterResponse response =
-                memberServiceClient.registerMember(registerRequest);
+        MemberInternalRegisterResponse grpcResponse = memberGrpcClient.registerMember(grpcRequest);
 
-        return getLoginResponse(response.memberId(), response.role());
+        return getLoginResponse(
+                grpcResponse.getMemberId(), toDomainMemberRole(grpcResponse.getRole()));
     }
 
     @Override
@@ -92,10 +108,15 @@ public class AuthServiceImpl implements AuthService {
         RefreshTokenDto newRefreshTokenDto =
                 jwtTokenService.reissueRefreshToken(oldRefreshTokenDto);
 
-        MemberInternalInfoResponse response =
-                memberServiceClient.findByMemberId(newRefreshTokenDto.memberId());
+        MemberInternalInfoResponse grpcResponse =
+                memberGrpcClient.findByMemberId(
+                        MemberInternalIdRequest.newBuilder()
+                                .setMemberId(newRefreshTokenDto.memberId())
+                                .build());
+
         AccessTokenDto newAccessTokenDto =
-                jwtTokenService.reissueAccessToken(response.memberId(), response.role());
+                jwtTokenService.reissueAccessToken(
+                        grpcResponse.getMemberId(), toDomainMemberRole(grpcResponse.getRole()));
 
         return TokenReissueResponse.of(
                 newAccessTokenDto.accessTokenValue(), newRefreshTokenDto.refreshTokenValue());
@@ -109,9 +130,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void deleteRefreshToken(String memberId) {
+    public void deleteRefreshToken(RefreshTokenDeleteRequest request) {
         refreshTokenRepository
-                .findById(Long.parseLong(memberId))
+                .findById(Long.parseLong(request.getMemberId()))
                 .ifPresent(refreshTokenRepository::delete);
     }
 
