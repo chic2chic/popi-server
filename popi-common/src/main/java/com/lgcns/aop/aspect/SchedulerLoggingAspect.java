@@ -12,9 +12,9 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Aspect
 @Component
+@Slf4j
 public class SchedulerLoggingAspect {
 
     @Pointcut("@annotation(org.springframework.scheduling.annotation.Scheduled)")

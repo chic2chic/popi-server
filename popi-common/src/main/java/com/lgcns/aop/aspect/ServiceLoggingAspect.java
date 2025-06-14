@@ -10,9 +10,9 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Aspect
 @Component
+@Slf4j
 public class ServiceLoggingAspect {
 
     @Pointcut("execution(public * com.lgcns..service..*.*(..))")
