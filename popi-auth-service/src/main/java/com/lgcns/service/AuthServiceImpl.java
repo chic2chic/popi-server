@@ -15,6 +15,7 @@ import com.lgcns.enums.MemberRole;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.AuthErrorCode;
 import com.lgcns.repository.RefreshTokenRepository;
+import com.popi.common.grpc.auth.RefreshTokenDeleteRequest;
 import com.popi.common.grpc.member.*;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -129,9 +130,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void deleteRefreshToken(String memberId) {
+    public void deleteRefreshToken(RefreshTokenDeleteRequest request) {
         refreshTokenRepository
-                .findById(Long.parseLong(memberId))
+                .findById(Long.parseLong(request.getMemberId()))
                 .ifPresent(refreshTokenRepository::delete);
     }
 

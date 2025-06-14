@@ -2,13 +2,14 @@ package com.lgcns.service;
 
 import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
 
-import com.lgcns.client.AuthServiceClient;
+import com.lgcns.client.AuthGrpcClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
 import com.lgcns.dto.response.MemberInfoResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
+import com.popi.common.grpc.auth.RefreshTokenDeleteRequest;
 import com.popi.common.grpc.member.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
-    private final AuthServiceClient authServiceClient;
+    private final AuthGrpcClient authGrpcClient;
 
     @Transactional(readOnly = true)
     public MemberInfoResponse findMemberInfo(String memberId) {
@@ -31,7 +32,8 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public void withdrawalMember(String memberId) {
-        authServiceClient.deleteRefreshToken(memberId);
+        authGrpcClient.deleteRefreshToken(
+                RefreshTokenDeleteRequest.newBuilder().setMemberId(memberId).build());
 
         final Member member = findByMemberId(Long.parseLong(memberId));
 
