@@ -4,42 +4,17 @@
 
     <property name="APP_NAME" value="popi-auth-service"/>
 
-    <springProfile name="local">
-        <property name="LOKI_URL" value="http://localhost:3100/loki/api/v1/push"/>
-    </springProfile>
-    <springProfile name="k8s">
-        <property name="LOKI_URL" value="http://loki.monitoring.svc:3100/loki/api/v1/push"/>
-    </springProfile>
-
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>${LOKI_URL}</url>
-        </http>
-        <format>
-            <label>
-                <pattern>app=${APP_NAME},level=%level</pattern>
-            </label>
-            <message class="com.github.loki4j.logback.JsonLayout"/>
-        </format>
-    </appender>
-
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>
-                {"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%p","thread":"%thread","logger":"%logger","traceId":"%X{trace-id}","memberId":"%X{member-id}","message":"%msg"}%n
-            </pattern>
-
+            <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%p","thread":"%thread","app_name":"${APP_NAME}","logger":"%logger{1}","traceId":"%X{traceId:-}","memberId":"%X{memberId:-}","message":"%replace(%msg){'\"','\\\"'}"}%n</pattern>
         </encoder>
     </appender>
 
     <logger name="org.springframework" level="WARN"/>
     <logger name="org.hibernate" level="WARN"/>
     <logger name="com.zaxxer.hikari" level="WARN"/>
-    <logger name="reactor.netty" level="WARN"/>
-    <logger name="org.springframework.cloud.gateway" level="WARN"/>
 
     <root level="INFO">
-        <appender-ref ref="LOKI"/>
         <appender-ref ref="CONSOLE"/>
     </root>
 
