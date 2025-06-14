@@ -32,6 +32,9 @@ dependencies {
     // WireMock
     testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:4.2.1'
 
+    // Protobuf serialization
+    implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
+
     // gRPC
     implementation "net.devh:grpc-spring-boot-starter:${grpcSpringVersion}"
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
