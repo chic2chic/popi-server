@@ -28,4 +28,8 @@ public class MemberGrpcClient {
     public MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request) {
         return stub().findByMemberId(request);
     }
+
+    public void rejoinMember(MemberInternalIdRequest request) {
+        stub().rejoinMember(request);
+    }
 }

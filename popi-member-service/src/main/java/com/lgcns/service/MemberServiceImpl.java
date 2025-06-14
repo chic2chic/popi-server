@@ -94,8 +94,8 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public void rejoinMember(Long memberId) {
-        final Member member = findByMemberId(memberId);
+    public void rejoinMember(MemberInternalIdRequest request) {
+        final Member member = findByMemberId(request.getMemberId());
 
         member.reEnroll();
     }

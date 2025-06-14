@@ -14,5 +14,5 @@ public interface MemberService {
 
     MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request);
 
-    void rejoinMember(Long memberId);
+    void rejoinMember(MemberInternalIdRequest request);
 }

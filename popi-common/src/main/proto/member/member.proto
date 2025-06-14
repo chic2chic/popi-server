@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option java_multiple_files = true;
 option java_package = "com.popi.common.grpc.member";
 option java_outer_classname = "MemberProto";
@@ -8,6 +10,7 @@ service MemberService {
   rpc RegisterMember (MemberInternalRegisterRequest) returns (MemberInternalRegisterResponse);
   rpc FindByOauthInfo (MemberInternalOauthInfoRequest) returns (MemberInternalInfoResponse);
   rpc FindByMemberId (MemberInternalIdRequest) returns (MemberInternalInfoResponse);
+  rpc RejoinMember (MemberInternalIdRequest) returns (google.protobuf.Empty);
 }
 
 message MemberInternalRegisterRequest {

@@ -3,7 +3,6 @@ package com.lgcns.service;
 import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
 
 import com.lgcns.client.MemberGrpcClient;
-import com.lgcns.client.MemberServiceClient;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
@@ -33,7 +32,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenService jwtTokenService;
     private final IdTokenVerifier idTokenVerifier;
-    private final MemberServiceClient memberServiceClient;
     private final MemberGrpcClient memberGrpcClient;
     private final RefreshTokenRepository refreshTokenRepository;
 
@@ -50,7 +48,10 @@ public class AuthServiceImpl implements AuthService {
                                     .build());
 
             if (grpcResponse.getStatus() == MemberStatus.DELETED) {
-                memberServiceClient.rejoinMember(grpcResponse.getMemberId());
+                memberGrpcClient.rejoinMember(
+                        MemberInternalIdRequest.newBuilder()
+                                .setMemberId(grpcResponse.getMemberId())
+                                .build());
             }
 
             return getLoginResponse(

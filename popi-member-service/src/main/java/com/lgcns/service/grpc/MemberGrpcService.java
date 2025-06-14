@@ -1,5 +1,6 @@
 package com.lgcns.service.grpc;
 
+import com.google.protobuf.Empty;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.service.MemberService;
@@ -48,6 +49,22 @@ public class MemberGrpcService extends MemberServiceGrpc.MemberServiceImplBase {
         try {
             MemberInternalInfoResponse grpcResponse = memberService.findByMemberId(request);
             responseObserver.onNext(grpcResponse);
+            responseObserver.onCompleted();
+        } catch (CustomException e) {
+            if (e.getErrorCode() == MemberErrorCode.MEMBER_NOT_FOUND) {
+                responseObserver.onError(Status.NOT_FOUND.asRuntimeException());
+            } else {
+                responseObserver.onError(Status.INTERNAL.asRuntimeException());
+            }
+        }
+    }
+
+    @Override
+    public void rejoinMember(
+            MemberInternalIdRequest request, StreamObserver<Empty> responseObserver) {
+        try {
+            memberService.rejoinMember(request);
+            responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
         } catch (CustomException e) {
             if (e.getErrorCode() == MemberErrorCode.MEMBER_NOT_FOUND) {
