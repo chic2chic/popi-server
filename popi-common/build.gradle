@@ -39,6 +39,12 @@ dependencies {
     // Slice & Pageable
     implementation 'org.springframework.data:spring-data-commons'
 
+    // AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // logback
+    api 'net.logstash.logback:logstash-logback-encoder:8.1'
+
     // Prometheus
     api 'io.micrometer:micrometer-registry-prometheus'
 
