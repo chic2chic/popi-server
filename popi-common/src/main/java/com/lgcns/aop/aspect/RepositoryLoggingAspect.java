@@ -1,5 +1,8 @@
 package com.lgcns.aop.aspect;
 
+import static com.lgcns.aop.util.LoggingUtil.calculateDuration;
+import static com.lgcns.aop.util.LoggingUtil.getShortErrorMessage;
+
 import com.lgcns.aop.util.LoggingUtil;
 import com.lgcns.error.exception.CustomException;
 import java.lang.reflect.Method;
@@ -25,41 +28,27 @@ public class RepositoryLoggingAspect {
         Method method = signature.getMethod();
         String methodName = LoggingUtil.getMethodSignature(method);
 
-        String traceId = LoggingUtil.getTraceId();
-        String memberId = LoggingUtil.getMemberId();
-
         long start = System.currentTimeMillis();
 
         try {
-            Object result = joinPoint.proceed();
-            long duration = System.currentTimeMillis() - start;
-
-            log.info(
-                    "[REPOSITORY] TraceId: {}, MemberId: {}, Method: {}, Duration: {}ms",
-                    traceId,
-                    memberId,
-                    methodName,
-                    duration);
-            return result;
+            return joinPoint.proceed();
 
         } catch (CustomException ce) {
             log.warn(
-                    "[REPOSITORY-CUSTOM] TraceId: {}, MemberId: {}, Method: {}, Code: {}, Message: {}",
-                    traceId,
-                    memberId,
+                    "[REPOSITORY-CUSTOM] Method: {}, Code: {}, Message: {}, Duration: {}ms",
                     methodName,
                     ce.getErrorCode(),
-                    ce.getMessage());
+                    ce.getMessage(),
+                    calculateDuration(start));
             throw ce;
 
         } catch (Exception e) {
             log.error(
-                    "[REPOSITORY-ERROR] TraceId: {}, MemberId: {}, Method: {}, Exception: {}, Message: {}",
-                    traceId,
-                    memberId,
+                    "[REPOSITORY-ERROR] Method: {}, Exception: {}, Message: {}, Duration: {}ms",
                     methodName,
                     e.getClass().getSimpleName(),
-                    e.getMessage());
+                    getShortErrorMessage(e.getMessage()),
+                    calculateDuration(start));
             throw e;
         }
     }

@@ -1,8 +1,10 @@
 package com.lgcns.aop.aspect;
 
+import static com.lgcns.aop.util.LoggingUtil.calculateDuration;
+import static com.lgcns.aop.util.LoggingUtil.getShortErrorMessage;
+
 import com.lgcns.aop.util.LoggingUtil;
 import java.lang.reflect.Method;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -24,33 +26,18 @@ public class KafkaProducerLoggingAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         String methodName = LoggingUtil.getMethodSignature(method);
-        Map<String, Object> params = LoggingUtil.extractParams(method, joinPoint.getArgs());
-
-        String traceId = LoggingUtil.getTraceId();
-        String memberId = LoggingUtil.getMemberId();
 
         long start = System.currentTimeMillis();
 
         try {
-            Object result = joinPoint.proceed();
-            long duration = System.currentTimeMillis() - start;
-
-            log.info(
-                    "[KAFKA] TraceId: {}, MemberId: {}, Method: {}, Payload: {}, Duration: {}ms",
-                    traceId,
-                    memberId,
-                    methodName,
-                    params,
-                    duration);
-            return result;
+            return joinPoint.proceed();
         } catch (Exception e) {
             log.error(
-                    "[KAFKA-ERROR] TraceId: {}, MemberId: {}, Method: {}, Exception: {}, Message: {}",
-                    traceId,
-                    memberId,
+                    "[KAFKA-ERROR] Method: {}, Exception: {}, Message: {}, Duration: {}ms",
                     methodName,
                     e.getClass().getSimpleName(),
-                    e.getMessage());
+                    getShortErrorMessage(e.getMessage()),
+                    calculateDuration(start));
             throw e;
         }
     }
