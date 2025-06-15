@@ -1,5 +1,24 @@
 plugins {
     id 'java-library'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                grpc {}
+            }
+        }
+    }
 }
 
 bootJar { enabled = false }
@@ -25,4 +44,15 @@ dependencies {
 
     // Grafana Loki
     api 'com.github.loki4j:loki-logback-appender:1.5.1'
+
+    // Protobuf serialization/deserialization
+    implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
+    implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+
+    // gRPC communication
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+
+    // javax.annotation for protoc generated classes
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
 }

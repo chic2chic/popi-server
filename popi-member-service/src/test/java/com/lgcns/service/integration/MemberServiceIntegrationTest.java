@@ -1,16 +1,12 @@
 package com.lgcns.service.integration;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.enums.MemberAge;
 import com.lgcns.enums.MemberGender;
 import com.lgcns.enums.MemberRole;
@@ -19,13 +15,14 @@ import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
 import com.lgcns.service.MemberService;
+import com.popi.common.grpc.member.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class MemberServiceIntegrationTest extends WireMockIntegrationTest {
+class MemberServiceIntegrationTest extends GrpcIntegrationTest {
 
     @Autowired private DatabaseCleaner databaseCleaner;
 
@@ -43,7 +40,7 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
         @Test
         void 회원이_존재하면_조회에_성공한다() {
             // given
-            registerAuthenticatedMember();
+            createTestMember();
 
             // when
             MemberInfoResponse response = memberService.findMemberInfo("1");
@@ -73,11 +70,7 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
         @Test
         void 회원이_탈퇴하면_상태는_DELETED가_된다() {
             // given
-            Member member = registerAuthenticatedMember();
-
-            stubFor(
-                    delete(urlEqualTo("/internal/1/refresh-token"))
-                            .willReturn(aResponse().withStatus(200)));
+            Member member = createTestMember();
 
             // when
             memberService.withdrawalMember(member.getId().toString());
@@ -90,11 +83,7 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
         @Test
         void 이미_탈퇴한_회원이_다시_탈퇴하면_예외가_발생한다() {
             // given
-            Member member = registerAuthenticatedMember();
-
-            stubFor(
-                    delete(urlEqualTo("/internal/1/refresh-token"))
-                            .willReturn(aResponse().withStatus(200)));
+            Member member = createTestMember();
 
             memberService.withdrawalMember(member.getId().toString());
 
@@ -108,40 +97,35 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
     @Nested
     class 인증_서비스의_회원_등록_요청을_처리할_때 {
 
+        MemberInternalRegisterRequest grpcRequest =
+                MemberInternalRegisterRequest.newBuilder()
+                        .setOauthId("testOauthId")
+                        .setOauthProvider("testOauthProvider")
+                        .setNickname("testNickname")
+                        .setAge(toGrpcMemberAge(MemberAge.TWENTIES))
+                        .setGender(toGrpcMemberGender(MemberGender.MALE))
+                        .build();
+
         @Test
         void 등록되지_않은_회원이면_정상적으로_가입된다() {
-            // given
-            MemberInternalRegisterRequest request =
-                    new MemberInternalRegisterRequest(
-                            "testOauthId",
-                            "testOauthProvider",
-                            "testNickname",
-                            MemberAge.TWENTIES,
-                            MemberGender.MALE);
-
             // when
-            MemberInternalRegisterResponse response = memberService.registerMember(request);
+            MemberInternalRegisterResponse response = memberService.registerMember(grpcRequest);
 
             // then
             Assertions.assertAll(
-                    () -> assertThat(response.memberId()).isEqualTo(1L),
-                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER));
+                    () -> assertThat(response.getMemberId()).isEqualTo(1L),
+                    () ->
+                            assertThat(response.getRole())
+                                    .isEqualTo(toGrpcMemberRole(MemberRole.USER)));
         }
 
         @Test
         void 이미_등록된_회원이면_예외가_발생한다() {
             // given
-            registerAuthenticatedMember();
-            MemberInternalRegisterRequest request =
-                    new MemberInternalRegisterRequest(
-                            "testOauthId",
-                            "testOauthProvider",
-                            "testNickname",
-                            MemberAge.TWENTIES,
-                            MemberGender.MALE);
+            createTestMember();
 
             // when & then
-            assertThatThrownBy(() -> memberService.registerMember(request))
+            assertThatThrownBy(() -> memberService.registerMember(grpcRequest))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.ALREADY_REGISTERED.getMessage());
         }
@@ -153,11 +137,14 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
         @Test
         void 탈퇴한_회원이라면_상태는_NORMAL로_변경된다() {
             // given
-            Member member = registerAuthenticatedMember();
+            MemberInternalIdRequest grpcRequest =
+                    MemberInternalIdRequest.newBuilder().setMemberId(1L).build();
+
+            Member member = createTestMember();
             member.withdrawal();
 
             // when
-            memberService.rejoinMember(1L);
+            memberService.rejoinMember(grpcRequest);
 
             // then
             member = memberRepository.findById(1L).get();
@@ -166,8 +153,12 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
 
         @Test
         void 존재하지_않는_회원이면_예외가_발생한다() {
+            // given
+            MemberInternalIdRequest grpcRequest =
+                    MemberInternalIdRequest.newBuilder().setMemberId(999L).build();
+
             // when & then
-            assertThatThrownBy(() -> memberService.rejoinMember(999L))
+            assertThatThrownBy(() -> memberService.rejoinMember(grpcRequest))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
         }
@@ -176,38 +167,44 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
     @Nested
     class 인증_서비스의_OAuth_회원_조회_요청을_처리할_때 {
 
+        private final MemberInternalOauthInfoRequest grpcRequest =
+                MemberInternalOauthInfoRequest.newBuilder()
+                        .setOauthId("testOauthId")
+                        .setOauthProvider("testOauthProvider")
+                        .build();
+
         @Test
         void 존재하는_회원이면_회원_정보를_반환한다() {
             // given
-            registerAuthenticatedMember();
-
-            MemberOauthInfoRequest request =
-                    MemberOauthInfoRequest.of("testOauthId", "testOauthProvider");
+            createTestMember();
 
             // when
-            MemberInternalInfoResponse response = memberService.findOauthInfo(request);
+            MemberInternalInfoResponse response = memberService.findByOauthInfo(grpcRequest);
 
             // then
             Assertions.assertAll(
-                    () -> assertThat(response.memberId()).isEqualTo(1L),
-                    () -> assertThat(response.nickname()).isEqualTo("testNickname"),
-                    () -> assertThat(response.age()).isEqualTo(MemberAge.TWENTIES),
-                    () -> assertThat(response.gender()).isEqualTo(MemberGender.MALE),
-                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
-                    () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
+                    () -> assertThat(response.getMemberId()).isEqualTo(1L),
+                    () -> assertThat(response.getNickname()).isEqualTo("testNickname"),
+                    () ->
+                            assertThat(response.getAge())
+                                    .isEqualTo(toGrpcMemberAge(MemberAge.TWENTIES)),
+                    () ->
+                            assertThat(response.getGender())
+                                    .isEqualTo(toGrpcMemberGender(MemberGender.MALE)),
+                    () ->
+                            assertThat(response.getRole())
+                                    .isEqualTo(toGrpcMemberRole(MemberRole.USER)),
+                    () ->
+                            assertThat(response.getStatus())
+                                    .isEqualTo(toGrpcMemberStatus(MemberStatus.NORMAL)));
         }
 
         @Test
-        void 존재하지_않는_회원이면_null을_반환한다() {
-            // given
-            MemberOauthInfoRequest request =
-                    MemberOauthInfoRequest.of("nonOauthId", "nonOauthProvider");
-
-            // when
-            MemberInternalInfoResponse response = memberService.findOauthInfo(request);
-
-            // then
-            assertThat(response).isNull();
+        void 존재하지_않는_회원이면_예외가_발생한다() {
+            // when & then
+            assertThatThrownBy(() -> memberService.findByOauthInfo(grpcRequest))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
         }
     }
 
@@ -217,28 +214,39 @@ class MemberServiceIntegrationTest extends WireMockIntegrationTest {
         @Test
         void 존재하는_회원이면_회원_정보를_반환한다() {
             // given
-            registerAuthenticatedMember();
+            MemberInternalIdRequest grpcRequest =
+                    MemberInternalIdRequest.newBuilder().setMemberId(1L).build();
+
+            createTestMember();
 
             // when
-            MemberInternalInfoResponse response = memberService.findMemberId(1L);
+            MemberInternalInfoResponse response = memberService.findByMemberId(grpcRequest);
 
             // then
             Assertions.assertAll(
-                    () -> assertThat(response.memberId()).isEqualTo(1L),
-                    () -> assertThat(response.role()).isEqualTo(MemberRole.USER),
-                    () -> assertThat(response.status()).isEqualTo(MemberStatus.NORMAL));
+                    () -> assertThat(response.getMemberId()).isEqualTo(1L),
+                    () ->
+                            assertThat(response.getRole())
+                                    .isEqualTo(toGrpcMemberRole(MemberRole.USER)),
+                    () ->
+                            assertThat(response.getStatus())
+                                    .isEqualTo(toGrpcMemberStatus(MemberStatus.NORMAL)));
         }
 
         @Test
         void 존재하지_않는_회원이면_예외가_발생한다() {
+            // given
+            MemberInternalIdRequest grpcRequest =
+                    MemberInternalIdRequest.newBuilder().setMemberId(999L).build();
+
             // when & then
-            assertThatThrownBy(() -> memberService.findMemberId(999L))
+            assertThatThrownBy(() -> memberService.findByMemberId(grpcRequest))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
         }
     }
 
-    private Member registerAuthenticatedMember() {
+    private Member createTestMember() {
         Member member =
                 Member.createMember(
                         OauthInfo.createOauthInfo("testOauthId", "testOauthProvider"),

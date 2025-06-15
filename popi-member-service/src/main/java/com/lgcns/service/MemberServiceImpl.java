@@ -1,17 +1,16 @@
 package com.lgcns.service;
 
-import com.lgcns.client.AuthServiceClient;
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
+
+import com.lgcns.client.AuthGrpcClient;
 import com.lgcns.domain.Member;
 import com.lgcns.domain.OauthInfo;
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.response.MemberInfoResponse;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.error.exception.CustomException;
 import com.lgcns.exception.MemberErrorCode;
 import com.lgcns.repository.MemberRepository;
-import java.util.Optional;
+import com.popi.common.grpc.auth.RefreshTokenDeleteRequest;
+import com.popi.common.grpc.member.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
-    private final AuthServiceClient authServiceClient;
+    private final AuthGrpcClient authGrpcClient;
 
     @Transactional(readOnly = true)
     public MemberInfoResponse findMemberInfo(String memberId) {
@@ -33,7 +32,8 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public void withdrawalMember(String memberId) {
-        authServiceClient.deleteRefreshToken(memberId);
+        authGrpcClient.deleteRefreshToken(
+                RefreshTokenDeleteRequest.newBuilder().setMemberId(memberId).build());
 
         final Member member = findByMemberId(Long.parseLong(memberId));
 
@@ -43,58 +43,61 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request) {
         if (memberRepository.existsByOauthInfo(
-                OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()))) {
+                OauthInfo.createOauthInfo(request.getOauthId(), request.getOauthProvider()))) {
             throw new CustomException(MemberErrorCode.ALREADY_REGISTERED);
         }
 
         Member member =
                 Member.createMember(
-                        OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()),
-                        request.nickname(),
-                        request.gender(),
-                        request.age());
+                        OauthInfo.createOauthInfo(request.getOauthId(), request.getOauthProvider()),
+                        request.getNickname(),
+                        toDomainMemberGender(request.getGender()),
+                        toDomainMemberAge(request.getAge()));
         memberRepository.save(member);
 
-        return MemberInternalRegisterResponse.of(member.getId(), member.getRole());
+        return MemberInternalRegisterResponse.newBuilder()
+                .setMemberId(member.getId())
+                .setRole(toGrpcMemberRole(member.getRole()))
+                .build();
     }
 
     @Override
-    public MemberInternalInfoResponse findOauthInfo(MemberOauthInfoRequest request) {
-        Optional<Member> optionalMember =
-                memberRepository.findByOauthInfo(
-                        OauthInfo.createOauthInfo(request.oauthId(), request.oauthProvider()));
+    public MemberInternalInfoResponse findByOauthInfo(MemberInternalOauthInfoRequest request) {
+        Member member =
+                memberRepository
+                        .findByOauthInfo(
+                                OauthInfo.createOauthInfo(
+                                        request.getOauthId(), request.getOauthProvider()))
+                        .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        if (optionalMember.isPresent()) {
-            Member member = optionalMember.get();
-            return new MemberInternalInfoResponse(
-                    member.getId(),
-                    member.getNickname(),
-                    member.getAge(),
-                    member.getGender(),
-                    member.getRole(),
-                    member.getStatus());
-        }
-
-        return null;
+        return MemberInternalInfoResponse.newBuilder()
+                .setMemberId(member.getId())
+                .setNickname(member.getNickname())
+                .setAge(toGrpcMemberAge(member.getAge()))
+                .setGender(toGrpcMemberGender(member.getGender()))
+                .setRole(toGrpcMemberRole(member.getRole()))
+                .setStatus(toGrpcMemberStatus(member.getStatus()))
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public MemberInternalInfoResponse findMemberId(Long memberId) {
-        final Member member = findByMemberId(memberId);
+    public MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request) {
+        final Member member = findByMemberId(request.getMemberId());
 
-        return new MemberInternalInfoResponse(
-                member.getId(),
-                member.getNickname(),
-                member.getAge(),
-                member.getGender(),
-                member.getRole(),
-                member.getStatus());
+        return MemberInternalInfoResponse.newBuilder()
+                .setMemberId(member.getId())
+                .setNickname(member.getNickname())
+                .setAge(toGrpcMemberAge(member.getAge()))
+                .setGender(toGrpcMemberGender(member.getGender()))
+                .setRole(toGrpcMemberRole(member.getRole()))
+                .setStatus(toGrpcMemberStatus(member.getStatus()))
+                .build();
     }
 
     @Override
-    public void rejoinMember(Long memberId) {
-        final Member member = findByMemberId(memberId);
+    public void rejoinMember(MemberInternalIdRequest request) {
+        final Member member = findByMemberId(request.getMemberId());
 
         member.reEnroll();
     }

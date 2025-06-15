@@ -1,15 +1,11 @@
 package com.lgcns.service.integration;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
@@ -28,6 +24,8 @@ import com.lgcns.repository.RefreshTokenRepository;
 import com.lgcns.service.AuthService;
 import com.lgcns.service.IdTokenVerifier;
 import com.lgcns.service.JwtTokenService;
+import com.popi.common.grpc.auth.RefreshTokenDeleteRequest;
+import io.grpc.StatusRuntimeException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +38,7 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
+public class AuthServiceIntegrationTest extends GrpcIntegrationTest {
 
     @Autowired private AuthService authService;
     @Autowired private RefreshTokenRepository refreshTokenRepository;
@@ -48,13 +46,11 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
     @MockitoBean private JwtTokenService jwtTokenService;
     @MockitoBean private IdTokenVerifier idTokenVerifier;
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
     @Nested
     class 회원가입할_때 {
 
         @Test
-        void 아직_회원가입하지_않은_회원이라면_가입에_성공한다() throws JsonProcessingException {
+        void 아직_회원가입하지_않은_회원이라면_가입에_성공한다() {
             // given
             given(jwtTokenService.validateRegisterToken(anyString()))
                     .willReturn(
@@ -67,17 +63,6 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
             MemberRegisterRequest request =
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
-
-            String expectedResponse =
-                    objectMapper.writeValueAsString(Map.of("memberId", 1, "role", "USER"));
-
-            stubFor(
-                    post(urlEqualTo("/internal/register"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(expectedResponse)));
 
             // when
             SocialLoginResponse response =
@@ -92,43 +77,23 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 이미_회원가입된_회원이_다시_회원가입하면_예외가_발생한다() throws JsonProcessingException {
+        void 이미_회원가입된_회원이_다시_회원가입하면_예외가_발생한다() {
             // given
             given(jwtTokenService.validateRegisterToken(anyString()))
                     .willReturn(
                             RegisterTokenDto.of(
-                                    "testOauthId", "testOauthProvider", "fake-register-token"));
+                                    "alreadyRegisteredOauthId",
+                                    "testOauthProvider",
+                                    "fake-register-token"));
 
             MemberRegisterRequest request =
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
 
-            String expectedResponse =
-                    objectMapper.writeValueAsString(
-                            Map.of(
-                                    "success",
-                                    false,
-                                    "status",
-                                    409,
-                                    "data",
-                                    Map.of(
-                                            "errorClassName", "ALREADY_REGISTERED",
-                                            "message", "이미 가입된 사용자입니다. 로그인 후 이용해주세요."),
-                                    "timestamp",
-                                    "2025-05-22T00:07:44.787516"));
-
-            stubFor(
-                    post(urlEqualTo("/internal/register"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(409)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(expectedResponse)));
-
             // when & then
             assertThatThrownBy(() -> authService.registerMember("testRegisterTokenValue", request))
-                    .isInstanceOf(CustomException.class)
-                    .hasMessage("이미 가입된 사용자입니다. 로그인 후 이용해주세요.");
+                    .isInstanceOf(StatusRuntimeException.class)
+                    .hasMessageContaining("ALREADY_EXISTS");
         }
 
         @Test
@@ -150,23 +115,14 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
     class 소셜_로그인할_때 {
 
         @Test
-        void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() throws JsonProcessingException {
+        void 회원가입되지_않은_회원은_레지스터_토큰을_받는다() {
             // given
-            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+            given(idTokenVerifier.getOidcUser(anyString(), any()))
+                    .willReturn(mockOidcUser("not-registered-oauthId"));
             given(jwtTokenService.createRegisterToken(anyString(), anyString()))
                     .willReturn("fake-register-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
-
-            String expectedResponse = objectMapper.writeValueAsString(null);
-
-            stubFor(
-                    post(urlEqualTo("/internal/oauth-info"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(expectedResponse)));
 
             // when
             SocialLoginResponse response =
@@ -181,25 +137,14 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 이미_회원가입된_회원은_로그인에_성공한다() throws JsonProcessingException {
-            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+        void 이미_회원가입된_회원은_로그인에_성공한다() {
+            given(idTokenVerifier.getOidcUser(anyString(), any()))
+                    .willReturn(mockOidcUser("already-registered-oauthId"));
             given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
                     .willReturn("fake-access-token");
             given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
-
-            String expectedResponse =
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", 1, "role", "USER", "status", "NORMAL"));
-
-            stubFor(
-                    post(urlEqualTo("/internal/oauth-info"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(expectedResponse)));
 
             // when
             SocialLoginResponse response =
@@ -214,27 +159,14 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
         }
 
         @Test
-        void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() throws JsonProcessingException {
-            given(idTokenVerifier.getOidcUser(anyString(), any())).willReturn(mockOidcUser());
+        void 회원_상태가_DELETED인_경우_재가입_처리_후_로그인에_성공한다() {
+            given(idTokenVerifier.getOidcUser(anyString(), any()))
+                    .willReturn(mockOidcUser("deleted-oauthId"));
             given(jwtTokenService.createAccessToken(anyLong(), any(MemberRole.class)))
                     .willReturn("fake-access-token");
             given(jwtTokenService.createRefreshToken(anyLong())).willReturn("fake-refresh-token");
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
-
-            String expectedResponse =
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", 1, "role", "USER", "status", "DELETED"));
-
-            stubFor(
-                    post(urlEqualTo("/internal/oauth-info"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(expectedResponse)));
-
-            stubFor(post(urlEqualTo("/internal/1/rejoin")).willReturn(aResponse().withStatus(200)));
 
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
@@ -248,15 +180,13 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
         }
     }
 
-    private OidcUser mockOidcUser() {
+    private OidcUser mockOidcUser(String sub) {
         OidcIdToken idToken =
                 new OidcIdToken(
                         "fake-id-token",
                         Instant.now(),
                         Instant.now().plusSeconds(3600),
-                        Map.of(
-                                "sub", "test-subject",
-                                "iss", "https://test-issuer.example.com"));
+                        Map.of("sub", sub, "iss", "https://test-issuer.example.com"));
 
         return new DefaultOidcUser(List.of(), idToken);
     }
@@ -265,7 +195,7 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
     class 토큰_재발급할_때 {
 
         @Test
-        void 유효한_리프레시_토큰이면_새로운_토큰을_반환한다() throws JsonProcessingException {
+        void 유효한_리프레시_토큰이면_새로운_토큰을_반환한다() {
             // given
             RefreshTokenDto oldRefreshTokenDto =
                     RefreshTokenDto.of(1L, "fake-old-register-token", 604800L);
@@ -279,18 +209,6 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
                     .willReturn(newRefreshTokenDto);
             given(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
                     .willReturn(newAccessTokenDto);
-
-            String expectedResponse =
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", 1, "role", "USER", "status", "NORMAL"));
-
-            stubFor(
-                    get(urlPathMatching("/internal/\\d+"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(expectedResponse)));
 
             // when
             TokenReissueResponse response = authService.reissueToken("testRefreshTokenValue");
@@ -334,12 +252,15 @@ public class AuthServiceIntegrationTest extends WireMockIntegrationTest {
         @Test
         void 리프레시_토큰이_존재하면_삭제된다() {
             // given
+            RefreshTokenDeleteRequest grpcRequest =
+                    RefreshTokenDeleteRequest.newBuilder().setMemberId("1").build();
+
             RefreshToken refreshToken =
                     RefreshToken.builder().memberId(1L).token("testRefreshToken").build();
             refreshTokenRepository.save(refreshToken);
 
             // when
-            authService.deleteRefreshToken(String.valueOf(1L));
+            authService.deleteRefreshToken(grpcRequest);
 
             // then
             assertThat(refreshTokenRepository.findById(1L)).isEmpty();

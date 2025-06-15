@@ -1,23 +1,20 @@
 package com.lgcns.service.unit;
 
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-import com.lgcns.client.MemberServiceClient;
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.domain.OauthProvider;
 import com.lgcns.domain.RefreshToken;
 import com.lgcns.dto.AccessTokenDto;
 import com.lgcns.dto.RefreshTokenDto;
 import com.lgcns.dto.RegisterTokenDto;
 import com.lgcns.dto.request.IdTokenRequest;
-import com.lgcns.dto.request.MemberInternalRegisterRequest;
-import com.lgcns.dto.request.MemberOauthInfoRequest;
 import com.lgcns.dto.request.MemberRegisterRequest;
-import com.lgcns.dto.response.MemberInternalInfoResponse;
-import com.lgcns.dto.response.MemberInternalRegisterResponse;
 import com.lgcns.dto.response.SocialLoginResponse;
 import com.lgcns.dto.response.TokenReissueResponse;
 import com.lgcns.enums.MemberAge;
@@ -30,6 +27,10 @@ import com.lgcns.repository.RefreshTokenRepository;
 import com.lgcns.service.AuthServiceImpl;
 import com.lgcns.service.IdTokenVerifier;
 import com.lgcns.service.JwtTokenService;
+import com.popi.common.grpc.auth.RefreshTokenDeleteRequest;
+import com.popi.common.grpc.member.*;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class AuthServiceUnitTest {
     @InjectMocks private AuthServiceImpl authService;
     @Mock private RefreshTokenRepository refreshTokenRepository;
 
-    @Mock private MemberServiceClient memberServiceClient;
+    @Mock private MemberGrpcClient memberGrpcClient;
 
     @Mock private JwtTokenService jwtTokenService;
     @Mock private IdTokenVerifier idTokenVerifier;
@@ -73,15 +74,21 @@ public class AuthServiceUnitTest {
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
 
-            given(memberServiceClient.registerMember(any(MemberInternalRegisterRequest.class)))
-                    .willReturn(new MemberInternalRegisterResponse(1L, MemberRole.USER));
+            MemberInternalRegisterResponse grpcResponse =
+                    MemberInternalRegisterResponse.newBuilder()
+                            .setMemberId(1L)
+                            .setRole(toGrpcMemberRole(MemberRole.USER))
+                            .build();
+
+            given(memberGrpcClient.registerMember(any(MemberInternalRegisterRequest.class)))
+                    .willReturn(grpcResponse);
 
             // when
             SocialLoginResponse response =
                     authService.registerMember("testRegisterTokenValue", request);
 
             // then
-            verify(memberServiceClient, times(1))
+            verify(memberGrpcClient, times(1))
                     .registerMember(any(MemberInternalRegisterRequest.class));
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
@@ -102,14 +109,14 @@ public class AuthServiceUnitTest {
                     new MemberRegisterRequest(
                             "testNickname", MemberAge.TWENTIES, MemberGender.MALE);
 
-            given(memberServiceClient.registerMember(any(MemberInternalRegisterRequest.class)))
+            given(memberGrpcClient.registerMember(any(MemberInternalRegisterRequest.class)))
                     .willThrow(new RuntimeException("이미 가입된 사용자입니다. 로그인 후 이용해주세요."));
 
             // when & then
             assertThatThrownBy(() -> authService.registerMember("testRegisterTokenValue", request))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("이미 가입된 사용자입니다. 로그인 후 이용해주세요.");
-            verify(memberServiceClient, times(1))
+            verify(memberGrpcClient, times(1))
                     .registerMember(any(MemberInternalRegisterRequest.class));
         }
 
@@ -141,12 +148,14 @@ public class AuthServiceUnitTest {
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
-            // when
+            given(memberGrpcClient.findByOauthInfo(any()))
+                    .willThrow(new StatusRuntimeException(Status.NOT_FOUND));
+
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
 
             // then
-            verify(memberServiceClient, times(1)).findByOauthInfo(any());
+            verify(memberGrpcClient, times(1)).findByOauthInfo(any());
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isNull(),
                     () -> assertThat(response.refreshToken()).isNull(),
@@ -163,24 +172,25 @@ public class AuthServiceUnitTest {
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
-            MemberInternalInfoResponse memberResponse =
-                    new MemberInternalInfoResponse(
-                            1L,
-                            "최현태",
-                            MemberAge.TWENTIES,
-                            MemberGender.MALE,
-                            MemberRole.USER,
-                            MemberStatus.NORMAL);
+            MemberInternalInfoResponse grpcResponse =
+                    MemberInternalInfoResponse.newBuilder()
+                            .setMemberId(1L)
+                            .setNickname("최현태")
+                            .setAge(toGrpcMemberAge(MemberAge.TWENTIES))
+                            .setGender(toGrpcMemberGender(MemberGender.MALE))
+                            .setRole(toGrpcMemberRole(MemberRole.USER))
+                            .setStatus(toGrpcMemberStatus(MemberStatus.NORMAL))
+                            .build();
 
-            given(memberServiceClient.findByOauthInfo(any())).willReturn(memberResponse);
+            given(memberGrpcClient.findByOauthInfo(any())).willReturn(grpcResponse);
 
             // when
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
 
             // then
-            verify(memberServiceClient, times(1))
-                    .findByOauthInfo(any(MemberOauthInfoRequest.class));
+            verify(memberGrpcClient, times(1))
+                    .findByOauthInfo(any(MemberInternalOauthInfoRequest.class));
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
@@ -197,24 +207,26 @@ public class AuthServiceUnitTest {
 
             IdTokenRequest request = new IdTokenRequest("testIdTokenValue");
 
-            MemberInternalInfoResponse memberResponse =
-                    new MemberInternalInfoResponse(
-                            1L,
-                            "최현태",
-                            MemberAge.TWENTIES,
-                            MemberGender.MALE,
-                            MemberRole.USER,
-                            MemberStatus.DELETED);
+            MemberInternalInfoResponse grpcResponse =
+                    MemberInternalInfoResponse.newBuilder()
+                            .setMemberId(1L)
+                            .setNickname("최현태")
+                            .setAge(toGrpcMemberAge(MemberAge.TWENTIES))
+                            .setGender(toGrpcMemberGender(MemberGender.MALE))
+                            .setRole(toGrpcMemberRole(MemberRole.USER))
+                            .setStatus(toGrpcMemberStatus(MemberStatus.DELETED))
+                            .build();
 
-            given(memberServiceClient.findByOauthInfo(any())).willReturn(memberResponse);
+            given(memberGrpcClient.findByOauthInfo(any())).willReturn(grpcResponse);
 
             SocialLoginResponse response =
                     authService.socialLoginMember(OauthProvider.KAKAO, request);
 
             // then
-            verify(memberServiceClient, times(1))
-                    .findByOauthInfo(any(MemberOauthInfoRequest.class));
-            verify(memberServiceClient, times(1)).rejoinMember(1L);
+            verify(memberGrpcClient, times(1))
+                    .findByOauthInfo(any(MemberInternalOauthInfoRequest.class));
+            verify(memberGrpcClient, times(1))
+                    .rejoinMember(MemberInternalIdRequest.newBuilder().setMemberId(1L).build());
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-refresh-token"),
@@ -255,22 +267,24 @@ public class AuthServiceUnitTest {
             given(jwtTokenService.reissueAccessToken(1L, MemberRole.USER))
                     .willReturn(newAccessTokenDto);
 
-            MemberInternalInfoResponse memberResponse =
-                    new MemberInternalInfoResponse(
-                            1L,
-                            "최현태",
-                            MemberAge.TWENTIES,
-                            MemberGender.MALE,
-                            MemberRole.USER,
-                            MemberStatus.DELETED);
+            MemberInternalInfoResponse grpcResponse =
+                    MemberInternalInfoResponse.newBuilder()
+                            .setMemberId(1L)
+                            .setNickname("최현태")
+                            .setAge(toGrpcMemberAge(MemberAge.TWENTIES))
+                            .setGender(toGrpcMemberGender(MemberGender.MALE))
+                            .setRole(toGrpcMemberRole(MemberRole.USER))
+                            .setStatus(toGrpcMemberStatus(MemberStatus.DELETED))
+                            .build();
 
-            when(memberServiceClient.findByMemberId(1L)).thenReturn(memberResponse);
+            when(memberGrpcClient.findByMemberId(any(MemberInternalIdRequest.class)))
+                    .thenReturn(grpcResponse);
 
             // when
             TokenReissueResponse response = authService.reissueToken("testRefreshTokenValue");
 
             // then
-            verify(memberServiceClient, times(1)).findByMemberId(1L);
+            verify(memberGrpcClient, times(1)).findByMemberId(any(MemberInternalIdRequest.class));
             Assertions.assertAll(
                     () -> assertThat(response.accessToken()).isEqualTo("fake-new-access-token"),
                     () -> assertThat(response.refreshToken()).isEqualTo("fake-new-refresh-token"));
@@ -314,7 +328,8 @@ public class AuthServiceUnitTest {
             refreshTokenRepository.save(refreshToken);
 
             // when
-            authService.deleteRefreshToken(String.valueOf(1L));
+            authService.deleteRefreshToken(
+                    RefreshTokenDeleteRequest.newBuilder().setMemberId("1").build());
 
             // then
             assertThat(refreshTokenRepository.findById(1L)).isEmpty();
