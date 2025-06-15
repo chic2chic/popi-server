@@ -10,11 +10,11 @@ import java.io.InputStream;
 public class FeignErrorDecoder implements ErrorDecoder {
 
     private final ErrorDecoder defaultDecoder = new Default();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Exception decode(String methodKey, Response response) {
         try (InputStream body = response.body().asInputStream()) {
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode errorBody = objectMapper.readTree(body);
 
             String errorClassName =
