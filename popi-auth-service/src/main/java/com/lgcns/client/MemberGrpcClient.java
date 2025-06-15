@@ -13,23 +13,21 @@ public class MemberGrpcClient {
     @GrpcClient("member-service")
     private Channel channel;
 
-    private MemberServiceGrpc.MemberServiceBlockingStub stub() {
-        return MemberServiceGrpc.newBlockingStub(channel);
-    }
+    private final MemberServiceGrpc.MemberServiceBlockingStub memberServiceBlockingStub;
 
     public MemberInternalRegisterResponse registerMember(MemberInternalRegisterRequest request) {
-        return stub().registerMember(request);
+        return memberServiceBlockingStub.registerMember(request);
     }
 
     public MemberInternalInfoResponse findByOauthInfo(MemberInternalOauthInfoRequest request) {
-        return stub().findByOauthInfo(request);
+        return memberServiceBlockingStub.findByOauthInfo(request);
     }
 
     public MemberInternalInfoResponse findByMemberId(MemberInternalIdRequest request) {
-        return stub().findByMemberId(request);
+        return memberServiceBlockingStub.findByMemberId(request);
     }
 
     public void rejoinMember(MemberInternalIdRequest request) {
-        stub().rejoinMember(request);
+        memberServiceBlockingStub.rejoinMember(request);
     }
 }
