@@ -91,6 +91,10 @@ public class HttpLoggingFilter implements GlobalFilter {
                                 .request(mutatedRequest)
                                 .response(decoratedResponse)
                                 .build())
+                .doOnError(
+                        throwable -> {
+                            logResponse(null, originalResponse);
+                        })
                 .doFinally(signal -> MDC.clear());
     }
 
