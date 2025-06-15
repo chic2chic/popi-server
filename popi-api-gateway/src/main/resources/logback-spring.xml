@@ -1,34 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <springProfile name="local">
-        <property name="LOKI_URL" value="http://localhost:3100/loki/api/v1/push"/>
-    </springProfile>
-    <springProfile name="dev">
-        <property name="LOKI_URL" value="http://loki.monitoring.svc:3100/loki/api/v1/push"/>
-    </springProfile>
-
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>${LOKI_URL}</url>
-        </http>
-        <format>
-            <label>
-                <pattern>app=popi,service=user-service,level=%level</pattern>
-            </label>
-            <message class="com.github.loki4j.logback.JsonLayout"/>
-        </format>
-    </appender>
+    <property name="APP_NAME" value="popi-api-gateway"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <pattern>
+                {"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%p","thread":"%thread","app_name":"${APP_NAME}","logger":"%logger{1}","traceId":"%X{traceId:-}","memberId":"%X{memberId:-}","message":"%replace(%msg){'\"','\\\"'}"}%n
+            </pattern>
         </encoder>
     </appender>
 
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="reactor.netty" level="WARN"/>
+    <logger name="org.springframework.web.reactive" level="INFO"/>
+
     <root level="INFO">
-        <appender-ref ref="LOKI"/>
         <appender-ref ref="CONSOLE"/>
     </root>
+
 </configuration>
