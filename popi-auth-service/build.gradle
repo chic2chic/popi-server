@@ -31,9 +31,6 @@ dependencies {
     // Oauth2 Jose
     implementation 'org.springframework.security:spring-security-oauth2-jose'
 
-    // WireMock
-    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:4.2.1'
-
     // gRPC
     implementation "net.devh:grpc-spring-boot-starter:${grpcSpringVersion}"
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"

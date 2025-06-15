@@ -29,9 +29,6 @@ dependencies {
     // Spring Cloud Open Feign
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
-    // WireMock
-    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock:4.2.1'
-
     // Protobuf serialization
     implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
 
