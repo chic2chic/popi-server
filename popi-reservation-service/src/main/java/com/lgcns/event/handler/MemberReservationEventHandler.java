@@ -22,13 +22,13 @@ public class MemberReservationEventHandler {
     private final MemberReservationService memberReservationService;
     private final MemberEnteredProducer memberEnteredProducer;
 
-    @Async
+    @Async("asyncTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMemberReservationUpdateEvent(MemberReservationUpdateEvent event) {
         tryUpdateEvent(event.memberReservationId(), event.waitTime(), 0);
     }
 
-    @Async
+    @Async("asyncTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMemberReservationNotificationEvent(MemberReservationNotificationEvent event) {
         memberReservationService.createReservationNotification(event);
