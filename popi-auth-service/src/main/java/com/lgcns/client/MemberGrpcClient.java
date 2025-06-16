@@ -1,17 +1,12 @@
 package com.lgcns.client;
 
 import com.popi.common.grpc.member.*;
-import io.grpc.Channel;
 import lombok.RequiredArgsConstructor;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class MemberGrpcClient {
-
-    @GrpcClient("member-service")
-    private Channel channel;
 
     private final MemberServiceGrpc.MemberServiceBlockingStub memberServiceBlockingStub;
 
