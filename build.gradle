@@ -120,6 +120,8 @@ subprojects {
             trimTrailingWhitespace()
             // 파일 끝에 새로운 라인 추가
             endWithNewline()
+            // generated 소스 제외
+            targetExclude("build/generated/**")
         }
     }
 
