@@ -46,6 +46,10 @@ spring-doc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-auth:
-  service:
-    name: auth
+grpc:
+  client:
+    auth-service:
+      address: "static://localhost:9091"
+      negotiationType: plaintext
+  server:
+    port: 9092
