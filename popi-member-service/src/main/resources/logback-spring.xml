@@ -6,7 +6,9 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%p","thread":"%thread","logger":"%logger{1}","traceId":"%X{traceId:-}","memberId":"%X{memberId:-}","message":"%replace(%msg){'\"','\\\"'}"}%n</pattern>
+            <pattern>
+                {"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS}","level":"%p","thread":"%thread","app_name":"${APP_NAME}","logger":"%logger{1}","traceId":"%X{traceId:-}","memberId":"%X{memberId:-}","message":"%replace(%msg){'\"','\\\"'}"}%n
+            </pattern>
         </encoder>
     </appender>
 
