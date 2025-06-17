@@ -11,6 +11,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.client.managerClient.dto.response.*;
+import com.lgcns.client.memberClient.MemberGrpcClient;
 import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
@@ -25,6 +26,8 @@ import com.lgcns.kafka.message.MemberAnswerMessage;
 import com.lgcns.kafka.message.MemberEnteredMessage;
 import com.lgcns.kafka.producer.MemberAnswerProducer;
 import com.lgcns.repository.MemberReservationRepository;
+import com.popi.common.grpc.member.MemberInternalIdRequest;
+import com.popi.common.grpc.member.MemberInternalInfoResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.awt.image.BufferedImage;
@@ -53,6 +56,7 @@ public class MemberReservationServiceImpl implements MemberReservationService {
 
     private final ManagerServiceClient managerServiceClient;
     private final MemberServiceClient memberServiceClient;
+    private final MemberGrpcClient memberGrpcClient;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -236,8 +240,12 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     @Override
     public void updateMemberReservation(Long memberReservationId) {
         MemberReservation memberReservation = findMemberReservationById(memberReservationId);
+
         MemberInternalInfoResponse memberInfo =
-                memberServiceClient.findMemberInfo(memberReservation.getMemberId());
+                memberGrpcClient.findByMemberId(
+                        MemberInternalIdRequest.newBuilder()
+                                .setMemberId(memberReservation.getMemberId())
+                                .build());
 
         ReservationInfoResponse reservationInfoResponse =
                 managerServiceClient.findReservationById(memberReservation.getReservationId());
@@ -247,8 +255,8 @@ public class MemberReservationServiceImpl implements MemberReservationService {
                         memberReservation.getId(),
                         memberReservation.getReservationId(),
                         reservationInfoResponse.popupId(),
-                        memberInfo.age().toString(),
-                        memberInfo.gender().toString(),
+                        memberInfo.getAge().toString(),
+                        memberInfo.getGender().toString(),
                         reservationInfoResponse.reservationDate(),
                         reservationInfoResponse.reservationTime());
 
