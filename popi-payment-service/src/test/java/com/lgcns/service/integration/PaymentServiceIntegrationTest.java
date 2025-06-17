@@ -39,7 +39,7 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class PaymentServiceIntegrationTest extends WireMockIntegrationTest {
+public class PaymentServiceIntegrationTest extends IntegrationTest {
 
     @Autowired private DatabaseCleaner databaseCleaner;
 
