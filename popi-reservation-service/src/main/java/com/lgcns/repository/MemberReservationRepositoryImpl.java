@@ -1,6 +1,5 @@
 package com.lgcns.repository;
 
-import static com.lgcns.domain.MemberReservationStatus.RESERVED;
 import static com.lgcns.domain.QMemberReservation.memberReservation;
 
 import com.lgcns.domain.MemberReservation;
@@ -44,25 +43,25 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
 
     @Override
     public MemberReservation findUpcomingReservation(Long memberId) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate nowDate = now.toLocalDate();
-        LocalTime nowTime = now.toLocalTime();
+
+        LocalDateTime now = LocalDateTime.now().minusMinutes(31);
 
         return queryFactory
                 .selectFrom(memberReservation)
                 .where(
                         memberReservation.memberId.eq(memberId),
-                        memberReservation.status.eq(RESERVED),
+                        memberReservation.status.eq(MemberReservationStatus.RESERVED),
                         memberReservation
                                 .reservationDate
-                                .gt(nowDate)
+                                .lt(now.toLocalDate())
+                                .not()
                                 .or(
                                         memberReservation
                                                 .reservationDate
-                                                .eq(nowDate)
+                                                .eq(now.toLocalDate())
                                                 .and(
                                                         memberReservation.reservationTime.goe(
-                                                                nowTime))))
+                                                                now.toLocalTime()))))
                 .orderBy(
                         memberReservation.reservationDate.asc(),
                         memberReservation.reservationTime.asc())
@@ -89,9 +88,8 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
     @Override
     public List<MemberReservation> findByMemberIdAndStatus(
             Long memberId, MemberReservationStatus status) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate nowDate = now.toLocalDate();
-        LocalTime nowTime = now.toLocalTime();
+
+        LocalDateTime now = LocalDateTime.now().minusMinutes(31);
 
         return queryFactory
                 .selectFrom(memberReservation)
@@ -100,14 +98,15 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
                         memberReservation.status.eq(status),
                         memberReservation
                                 .reservationDate
-                                .gt(nowDate)
+                                .lt(now.toLocalDate())
+                                .not()
                                 .or(
                                         memberReservation
                                                 .reservationDate
-                                                .eq(nowDate)
+                                                .eq(now.toLocalDate())
                                                 .and(
                                                         memberReservation.reservationTime.goe(
-                                                                nowTime))))
+                                                                now.toLocalTime()))))
                 .orderBy(
                         memberReservation.reservationDate.asc(),
                         memberReservation.reservationTime.asc())
