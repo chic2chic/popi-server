@@ -70,7 +70,6 @@ public class PaymentServiceIntegrationTest extends IntegrationTest {
                                     new PaymentReadyRequest.Item(9L, 1),
                                     new PaymentReadyRequest.Item(17L, 3)));
 
-            stubManagerInfo();
             stubItemDetails();
 
             // when
@@ -96,7 +95,6 @@ public class PaymentServiceIntegrationTest extends IntegrationTest {
                                     new PaymentReadyRequest.Item(9L, 1),
                                     new PaymentReadyRequest.Item(999L, 3)));
 
-            stubManagerInfo();
             stubItemDetails();
 
             // when & then
@@ -115,35 +113,12 @@ public class PaymentServiceIntegrationTest extends IntegrationTest {
                                     new PaymentReadyRequest.Item(9L, 1),
                                     new PaymentReadyRequest.Item(17L, 12)));
 
-            stubManagerInfo();
             stubItemDetails();
 
             // when & then
             assertThatThrownBy(() -> paymentService.preparePayment("1", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.OUT_OF_STOCK.getMessage());
-        }
-
-        private void stubManagerInfo() throws JsonProcessingException {
-            String managerExpectedResponse =
-                    objectMapper.writeValueAsString(
-                            Map.of(
-                                    "memberId",
-                                    1,
-                                    "nickname",
-                                    "현태",
-                                    "role",
-                                    "USER",
-                                    "status",
-                                    "NORMAL"));
-
-            stubFor(
-                    get(urlEqualTo("/internal/1"))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody(managerExpectedResponse)));
         }
 
         private void stubItemDetails() throws JsonProcessingException {
