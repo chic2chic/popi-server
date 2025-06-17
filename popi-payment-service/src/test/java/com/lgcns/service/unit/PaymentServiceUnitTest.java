@@ -1,15 +1,16 @@
 package com.lgcns.service.unit;
 
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.request.ItemIdsForPaymentRequest;
 import com.lgcns.client.managerClient.dto.response.ItemForPaymentResponse;
-import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentStatus;
 import com.lgcns.dto.FlatPaymentItem;
@@ -25,6 +26,8 @@ import com.lgcns.kafka.producer.ItemPurchasedProducer;
 import com.lgcns.repository.PaymentRepository;
 import com.lgcns.response.SliceResponse;
 import com.lgcns.service.PaymentServiceImpl;
+import com.popi.common.grpc.member.MemberInternalIdRequest;
+import com.popi.common.grpc.member.MemberInternalInfoResponse;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -51,7 +54,7 @@ public class PaymentServiceUnitTest {
     @InjectMocks private PaymentServiceImpl paymentService;
     @Mock private PaymentRepository paymentRepository;
 
-    @Mock private MemberServiceClient memberServiceClient;
+    @Mock private MemberGrpcClient memberGrpcClient;
     @Mock private ManagerServiceClient managerServiceClient;
 
     @Mock private IamportClient iamportClient;
@@ -72,14 +75,14 @@ public class PaymentServiceUnitTest {
                                     new PaymentReadyRequest.Item(9L, 1),
                                     new PaymentReadyRequest.Item(17L, 3)));
 
-            stubMemberInfo();
+            stubFindMember();
             stubItemDetails();
 
             // when
             PaymentReadyResponse response = paymentService.preparePayment("1", request);
 
             // then
-            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(memberGrpcClient, times(1)).findByMemberId(any(MemberInternalIdRequest.class));
             verify(managerServiceClient, times(1))
                     .findItemsForPayment(anyLong(), any(ItemIdsForPaymentRequest.class));
             Assertions.assertAll(
@@ -101,14 +104,14 @@ public class PaymentServiceUnitTest {
                                     new PaymentReadyRequest.Item(9L, 1),
                                     new PaymentReadyRequest.Item(999L, 3)));
 
-            stubMemberInfo();
+            stubFindMember();
             stubItemDetails();
 
             // when & then
             assertThatThrownBy(() -> paymentService.preparePayment("1", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.ITEM_NOT_FOUND.getMessage());
-            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(memberGrpcClient, times(1)).findByMemberId(any(MemberInternalIdRequest.class));
             verify(managerServiceClient, times(1))
                     .findItemsForPayment(anyLong(), any(ItemIdsForPaymentRequest.class));
         }
@@ -123,28 +126,29 @@ public class PaymentServiceUnitTest {
                                     new PaymentReadyRequest.Item(9L, 1),
                                     new PaymentReadyRequest.Item(17L, 12)));
 
-            stubMemberInfo();
+            stubFindMember();
             stubItemDetails();
 
             // when & then
             assertThatThrownBy(() -> paymentService.preparePayment("1", request))
                     .isInstanceOf(CustomException.class)
                     .hasMessage(PaymentErrorCode.OUT_OF_STOCK.getMessage());
-            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(memberGrpcClient, times(1)).findByMemberId(any(MemberInternalIdRequest.class));
             verify(managerServiceClient, times(1))
                     .findItemsForPayment(anyLong(), any(ItemIdsForPaymentRequest.class));
         }
 
-        private void stubMemberInfo() {
-            given(memberServiceClient.findMemberInfo(anyLong()))
+        private void stubFindMember() {
+            given(memberGrpcClient.findByMemberId(any(MemberInternalIdRequest.class)))
                     .willReturn(
-                            new MemberInternalInfoResponse(
-                                    1L,
-                                    "현태",
-                                    MemberAge.TWENTIES,
-                                    MemberGender.MALE,
-                                    MemberRole.USER,
-                                    MemberStatus.NORMAL));
+                            MemberInternalInfoResponse.newBuilder()
+                                    .setMemberId(1L)
+                                    .setNickname("현태")
+                                    .setAge(toGrpcMemberAge(MemberAge.TWENTIES))
+                                    .setGender(toGrpcMemberGender(MemberGender.MALE))
+                                    .setRole(toGrpcMemberRole(MemberRole.USER))
+                                    .setStatus(toGrpcMemberStatus(MemberStatus.NORMAL))
+                                    .build());
         }
 
         private void stubItemDetails() {
