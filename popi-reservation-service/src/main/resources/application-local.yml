@@ -80,3 +80,9 @@ manager:
 member:
   service:
     name: members
+
+grpc:
+  client:
+    member-service:
+      address: "static://localhost:9092"
+      negotiationType: plaintext
