@@ -62,3 +62,5 @@ grpc:
     member-service:
       address: "static://localhost:9092"
       negotiationType: plaintext
+  server:
+    port: 9094
