@@ -9,6 +9,9 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+//import com.lgcns.service.integration.GrpcClientTestConfig;
+import com.lgcns.service.integration.IntegrationTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -16,16 +19,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @EmbeddedKafka(partitions = 1, topics = "item-purchased-topic")
-class EmbeddedKafkaIntegrationTest {
+class EmbeddedKafkaIntegrationTest extends IntegrationTest {
 
     @Autowired private EmbeddedKafkaBroker embeddedKafkaBroker;
 
