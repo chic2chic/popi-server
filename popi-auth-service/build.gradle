@@ -36,4 +36,7 @@ dependencies {
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     implementation "io.grpc:grpc-inprocess:${grpcVersion}"
+
+    // prometheus
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }

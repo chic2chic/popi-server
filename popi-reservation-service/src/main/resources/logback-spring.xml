@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <property name="APP_NAME" value="api-gateway"/>
+    <property name="APP_NAME" value="reservation-service"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -14,8 +13,8 @@
     </appender>
 
     <logger name="org.springframework" level="WARN"/>
-    <logger name="reactor.netty" level="WARN"/>
-    <logger name="org.springframework.web.reactive" level="INFO"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

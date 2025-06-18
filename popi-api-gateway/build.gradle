@@ -25,9 +25,6 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-    // Prometheus
+    // prometheus
     implementation 'io.micrometer:micrometer-registry-prometheus'
-
-    // Grafana Loki
-    implementation 'com.github.loki4j:loki-logback-appender:1.5.1'
 }

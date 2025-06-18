@@ -39,11 +39,11 @@ dependencies {
     // Slice & Pageable
     implementation 'org.springframework.data:spring-data-commons'
 
-    // Prometheus
-    api 'io.micrometer:micrometer-registry-prometheus'
+    // AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
-    // Grafana Loki
-    api 'com.github.loki4j:loki-logback-appender:1.5.1'
+    // logback
+    api 'net.logstash.logback:logstash-logback-encoder:8.1'
 
     // Protobuf serialization/deserialization
     implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
