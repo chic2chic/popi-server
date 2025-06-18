@@ -30,7 +30,5 @@ public abstract class IntegrationTest {
     @AfterEach
     void afterEach() {
         wireMockServer.resetAll();
-
-        inMemoryGrpcServer.shutdown();
     }
 }

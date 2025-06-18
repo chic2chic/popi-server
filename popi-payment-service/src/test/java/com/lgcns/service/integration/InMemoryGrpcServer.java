@@ -21,10 +21,4 @@ public class InMemoryGrpcServer {
         }
         server = builder.build().start();
     }
-
-    public void shutdown() {
-        if (server != null) {
-            server.shutdownNow();
-        }
-    }
 }
