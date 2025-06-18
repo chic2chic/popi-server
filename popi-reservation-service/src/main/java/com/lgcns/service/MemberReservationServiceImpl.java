@@ -8,11 +8,10 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.request.PopupIdsRequest;
 import com.lgcns.client.managerClient.dto.response.*;
-import com.lgcns.client.memberClient.MemberGrpcClient;
-import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
@@ -55,7 +54,6 @@ public class MemberReservationServiceImpl implements MemberReservationService {
     private final MemberReservationRepository memberReservationRepository;
 
     private final ManagerServiceClient managerServiceClient;
-    private final MemberServiceClient memberServiceClient;
     private final MemberGrpcClient memberGrpcClient;
 
     private final ApplicationEventPublisher eventPublisher;
