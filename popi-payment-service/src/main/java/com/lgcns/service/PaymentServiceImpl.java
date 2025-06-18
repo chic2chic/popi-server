@@ -1,9 +1,9 @@
 package com.lgcns.service;
 
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.request.ItemIdsForPaymentRequest;
 import com.lgcns.client.managerClient.dto.response.ItemForPaymentResponse;
-import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.Payment;
 import com.lgcns.domain.PaymentItem;
 import com.lgcns.domain.PaymentStatus;
@@ -19,6 +19,7 @@ import com.lgcns.kafka.message.ItemPurchasedMessage;
 import com.lgcns.kafka.producer.ItemPurchasedProducer;
 import com.lgcns.repository.PaymentRepository;
 import com.lgcns.response.SliceResponse;
+import com.popi.common.grpc.member.MemberInternalIdRequest;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
@@ -42,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final MemberServiceClient memberServiceClient;
+    private final MemberGrpcClient memberGrpcClient;
     private final ManagerServiceClient managerServiceClient;
     private final IamportClient iamportClient;
     private final ItemPurchasedProducer itemPurchasedProducer;
@@ -50,7 +51,9 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public synchronized PaymentReadyResponse preparePayment(
             String memberId, PaymentReadyRequest request) {
-        String buyerName = memberServiceClient.findMemberInfo(Long.valueOf(memberId)).nickname();
+        MemberInternalIdRequest grpcRequest =
+                MemberInternalIdRequest.newBuilder().setMemberId(Long.parseLong(memberId)).build();
+        String buyerName = memberGrpcClient.findByMemberId(grpcRequest).getNickname();
 
         List<Long> itemIds =
                 request.items().stream().map(PaymentReadyRequest.Item::itemId).toList();
