@@ -19,7 +19,3 @@ manager:
   service:
     name: managers
     url: http://localhost:${wiremock.server.port}
-member:
-  service:
-    name: members
-    url: http://localhost:${wiremock.server.port}
