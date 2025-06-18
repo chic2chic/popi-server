@@ -55,8 +55,11 @@ dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
 
+	// Protobuf serialization
+	implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
+
 	// gRPC
-	implementation "net.devh:grpc-spring-boot-starter:${grpcSpringVersion}"
+	implementation "net.devh:grpc-client-spring-boot-starter:${grpcSpringVersion}"
 	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
 	implementation "io.grpc:grpc-stub:${grpcVersion}"
 	implementation "io.grpc:grpc-inprocess:${grpcVersion}"
