@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.repository.MemberReservationRepository;
 import com.lgcns.service.MemberReservationService;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class MemberReservationMockTest extends WireMockIntegrationTest {
+public class MemberReservationMockTest extends IntegrationTest {
 
     @MockitoBean private MemberReservationRepository memberReservationRepository;
     @Autowired private MemberReservationService memberReservationService;
@@ -54,11 +53,7 @@ public class MemberReservationMockTest extends WireMockIntegrationTest {
         void 예약_저장_중_예외_발생시_복구_및_예외_반환() throws JsonProcessingException {
             // given
             reservationRedisTemplate.opsForValue().set(reservationId.toString(), 10L);
-            stubForFindMemberInternalInfo(
-                    memberId,
-                    200,
-                    objectMapper.writeValueAsString(
-                            Map.of("memberId", memberId, "role", "USER", "status", "NORMAL")));
+
             given(memberReservationRepository.save(ArgumentMatchers.any(MemberReservation.class)))
                     .willThrow(new RuntimeException("DB error"));
 

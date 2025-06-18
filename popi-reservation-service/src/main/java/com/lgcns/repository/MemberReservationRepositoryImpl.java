@@ -1,6 +1,5 @@
 package com.lgcns.repository;
 
-import static com.lgcns.domain.MemberReservationStatus.RESERVED;
 import static com.lgcns.domain.QMemberReservation.memberReservation;
 
 import com.lgcns.domain.MemberReservation;
@@ -10,6 +9,7 @@ import com.lgcns.dto.response.DailyReservationCountResponse;
 import com.lgcns.dto.response.HourlyReservationCount;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -44,25 +44,20 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
 
     @Override
     public MemberReservation findUpcomingReservation(Long memberId) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate nowDate = now.toLocalDate();
-        LocalTime nowTime = now.toLocalTime();
+
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(30);
 
         return queryFactory
                 .selectFrom(memberReservation)
                 .where(
                         memberReservation.memberId.eq(memberId),
-                        memberReservation.status.eq(RESERVED),
-                        memberReservation
-                                .reservationDate
-                                .gt(nowDate)
-                                .or(
-                                        memberReservation
-                                                .reservationDate
-                                                .eq(nowDate)
-                                                .and(
-                                                        memberReservation.reservationTime.goe(
-                                                                nowTime))))
+                        memberReservation.status.eq(MemberReservationStatus.RESERVED),
+                        Expressions.dateTimeTemplate(
+                                        LocalDateTime.class,
+                                        "cast(concat({0}, ' ', {1}) as timestamp)",
+                                        memberReservation.reservationDate,
+                                        memberReservation.reservationTime)
+                                .after(threshold))
                 .orderBy(
                         memberReservation.reservationDate.asc(),
                         memberReservation.reservationTime.asc())
@@ -89,25 +84,20 @@ public class MemberReservationRepositoryImpl implements MemberReservationReposit
     @Override
     public List<MemberReservation> findByMemberIdAndStatus(
             Long memberId, MemberReservationStatus status) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate nowDate = now.toLocalDate();
-        LocalTime nowTime = now.toLocalTime();
+
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(30);
 
         return queryFactory
                 .selectFrom(memberReservation)
                 .where(
                         memberReservation.memberId.eq(memberId),
                         memberReservation.status.eq(status),
-                        memberReservation
-                                .reservationDate
-                                .gt(nowDate)
-                                .or(
-                                        memberReservation
-                                                .reservationDate
-                                                .eq(nowDate)
-                                                .and(
-                                                        memberReservation.reservationTime.goe(
-                                                                nowTime))))
+                        Expressions.dateTimeTemplate(
+                                        LocalDateTime.class,
+                                        "cast(concat({0}, ' ', {1}) as timestamp)",
+                                        memberReservation.reservationDate,
+                                        memberReservation.reservationTime)
+                                .after(threshold))
                 .orderBy(
                         memberReservation.reservationDate.asc(),
                         memberReservation.reservationTime.asc())

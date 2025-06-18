@@ -38,7 +38,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 
-class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
+class MemberReservationServiceIntegrationTest extends IntegrationTest {
 
     @Autowired private MemberReservationService memberReservationService;
     @Autowired private MemberReservationRepository memberReservationRepository;
@@ -65,6 +65,7 @@ class MemberReservationServiceIntegrationTest extends WireMockIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         databaseCleaner.execute();
+        notificationRedisTemplate.delete("reservation:notifications");
     }
 
     @BeforeEach

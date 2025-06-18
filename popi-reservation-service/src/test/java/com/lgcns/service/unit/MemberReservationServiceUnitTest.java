@@ -2,6 +2,8 @@ package com.lgcns.service.unit;
 
 import static com.lgcns.domain.MemberReservationStatus.RESERVED;
 import static com.lgcns.exception.MemberReservationErrorCode.RESERVATION_FAILED;
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.*;
+import static com.lgcns.grpc.mapper.MemberGrpcMapper.toGrpcMemberStatus;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -14,9 +16,9 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgcns.client.MemberGrpcClient;
 import com.lgcns.client.managerClient.ManagerServiceClient;
 import com.lgcns.client.managerClient.dto.response.*;
-import com.lgcns.client.memberClient.MemberServiceClient;
 import com.lgcns.domain.MemberReservation;
 import com.lgcns.dto.request.QrEntranceInfoRequest;
 import com.lgcns.dto.request.SurveyChoiceRequest;
@@ -34,6 +36,8 @@ import com.lgcns.kafka.message.MemberEnteredMessage;
 import com.lgcns.kafka.producer.MemberAnswerProducer;
 import com.lgcns.repository.MemberReservationRepository;
 import com.lgcns.service.MemberReservationServiceImpl;
+import com.popi.common.grpc.member.*;
+import com.popi.common.grpc.member.MemberInternalInfoResponse;
 import feign.FeignException;
 import feign.Request;
 import feign.RequestTemplate;
@@ -69,7 +73,7 @@ public class MemberReservationServiceUnitTest {
     @Mock private MemberReservationRepository memberReservationRepository;
 
     @Mock private ManagerServiceClient managerServiceClient;
-    @Mock private MemberServiceClient memberServiceClient;
+    @Mock private MemberGrpcClient memberGrpcClient;
 
     @Mock private RedisTemplate<String, Long> reservationRedisTemplate;
     @Mock private ValueOperations<String, Long> reservationRedisValueOperations;
@@ -663,15 +667,23 @@ public class MemberReservationServiceUnitTest {
                             reservationId, Long.parseLong(memberId));
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
-            given(memberServiceClient.findMemberInfo(anyLong()))
-                    .willReturn(
-                            new MemberInternalInfoResponse(
-                                    Long.parseLong(memberId),
-                                    "testNickName",
-                                    MemberAge.TEENAGER,
-                                    MemberGender.MALE,
-                                    MemberRole.USER,
-                                    MemberStatus.NORMAL));
+
+            MemberInternalInfoResponse grpcResponse =
+                    MemberInternalInfoResponse.newBuilder()
+                            .setMemberId(1L)
+                            .setNickname("testNickName")
+                            .setAge(toGrpcMemberAge(MemberAge.TEENAGER))
+                            .setGender(toGrpcMemberGender(MemberGender.MALE))
+                            .setRole(toGrpcMemberRole(MemberRole.USER))
+                            .setStatus(toGrpcMemberStatus(MemberStatus.NORMAL))
+                            .build();
+
+            given(
+                            memberGrpcClient.findByMemberId(
+                                    MemberInternalIdRequest.newBuilder()
+                                            .setMemberId(Long.parseLong(memberId))
+                                            .build()))
+                    .willReturn(grpcResponse);
 
             given(managerServiceClient.findReservationById(anyLong()))
                     .willReturn(
@@ -683,7 +695,11 @@ public class MemberReservationServiceUnitTest {
 
             // then
             verify(memberReservationRepository, times(1)).findById(anyLong());
-            verify(memberServiceClient, times(1)).findMemberInfo(anyLong());
+            verify(memberGrpcClient, times(1))
+                    .findByMemberId(
+                            MemberInternalIdRequest.newBuilder()
+                                    .setMemberId(Long.parseLong(memberId))
+                                    .build());
             verify(eventPublisher, times(1))
                     .publishEvent(any(MemberReservationNotificationEvent.class));
         }
@@ -708,7 +724,7 @@ public class MemberReservationServiceUnitTest {
             ;
             given(memberReservationRepository.findById(anyLong()))
                     .willReturn(Optional.of(reservation));
-            given(memberServiceClient.findMemberInfo(anyLong()))
+            given(memberGrpcClient.findByMemberId(any()))
                     .willThrow(buildMemberInfoException(Long.parseLong(memberId)));
 
             // when

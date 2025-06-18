@@ -15,14 +15,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @EmbeddedKafka(partitions = 1, topics = MemberEnteredKafkaTest.TOPIC)
 public class MemberEnteredKafkaTest extends AbstractKafkaIntegrationTest {
 
