@@ -1,5 +1,6 @@
 package com.lgcns.kafka;
 
+import com.lgcns.service.integration.IntegrationTest;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -8,7 +9,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
-public abstract class AbstractKafkaIntegrationTest {
+public abstract class AbstractKafkaIntegrationTest extends IntegrationTest {
 
     @Autowired protected EmbeddedKafkaBroker embeddedKafkaBroker;
 
