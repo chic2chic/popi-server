@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-        name = "${manager.service.name}",
+        name = "${manager.service.name:}",
         url = "${manager.service.url:}",
         configuration = FeignConfig.class)
 public interface ManagerServiceClient {
