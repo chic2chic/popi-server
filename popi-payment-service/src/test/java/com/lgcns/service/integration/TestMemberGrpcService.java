@@ -12,7 +12,7 @@ public class TestMemberGrpcService extends MemberServiceGrpc.MemberServiceImplBa
         MemberInternalInfoResponse response =
                 MemberInternalInfoResponse.newBuilder()
                         .setMemberId(1L)
-                        .setNickname("testNickname")
+                        .setNickname("현태")
                         .setAge(MemberAge.TEENAGER)
                         .setGender(MemberGender.MALE)
                         .setRole(MemberRole.USER)
